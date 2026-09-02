@@ -1,0 +1,173 @@
+artifact: event-catalog
+question: "What happened, and who is authorised to claim it?"
+owner: "system architect"
+updated_when: "an event is added or renamed, or its envelope changes"
+source: "states.html §6; transitions.html §2, §3 (where each one is consumed)"
+authored: "2026-08-24"
+# Split into commands and events, which is the distinction the previous version
+# of this file collapsed. A command asks for something to happen, may be refused,
+# and its producer waits for an answer. An event states that something happened;
+# it is a historical fact and its producer waits for nothing.
+#
+# 7 commands + 25 events across 24 rows of the source table.
+
+envelope:
+  note: >-
+    No event in this system carries a declared envelope today. This is the shape
+    every one of them must acquire, and the failure column is why — each field is
+    here because omitting it breaks something specific.
+  fields:
+    - field: event_id
+      required: true
+      breaks_if_missing: "deduplication reuses an id and silently deletes a real event"
+    - field: event_type
+      required: true
+    - field: event_time
+      required: true
+      means: "when the producer says it happened — never processing time"
+      breaks_if_missing: "a delayed event cannot be told from a current one"
+    - field: producer
+      required: true
+      means: "the component authorised to make this claim"
+    - field: correlation_id
+      required: true
+      means: "the revision this belongs to — the thread across editor sessions"
+      note: "maps to trace_id in the state inventory"
+    - field: causation_id
+      required: true
+      means: "the event that caused this one"
+      breaks_if_missing: "out-of-order arrival can drive a transition that never legally happened"
+    - field: schema_version
+      required: true
+    - field: idempotency_key
+      required: "on any event recording a side effect"
+      breaks_if_missing: "a retry executes the effect twice instead of being a no-op"
+    - field: payload
+      required: true
+
+commands:
+  - name: "PublishRequested"
+    producer: "editor, through the orchestrator"
+    asks: "put this already-approved revision on air"
+    issued_from_state: "Approved"
+    may_be_refused_by: "OPA"
+    answered_by: ["the revision reaching Published", "LivePointerMoved"]
+    note: >-
+      An earlier version of this file said ApprovalGranted answers this command.
+      It does not — the order runs the other way. ApprovalGranted moves the
+      revision from PendingApproval to Approved, and only then can publication be
+      requested. The approval is a precondition of the command, not its reply.
+  - name: "NodeGenerationRequested"
+    producer: "editor"
+    asks: "generate content for this node"
+    may_be_refused_by: "OPA, Datalog (are the topics this depends on approved)"
+    answered_by: ["NodeGenerated", "ModelError", "Timeout"]
+  - name: "CourseChecksRequested"
+    producer: "editor"
+    asks: "declare the revision done and run the whole-course checks"
+    may_be_refused_by: "the guard requiring every node approved and none stale"
+    answered_by: ["CheckFailed", "(auto) advance to PendingApproval"]
+  - name: "ReviseRequested"
+    producer: "editor"
+    asks: "fork a new revision from a published or withdrawn one"
+    answered_by: ["a new revision in ContentInProgress"]
+  - name: "RollbackRequested"
+    producer: "editor, with a reason"
+    asks: "put a superseded revision back on air"
+    answered_by: ["the revision enters StaleReview and must re-verify to earn the pointer"]
+    note: "rollback is not a restore — it is a re-entry through verification"
+  - name: "WithdrawRequested"
+    producer: "editor"
+    asks: "pull a live revision off air without waiting for a re-check"
+    answered_by: ["Withdrawn"]
+  - name: "ArchiveRequested"
+    producer: "editor"
+    asks: "close this course"
+    answered_by: ["Archived"]
+
+events:
+  - name: "BriefSubmitted"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "course"
+    borderline: >-
+      This one sits on the line. The editor submits and waits for a verdict, which
+      fits the definition of a command. It is kept as an event because the fact it
+      records — this brief now exists on this course — is true whether or not
+      validation ever runs, and the validation that follows is a consequence, not
+      a reply. Worth naming rather than deciding silently.
+  - names: ["OutlineGenerated", "NodeGenerated"]
+    producer: "model, through the generation gateway"
+    affects: "course / node"
+  - name: "GuardrailVerdict"
+    producer: "managed guardrail service"
+    affects: "course / node"
+    payload_must_carry: ["verdict", "reason", "guardrail_version"]
+  - name: "CheckFailed(layer, reason)"
+    producer: "formal layer"
+    affects: "course / node"
+    payload_must_carry: ["layer", "reason", "the refusal artifact — unsat core, leak path, proof tree, or named rule"]
+  - names: ["OutlineApproved", "OutlineRejected"]
+    producer: "orchestrator, recording a decision by the course editor"
+    affects: "course / node"
+    payload_must_carry: ["actor", "what_was_shown", "committed_outline on approval"]
+  - names: ["NodeApproved", "NodeRejected"]
+    producer: "orchestrator, recording a decision by the course editor"
+    affects: "node"
+    payload_must_carry: ["actor", "what_was_shown"]
+  - names: ["ApprovalGranted", "ApprovalRejected"]
+    producer: "orchestrator, recording a decision by the course editor"
+    affects: "course — PendingApproval to Approved, or back to ContentInProgress"
+    answers: "the approval gate reached automatically after the whole-course checks pass; no command precedes it"
+    payload_must_carry: ["actor", "what_was_shown", "the revision id being approved"]
+    note: >-
+      These were grouped with PublishRequested in the previous catalog. A command
+      and the two events that answer it are three different things.
+  - name: "NodeEdited"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "node, then the staleness cascade"
+  - names: ["PolicyChanged", "CatalogChanged", "KBUpdated"]
+    producer: "organization configuration"
+    affects: "every stamped artifact"
+    note: "produced outside this system; they are what make an approved revision stale"
+  - name: "GuardrailChanged"
+    producer: "compliance officer, through the managed guardrail service"
+    affects: "every stamped artifact — carries guardrail_version"
+    payload_must_carry: ["from_version", "to_version"]
+    note: >-
+      Held apart from the three above because its owner and its console are
+      different. Compliance owns both, but the bundle is deployed OPA source
+      and the guardrail is a definition in a managed console, each with its own
+      version and its own audit trail. An earlier
+      draft had no such event and demonstrated the cascade by firing
+      PolicyChanged for a change to a forbidden topic — a guardrail change
+      wearing the policy bundle's name.
+  - name: "BlockedInputFixed"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "a recoverable stop is cleared; the revision returns to the state named by blocked_at"
+  - name: "OutlineRevised"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "the skeleton changes after content exists"
+  - name: "ReturnedToWork"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "an approved revision goes back to ContentInProgress"
+  - name: "DraftDiscarded"
+    producer: "orchestrator, recording an act by the course editor"
+    affects: "a draft revision is abandoned"
+  - name: "ServiceUnreachable"
+    producer: "infrastructure"
+    affects: "an unknown, never a denial"
+  - name: "LivePointerMoved"
+    producer: "system, on publication or rollback"
+    affects: "the revision losing the pointer becomes Superseded"
+    payload_must_carry: ["from_revision", "to_revision"]
+  - name: "LearnersNotified"
+    producer: "system, on publication"
+    affects: "none — the revision does not move, the notice is recorded"
+  - names: ["ModelError", "Timeout"]
+    producer: "infrastructure"
+    affects: "the current state routes to ErrorRecovery"
+    note: "a timeout is an unknown; whether the write landed is decided by idempotency_key, not assumed"
+
+open_questions:
+  - "No event is emitted today with any of the envelope fields above. Until they exist, causation cannot be reconstructed and the audit trace is a log rather than a model."
+  - "Commands are recorded in the same stream as events. Whether they belong in one log or two is undecided; the deck separates them conceptually but not physically."

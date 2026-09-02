@@ -1,0 +1,79 @@
+---
+title: Context — Governed AI Course Generator
+---
+%% artifact:     context-diagram
+%% question:     Who is inside the boundary and who is outside?
+%% owner:        system architect
+%% updated_when: a component crosses the boundary, or a new external dependency appears
+%% source:       specification.html §1, §4, §7; safety.html §8
+%% authored:     2026-08-24
+%%
+%% Metadata lives in comments rather than the front matter: mermaid's front
+%% matter accepts only its own keys, and an unknown one risks the render.
+%% The boundary separates what we control from what we depend on. The model
+%% provider sits OUTSIDE it and produces a proposal only; there is no path from
+%% the model to course state that does not cross the generation gateway, which is
+%% the single admission point and the only holder of platform credentials.
+flowchart LR
+  subgraph HUMANS["Human actors"]
+    EDITOR["Course author / editor"]
+    ADMIN["Training administrator"]
+    COMPLIANCE["Compliance officer"]
+  end
+
+  subgraph CONFIG["Configuration — owned by people, not deployed"]
+    THRESH["Thresholds and audience rules"]
+  end
+
+  subgraph EXTERNAL["External systems — depended on, not controlled"]
+    CATALOG["Sylla platform — skills and block catalog"]
+    KB["Sylla knowledge base"]
+    PERMS["Sylla permission model"]
+    GUARD["Managed guardrail service"]
+    MODEL["Model provider"]
+    LEARNERS["Learners"]
+  end
+
+  subgraph SYS["Governed AI Course Generator — system of interest"]
+    ORCH["Orchestrator — revision and node state machines"]
+    RET["Retrieval, scoped per topic"]
+    SCHEMA["Schema validator"]
+    OPA["Policy engine — OPA"]
+    FORMAL["Formal layers — Z3, Datalog, Prolog, temporal logic"]
+    GW["Generation gateway — sole admission authority"]
+    STORE["State store"]
+    AUDIT["Audit trace"]
+    MON["Runtime monitor — PROPOSED, does not exist"]
+    REPAIR["Repair loop — bounded retries"]
+  end
+
+  EDITOR -->|brief, edits, approvals| ORCH
+  ADMIN -->|thresholds, audience rules| ORCH
+  COMPLIANCE -->|guardrail policy, no deployment| GUARD
+
+  ORCH -->|generate this node| GW
+  ORCH --> RET
+  RET --> KB
+  RET --> CATALOG
+
+  GW -->|prompt| MODEL
+  MODEL -->|proposal only| SCHEMA
+  SCHEMA --> GW
+  GW --> OPA
+  OPA --> PERMS
+  GW --> GUARD
+  GW --> FORMAL
+  FORMAL --> CATALOG
+
+  GW -->|admission| STORE
+  STORE --> ORCH
+  GW --> AUDIT
+  GW -->|refusal| REPAIR
+  REPAIR -->|bounded retry| GW
+  AUDIT --> MON
+  STORE --> MON
+  MON -->|assumption violated| ORCH
+  ADMIN --> THRESH
+  THRESH --> GW
+  ORCH -->|prepared, never performed| EDITOR
+  EDITOR -->|publishes| LEARNERS

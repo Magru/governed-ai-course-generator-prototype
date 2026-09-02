@@ -1,0 +1,11 @@
+# an exam generated before the topics it tests are approved. the guard quantifies
+# over the committed outline, so this is refused rather than deadlocked.
+expect: {refused_by: state-store, artifact: outstanding-topics}
+brief:
+  id: mt-course-104
+  title: bench safety exam
+  audience: apprentices
+  objectives: [bench-safety]
+  nodes:
+    - {id: mt-node-104, type: exam, topics: [mt-node-105]}
+    - {id: mt-node-105, type: topic, skill: bench-safety, state: Planned}

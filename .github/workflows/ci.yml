@@ -1,0 +1,29 @@
+name: ci
+on: [push, pull_request]
+
+jobs:
+  guarantees:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+
+      - name: install
+        run: |
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet pyyaml pytest z3-solver boto3
+
+      # Runs before anything else: a fixture carrying a name that is not ours
+      # must never reach a public repository, and the check that prevents it
+      # must never be the one that got skipped.
+      - name: no borrowed names in fixtures
+        run: python tools_allowlist_scan.py
+
+      - name: the prototype runs the published specification
+        run: python tools_model_sync.py verify
+
+      # No credentials are configured for this job on purpose. If a test could
+      # reach an account from CI, it could reach one from a laptop.
+      - name: tests
+        run: python -m pytest tests -q

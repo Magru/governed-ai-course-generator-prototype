@@ -1,0 +1,10 @@
+# the node cites a chunk the audience cannot see. datalog refuses with the path:
+# node to source to the audience that lacks rights.
+expect: {refused_by: datalog, artifact: leak-path}
+brief:
+  id: mt-course-103
+  title: incident reporting for apprentices
+  audience: apprentices
+  objectives: [incident-reporting]
+  nodes:
+    - {id: mt-node-103, type: topic, skill: incident-reporting, cites: [mt-kb-008]}

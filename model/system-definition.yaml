@@ -1,0 +1,173 @@
+artifact: system-definition
+question: "What does the system promise?"
+owner: "system architect"
+updated_when: "the promise, the boundary, or an authority changes"
+source: "specification.html §1, §2, §4; safety.html §9"
+authored: "2026-08-24"
+# Written by hand, not exported: the specification states these in prose and the
+# structuring below is a reading of it. Every field traces to a named section.
+
+business_outcome:
+  statement: >-
+    Course authoring drops from days to hours, with no course reaching learners
+    that bypassed a formal check or a human approval.
+  measures:
+    - metric: "authoring time per course"
+      from: "days"
+      to: "hours"
+    - metric: "courses published bypassing formal checks or human approval"
+      target: 0
+    - metric: "leaks of a restricted source into a course"
+      target: 0
+    - metric: "published courses carrying a desynchronised node"
+      target: 0
+  measured_by: >-
+    latency-budget.yaml. The figures are deliberately not restated here — they
+    were, and they drifted the moment the budget was recomputed. One file owns
+    a number.
+
+system_of_interest:
+  name: "Governed AI Course Generator"
+  is: >-
+    A standalone prototype that drafts course content for the Sylla learning
+    platform and admits it to course state only through a governed gateway.
+  is_not: >-
+    Production code. It models the same entities and the same permission rules
+    as the platform, and is designed so its architecture can graduate into it.
+
+boundary:
+  inside:
+    - "generation gateway"
+    - "five formal engines and the schema validator"
+    - "revision and node state machines"
+    - "state store, audit trace, repair loop"
+  outside:
+    - name: "Sylla platform"
+      relied_on_for: "skills catalog, knowledge base, permission model, human approvals"
+    - name: "managed guardrail service"
+      relied_on_for: "forbidden topics, harmful text, personal data, image content"
+      note: "configured and versioned outside the application; a network hop"
+    - name: "model provider"
+      relied_on_for: "generation, under a routing table the gateway owns"
+  actors:
+    - "course author"
+    - "training administrator"
+    - "compliance officer — owns guardrail policy, changes it without a deployment"
+
+authority:
+  # The canvas asks for ONE primary decision with one authority. This system makes
+  # many judgments, but exactly one of them is the reason it exists.
+  # Approvals here do not expire on a clock. There is no approval TTL anywhere in
+  # this system, and that is deliberate: an approval goes stale when a stamped
+  # version moves under it — policy, guardrail, catalog, knowledge base — not when
+  # a timer runs out. StaleReview is the mechanism. A TTL would answer a question
+  # nobody here is asking and would let a policy change pass unnoticed inside the
+  # window.
+  primary_decision:
+    name: "admit_generated_content_into_a_revision"
+    authority: "the formal layer stack — schema, OPA, guardrail, Datalog, Z3, Prolog, temporal logic"
+    note: "the model proposes this decision and never makes it"
+
+  decision:
+    - holder: "formal engines"
+      over: "structure — rights, ordering, dependencies, arithmetic, coverage, staleness"
+      basis: "deterministic versioned rules that produce a proof rather than an opinion"
+    - holder: "managed services"
+      over: "meaning and modality — a forbidden request phrased indirectly, harmful text, personal data, what is inside a generated image"
+      basis: "configuration with its own version history, not code"
+    - holder: "the editor"
+      over: "pedagogical judgment — whether this is worth teaching, in this order, to these people"
+      basis: "delegated to no model, no service and no rule"
+  boundary_rule: >-
+    A check statable about a graph, a set, an ordering or a number belongs to the
+    formal engines. A check requiring a text to be understood or an image to be
+    looked at is configured, never coded. A question of pedagogical value is a
+    person's.
+  execution:
+    holder: "the generation gateway"
+    rule: "the gateway, not the model, decides whether a write happens"
+    autonomy_level: 4
+    ceiling: 4
+    ceiling_is: "deliberate, not a stage toward level 6"
+    excluded_from_the_system: ["publication", "withdrawal", "learner notification"]
+    excluded_because: "all three are one rung higher; the generator prepares them and a person performs them"
+
+quality_attributes:
+  # Requirements, not estimates. The latency budget is measured against these;
+  # without them it is a cost sheet. Nobody has agreed them yet — they are the
+  # architect's proposal and the organisation's decision.
+  status: "proposed"
+  node_draft_p95_seconds: 30
+  whole_course_check_p95_seconds: 60
+  audit_lag_max_seconds: 5
+  guardrail_timeout_seconds: 2
+  rationale: >-
+    A node takes roughly three minutes to review. A thirty-second wait is a
+    sixth of that and is tolerated; a two-minute wait is not, because the editor
+    switches to something else and comes back skimming. The number is chosen to
+    protect assumption A8 — that the editor reads what they approve — which is
+    the assumption the whole governance argument rests on.
+
+hard_constraints:
+  - "Nothing generated enters course state without crossing the gateway."
+  - "A missing verdict is never read as permission — no degraded mode turns an unavailable layer into a pass."
+  - "A published revision is immutable; an edit forks a new one."
+  - "Publication requires every node approved and none stale, then a person."
+  - "Autonomy never exceeds level 4."
+
+safe_fallbacks:
+  - trigger: "policy denies"
+    fallback: "terminal refusal carrying the rule that denied, by name"
+  - trigger: "guardrail unreachable"
+    fallback: "timeout routed to ErrorRecovery — an unknown, never a denial and never a pass"
+  - trigger: "repair budget exhausted"
+    fallback: "the revision stops at BlockedRecoverable and asks a person"
+  - trigger: "a formal engine cannot run"
+    fallback: "stop admitting work rather than admit it unchecked"
+  - trigger: "the audit trace is unavailable"
+    fallback: "durable outbox, and an alert — admission continues, the record is never dropped"
+    status: "PROPOSED — not in the specification"
+    note: >-
+      The seven specification pages name no behaviour for an unavailable audit.
+      This fills the gap the way the framework's own worked example does, which
+      makes it a design decision rather than a reading of the spec: continuing
+      admission while buffering trades a stalled system for a delayed record. The
+      opposite choice — stop admitting — is equally defensible and belongs to
+      whoever owns the compliance requirement.
+  - trigger: "operator intervention"
+    fallback: "kill switch"
+
+assumptions:
+  status: "consolidated"
+  where: "assumptions.yaml — eleven dependencies, each with a signal, threshold, response and owner"
+  monitored: 0
+  note: >-
+    The list exists; nothing on it is watched. Collecting them was the
+    prerequisite to a monitoring map, and the map is the next artifact.
+
+evidence:
+  # What will let us prove, later, what actually happened.
+  - item: "the brief and the guardrail verdict on it"
+    proves: "the course was screened before a single token was paid for"
+  - item: "the refusal artifact from each layer — unsat core, leak path, proof tree, named rule"
+    proves: "a refusal was a finding, not an opinion, and can be re-read a year later"
+  - item: "approvals[] with what_was_shown"
+    proves: "a person approved this content, and which content they were looking at"
+  - item: "the stamped versions — policy, guardrail, catalog, knowledge base, model"
+    proves: "what the artifact was judged against, which is what makes staleness detectable"
+  - item: "the audit trace, threaded by trace_id"
+    proves: "the order events actually occurred in"
+  - item: "idempotency_key per side-effecting operation"
+    proves: "a repeated operation was the same operation, not a second one"
+
+unknowns:
+  # Deliberately separate from assumptions. An assumption is something we are
+  # relying on; an unknown is something nobody has measured and nobody should
+  # pretend to know. Every number the latency budget states is an estimate
+  # standing on these.
+  - "generation latency per node, in production, against a real catalog"
+  - "how long an editor actually spends reviewing one node before approving it"
+  - "how often the catalog or policy changes under a live course — this drives the entire cascade volume"
+  - "tail latency of the managed guardrail service, which is a network hop we do not own"
+  - "how many nodes a real course has; every capacity figure scales linearly with it"
+  - "whether editors approve faster as their queue grows — the failure this architecture is most exposed to and the one it cannot currently see"

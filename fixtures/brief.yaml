@@ -1,0 +1,11 @@
+# the happy path. two topics and an exam, inside every threshold.
+brief:
+  id: mt-course-001
+  title: Bench safety for apprentices
+  audience: apprentices
+  objectives: [bench-safety, tool-inspection]
+  minutes_per_lesson: 20
+  nodes:
+    - {id: mt-node-001, type: topic, skill: bench-safety}
+    - {id: mt-node-002, type: topic, skill: tool-inspection}
+    - {id: mt-node-003, type: exam, topics: [mt-node-001, mt-node-002]}

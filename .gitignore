@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+model.lock.local
+demo/*.mov
+demo/*.mp4
+.DS_Store

@@ -1,0 +1,146 @@
+artifact: assumptions
+question: "What does the model depend on, and how would we learn that a dependency has stopped being true?"
+owner: "system architect"
+updated_when: "a dependency is added, or one of these acquires a real signal"
+source: "guards in transitions.html §4; stamped versions in states.html §9; the open questions on all six pages"
+authored: "2026-08-24"
+# Each row carries the four monitoring columns the framework asks for — signal,
+# threshold, response, owner — because an assumption with no signal is a belief.
+# Every row is currently `monitored: false`. That is the honest state of this
+# system and it is the reason the monitoring map is the second artifact to build.
+#
+# An assumption is something the design relies on. It is not the same as an
+# unknown, which is something nobody has measured — those live in
+# system-definition.yaml under `unknowns`.
+
+assumptions:
+  - id: A1
+    assumption: "The catalog_version stamped on a block is the one the platform still serves."
+    relied_on_by: "every schema check against catalog://schemas; the whole staleness cascade"
+    if_false: "a node passes validation against a catalog that no longer exists, and nothing marks it stale"
+    signal: "age of the stamped catalog_version against the platform's current one, per live revision"
+    threshold: "any live revision more than one catalog version behind"
+    response: "mark affected nodes NeedsRevalidation — the cascade already exists, nothing triggers it"
+    owner: "Sylla platform"
+    monitored: false
+
+  - id: A2
+    assumption: "The OPA bundle in force is the one the revision was verified against."
+    relied_on_by: "every policy_allows guard; the publication invariant"
+    if_false: "a course is live under a rule that was never applied to it"
+    signal: "policy_version drift between live revisions and the active bundle"
+    threshold: "any drift at all"
+    response: "re-verify affected revisions; the StaleReview path exists for exactly this"
+    owner: "Policy owner"
+    monitored: false
+
+  - id: A3
+    assumption: "The Datalog fact mirror — permissions, skills, dependencies — is fresh enough that a leak check is about the present."
+    relied_on_by: "no_permission_leak; every grounding and rights check"
+    if_false: "a permission revoked a minute ago passes a check on stale truth, and restricted material reaches an audience without rights"
+    signal: "mirror lag behind the platform permission model"
+    threshold: "to be set — the design has never named one"
+    response: "refuse to admit rather than admit unchecked"
+    owner: "Sylla platform"
+    monitored: false
+    note: "this is the open question 'who owns the fact mirror, and how fresh is it' from layers.html, stated as a dependency"
+
+  - id: A4
+    assumption: "The managed guardrail service is reachable, and its verdict is authoritative for meaning."
+    relied_on_by: "every generation; the semantic half of the division of responsibility"
+    if_false: "either work stops, or — worse — an unavailable verdict is read as permission"
+    signal: "guardrail timeout rate and p95 response time"
+    threshold: "to be set"
+    response: "route to ErrorRecovery; never to admission"
+    owner: "Compliance officer"
+    monitored: false
+
+  - id: A5
+    assumption: "The model honours the forced output schema it is given."
+    relied_on_by: "the schema layer, which runs first and is assumed to almost always pass"
+    if_false: "the repair loop absorbs the failure quietly and the cost per node rises without anyone seeing it"
+    signal: "schema failure rate at generation, by model_id"
+    threshold: "to be set"
+    response: "re-route the task in the model routing table"
+    owner: "Generation gateway"
+    monitored: false
+
+  - id: A6
+    assumption: "The repair loop converges inside its budget most of the time."
+    relied_on_by: "the promise that a bounded loop either fixes the node or hands it back"
+    if_false: "editors receive blocked nodes instead of drafts, and authoring does not get faster"
+    signal: "repair_count distribution per node; share of nodes exhausting the budget"
+    threshold: "to be set"
+    response: "raise the budget, or fix the prompt — the distinction matters and needs the data"
+    owner: "System architect"
+    monitored: false
+
+  - id: A7
+    assumption: "An idempotency_key is unique to a canonical action, so a retry is a no-op."
+    relied_on_by: "ErrorRecovery; every side-effecting operation"
+    if_false: "a timeout followed by a retry performs the effect twice"
+    signal: "collisions, and repeated keys resolving to different canonical actions"
+    threshold: "one is too many"
+    response: "halt admission; this is a correctness failure, not a degradation"
+    owner: "Generation gateway"
+    monitored: false
+
+  - id: A8
+    assumption: "The editor reads what they approve."
+    relied_on_by: "the entire governance argument — every human stop in both machines"
+    if_false: "every guard still passes and the governance stops happening, invisibly"
+    signal: "time between a node being shown and approved; approvals per session"
+    threshold: "to be set — but a node approved in under a few seconds was not read"
+    response: "no automated response is appropriate; this is a conversation with a person"
+    owner: "Training administrator"
+    monitored: false
+    note: >-
+      The most important row in this file and the only one with no technical
+      remedy. latency-budget.yaml exists to protect it: the proposed thirty-second
+      node target is chosen so that waiting never becomes the reason an editor
+      stops reading. If that target is missed, this assumption fails quietly and
+      every guard keeps passing.
+
+  - id: A9
+    assumption: "Over-refusal is rare enough not to matter."
+    relied_on_by: "nothing — it is assumed by omission"
+    if_false: "authors quietly stop using the generator, and no signal in this system distinguishes that from low demand"
+    signal: "refusals per accepted brief; abandoned drafts per author"
+    threshold: "to be set"
+    response: "review guardrail policy and thresholds with the compliance officer"
+    owner: "Compliance officer"
+    monitored: false
+    note: "stated as an open question on specification.html — 'over-refusal is invisible in a way under-refusal is not'"
+
+  - id: A10
+    assumption: "Clocks agree closely enough that event_time can be trusted for ordering."
+    relied_on_by: "the temporal invariants; causation reconstructed from the audit trace"
+    if_false: "a trace replays in an order that never happened, and a temporal check passes or fails on fiction"
+    signal: "clock skew between the components that stamp event_time"
+    threshold: "to be set — smaller than the shortest interval any invariant distinguishes"
+    response: "order by causation_id rather than event_time, and flag the trace"
+    owner: "Generation gateway"
+    monitored: false
+    note: "the event catalog declares event_time authoritative; nothing checks the clock behind it"
+
+  - id: A11
+    assumption: "The guardrail version stamped on a revision is the one the service still enforces."
+    relied_on_by: "I15; the affected() sweep; every guardrail_clean verdict recorded as authoritative"
+    if_false: "a course serves under a rule the compliance officer has already replaced, and nothing marks it"
+    signal: "guardrail_version drift between live revisions and the active guardrail"
+    threshold: "any drift at all"
+    response: "run the affected() sweep; the StaleReview path exists for exactly this"
+    owner: "Compliance officer"
+    monitored: false
+    note: >-
+      A4 asks whether the service answers. This asks whether it is answering under
+      the rule we think it is. Two different failures of the same dependency.
+
+summary:
+  count: 11
+  monitored: 0
+  with_a_named_threshold: 4
+  note: "seven of eleven have no threshold"
+  open_questions:
+    - "Seven of eleven have no threshold. A threshold nobody has set is not a weaker control than one nobody measures — it is the same control, and both are absent."
+    - "A8 has a signal and no valid automated response. That is not a gap in the design; it is a property of putting a person in the loop, and it should be said out loud at the defence rather than discovered there."

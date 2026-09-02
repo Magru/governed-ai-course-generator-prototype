@@ -1,0 +1,11 @@
+# refused by z3 before generation. the unsat core names the smallest set of
+# requirements that cannot hold together.
+expect: {refused_by: z3, state: BlockedRecoverable, artifact: unsat-core}
+brief:
+  id: mt-course-102
+  title: everything about the workshop
+  audience: apprentices
+  objectives: [bench-safety, tool-inspection, dust-extraction, noise-exposure,
+               lifting-technique, machine-guarding, waste-disposal, ppe-selection]
+  minutes_per_lesson: 5
+  nodes: []

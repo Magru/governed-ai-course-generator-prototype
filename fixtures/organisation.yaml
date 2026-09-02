@@ -1,0 +1,30 @@
+# the organisation courses are authored for. invented; see namespace.yaml.
+organisation:
+  slug: meridian-tools
+  name: Meridian Tools
+  audiences:
+    - slug: all-staff
+      label: All staff
+    - slug: workshop-floor
+      label: Workshop floor
+    - slug: apprentices
+      label: Apprentices
+    - slug: supervisors
+      label: Supervisors
+
+people:
+  - id: author-1
+    role: course-author
+    may_author_for: [all-staff, workshop-floor, apprentices]
+  - id: admin-1
+    role: training-administrator
+    may_author_for: [all-staff, workshop-floor, apprentices, supervisors]
+  - id: compliance-1
+    role: compliance-officer
+    may_author_for: []
+
+thresholds:
+  repair_budget: 2
+  max_nodes_per_course: 12
+  max_minutes_per_lesson: 25
+  max_audience_breadth: 4

@@ -1,0 +1,10 @@
+# every node approved, then one goes stale. publication is refused because a
+# published course may carry no stale node.
+expect: {refused_by: temporal, invariant: I3, artifact: violated-formula}
+brief:
+  id: mt-course-105
+  title: dust extraction
+  audience: workshop-floor
+  objectives: [dust-extraction]
+  nodes:
+    - {id: mt-node-106, type: topic, skill: dust-extraction, state: NeedsRevalidation}

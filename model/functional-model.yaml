@@ -1,0 +1,82 @@
+artifact: functional-model
+question: "What does the system do?"
+owner: "system architect"
+updated_when: "a phase is added or removed, or a gateway stage changes its order or its refusal"
+source: "specification.html §5 (editor's journey), §7 (generation gateway)"
+authored: "2026-08-24"
+# Written by hand from the specification's prose and its gateway flowchart.
+
+shape: >-
+  A course is not generated in one pass. It is a governed journey in three
+  phases, and the expensive work starts only after a person has approved the
+  cheap part.
+
+phases:
+  - id: 1
+    name: "Skeleton"
+    does: >-
+      The author gives a brief; the model proposes modules, lessons, topics and
+      exams — titles and learning objectives only.
+    gate: "checked formally, then edited and approved by a person before any content is paid for"
+  - id: 2
+    name: "Content, over many sessions"
+    does: >-
+      Node by node: retrieval scoped to that topic, blocks assembled against the
+      catalog's schemas, checks, repair, approval.
+    gate: "state is persistent — the editor leaves and comes back"
+  - id: 3
+    name: "Publication"
+    does: "every node approved and none stale, then whole-course checks for completeness, ordering and consistency"
+    gate: "a final human approval; the generator prepares publication, a person performs it"
+
+gateway:
+  rule: >-
+    Every call to a model crosses one membrane, in both directions. Nothing
+    generated enters course state without passing it, and the gateway — not the
+    model — decides whether the write happens.
+  stages:
+    - { order: 1,  stage: "schema",            asks: "is the request well formed" }
+    - { order: 2,  stage: "policy",            asks: "role, audience, limits, is the action legal in this state" }
+    - { order: 3,  stage: "guardrail in",      asks: "forbidden topics, personal data" }
+    - { order: 4,  stage: "routing",           asks: "which model for this task, by policy" }
+    - { order: 5,  stage: "generation",        asks: "produce, against a forced output schema" }
+    - { order: 6,  stage: "guardrail out",     asks: "text and images" }
+    - { order: 7,  stage: "block schemas",     asks: "valid against the platform catalog" }
+    - { order: 8,  stage: "grounding and rights", asks: "sources traced, permissions re-checked" }
+    - { order: 9,  stage: "constraints and coverage", asks: "satisfiable, complete" }
+    - { order: 10, stage: "admission",         asks: "write into course state" }
+    - { order: 11, stage: "audit",             asks: "record versions of model, policy, catalog, guardrail" }
+  refusals:
+    - at: "policy"
+      when: "not permitted"
+      outcome: "blocked, with a reason and a safe next action"
+      recoverable: false
+    - at: "guardrail in"
+      when: "forbidden topic"
+      outcome: "blocked, with a reason and a safe next action"
+      recoverable: false
+    - at: "guardrail out"
+      when: "unsafe"
+      outcome: "repair loop, bounded retries"
+      recoverable: true
+    - at: "block schemas"
+      when: "invalid settings"
+      outcome: "repair loop, bounded retries"
+      recoverable: true
+    - at: "grounding and rights"
+      when: "ungrounded, or a permission leak"
+      outcome: "repair loop, bounded retries"
+      recoverable: true
+  human_stop: "admission is followed by editor approval; approval is never inferred"
+
+prompt_inputs:
+  note: "assembled from three trust levels, kept separate rather than concatenated"
+  levels:
+    - level: "system instructions"
+      trust: "trusted, ours"
+      carries: "generation rules for the phase and a strict output schema"
+    - level: "retrieved material"
+      trust: "untrusted"
+    - level: "author prompt"
+      trust: "untrusted"
+  source_note: "see safety.html §4–§5 for the full architecture and the four injection surfaces"

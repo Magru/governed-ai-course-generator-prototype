@@ -1,0 +1,54 @@
+# what the platform offers an author. a skill the outline invents is not here,
+# and that is what makes the grounding check able to refuse.
+catalog:
+  version: cat-7
+  skills:
+    - {id: bench-safety, label: Bench safety}
+    - {id: tool-inspection, label: Tool inspection}
+    - {id: hand-plane-setup, label: Hand plane setup}
+    - {id: chisel-sharpening, label: Chisel sharpening}
+    - {id: dust-extraction, label: Dust extraction}
+    - {id: noise-exposure, label: Noise exposure}
+    - {id: first-aid-basics, label: First aid basics}
+    - {id: lifting-technique, label: Lifting technique}
+    - {id: machine-guarding, label: Machine guarding}
+    - {id: waste-disposal, label: Waste disposal}
+    - {id: ppe-selection, label: Ppe selection}
+    - {id: incident-reporting, label: Incident reporting}
+
+  blocks:
+    - id: heading
+      schema: {type: object, required: [text], properties: {text: {type: string}}}
+    - id: paragraph
+      schema:
+        type: object
+        required: [text, cites]
+        properties:
+          text: {type: string}
+          cites: {type: array, items: {type: string}}
+    - id: image
+      requires_visual_review: true
+      schema:
+        type: object
+        required: [src, alt, caption, cites]
+        properties:
+          src: {type: string}
+          alt: {type: string}
+          caption: {type: string}
+          cites: {type: array, items: {type: string}}
+    - id: checklist
+      schema:
+        type: object
+        required: [items]
+        properties: {items: {type: array, items: {type: string}}}
+    - id: quiz
+      schema:
+        type: object
+        required: [question, options, answer, points]
+        properties:
+          question: {type: string}
+          options: {type: array, items: {type: string}}
+          answer: {type: integer}
+          points: {type: integer}
+    - id: callout
+      schema: {type: object, required: [text], properties: {text: {type: string}}}

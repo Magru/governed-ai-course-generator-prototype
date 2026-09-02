@@ -1,0 +1,161 @@
+artifact: state-inventory
+question: "What does the system remember, who is authoritative for it, and how is it recovered after a failure?"
+owner: "system architect"
+updated_when: "a variable is added, changes owner, or changes how it is recovered"
+source: "states.html §2, §3 (valid values), §9 (fields carried); transitions.html §4 (guards that read them)"
+authored: "2026-08-24"
+# Rows are state VARIABLES, not states. The 21 revision states and 11 node states
+# are the valid values of two of the variables below — they are enumerations, not
+# the inventory. Names are reproduced verbatim: transitions.yaml and both
+# generated diagrams key on them.
+#
+# Type vocabulary
+#   Durable                persists across sessions; the editor may leave and return
+#   Authoritative Durable  durable, and this owner is the source of truth for it
+#   Authoritative          owned elsewhere; a local copy is a cache and may be stale
+#   Durable Binding ID     identity of an operation, recomputable from its inputs
+#   Operational            bookkeeping; reconstructable, not itself a fact
+#   Provenance             immutable record of what something was judged against
+
+variables:
+  - variable: "revision.state"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["AwaitingBrief", "BriefValidation", "BriefFeasibility", "OutlineDrafting",
+                   "OutlineGuardrail", "OutlineChecks", "OutlineRepair", "OutlineReview",
+                   "ContentInProgress", "ReadyForReview", "WholeCourseChecks",
+                   "PendingApproval", "Approved", "Published", "StaleReview", "Withdrawn",
+                   "Superseded", "Archived", "BlockedFinal", "BlockedRecoverable",
+                   "ErrorRecovery"]
+    count: 21
+    recovery: "replay the event log for this revision"
+    note: "BlockedFinal also names a node state with a different exit — always qualify by machine"
+
+  - variable: "node.state"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["Planned", "ContentDrafting", "Generated", "OutputGuardrail", "NodeChecks",
+                   "NodeRepair", "Validated", "NodeApproved", "NeedsRevalidation",
+                   "BlockedFinal", "NodeRecovery", "Removed"]
+    count: 12
+    recovery: "replay the event log for this node"
+
+  - variable: "revision"
+    type: "Durable Binding ID"
+    owner: "State store"
+    valid_values: "monotonic integer, one lineage per course"
+    recovery: "immutable once assigned"
+
+  - variable: "forked_from"
+    type: "Provenance"
+    owner: "State store"
+    valid_values: "a revision id, or null for the first"
+    recovery: "trace"
+    note: "a published revision is immutable; an edit forks, and this is the only link back"
+
+  - variable: "live_pointer"
+    type: "Authoritative Durable"
+    owner: "State store"
+    valid_values: "the revision id learners currently see, or null"
+    recovery: "last LivePointerMoved event"
+
+  - variable: "outline_version"
+    type: "Durable"
+    owner: "State store"
+    valid_values: "integer >= 0"
+    recovery: "count OutlineApproved events on this revision"
+    note: "advanced by the same transition that evaluates in_outline, so guards must read committed_outline instead"
+
+  - variable: "committed_outline"
+    type: "Durable"
+    owner: "State store"
+    valid_values: "the set of node ids in the approved skeleton"
+    recovery: "payload of the OutlineApproved event that set the current outline_version"
+
+  - variable: "repair_count"
+    type: "Operational"
+    owner: "State store"
+    valid_values: "integer >= 0, per revision and per node"
+    recovery: "count CheckFailed events and retries taken out of NodeRecovery, since the last approval"
+    note: "read by retry_budget_left; exhausting it is what sends work to a person"
+
+  - variable: "blocked_at"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["brief", "outline", "node"]
+    recovery: "the CheckFailed event that caused the block"
+    note: "resolves the transition target written as 'the state that blocked'"
+
+  - variable: "recovery_from"
+    type: "Durable"
+    owner: "State store"
+    valid_values: ["generation", "guardrail"]
+    recovery: "the Timeout or ServiceUnreachable event that sent the node to NodeRecovery"
+    note: >-
+      Which stage a node fell out of when infrastructure failed, so recovery
+      returns it there rather than regenerating work that was already fine. The
+      node-machine twin of blocked_at.
+
+  - variable: "approvals[]"
+    type: "Authoritative Durable"
+    owner: "The editor, recorded by the State store"
+    valid_values: "list of { actor, scope, at, what_was_shown }"
+    recovery: "not recoverable — an approval that was not recorded did not happen"
+    note: "what_was_shown is what makes the approval auditable a year later"
+
+  - variable: "idempotency_key"
+    type: "Durable Binding ID"
+    owner: "Generation gateway"
+    valid_values: "sha256 of the canonical action and its arguments"
+    recovery: "recompute from the canonical action"
+    note: "a repeat is a no-op, not a second effect"
+
+  - variable: "trace_id"
+    type: "Provenance"
+    owner: "Audit trace"
+    valid_values: "uuid, one per revision lineage"
+    recovery: "trace"
+
+  - variable: "policy_version"
+    type: "Authoritative"
+    owner: "OPA policy bundle"
+    valid_values: "immutable bundle identifier"
+    recovery: "re-query the bundle"
+    note: "stamped on the artifact; a change to it is what can make an approved revision stale"
+
+  - variable: "guardrail_version"
+    type: "Authoritative"
+    owner: "Managed guardrail service"
+    valid_values: "immutable policy identifier"
+    recovery: "service query"
+    note: "owned by a compliance officer and changed without a deployment"
+
+  - variable: "catalog_version"
+    type: "Authoritative"
+    owner: "Sylla platform — skills and block catalog"
+    valid_values: "immutable catalog identifier"
+    recovery: "platform query"
+    note: "the staleness cascade is driven by this changing under an approved node"
+
+  - variable: "kb_snapshot"
+    type: "Authoritative"
+    owner: "Sylla platform — knowledge base"
+    valid_values: "immutable snapshot identifier"
+    recovery: "platform query"
+
+  - variable: "model_id + model_version"
+    type: "Provenance"
+    owner: "Generation gateway routing table"
+    valid_values: "immutable provider model identifier"
+    recovery: "trace"
+
+  - variable: "threshold_set"
+    type: "Authoritative"
+    owner: "Configuration"
+    valid_values: "named threshold-set identifier"
+    recovery: "configuration query"
+    note: "which numbers the budgets and windows came from"
+
+open_questions:
+  - "Four variables are owned outside this system — policy, guardrail, catalog and knowledge base. Each is stamped at the moment of a transition and never re-read until something forces it. Nothing currently notices when the upstream copy moves; that is the monitoring map."
+  - "approvals[] is the only variable with no recovery path. That is deliberate and it means the state store is the single point of failure for the one fact the whole governance argument rests on."

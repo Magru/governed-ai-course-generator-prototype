@@ -1,0 +1,35 @@
+# the knowledge base a node may cite. visibility is per audience, and a chunk
+# used outside it is the leak the dependency check exists to find.
+knowledge_base:
+  version: kb-4
+  chunks:
+    - id: mt-kb-001
+      visible_to: [all-staff]
+      text: keep the bench clear of offcuts and wipe spills before starting work
+    - id: mt-kb-002
+      visible_to: [all-staff]
+      text: check a tool for splits and loose handles before every use
+    - id: mt-kb-003
+      visible_to: [workshop-floor, apprentices]
+      text: set the plane iron so a thin shaving lifts evenly across the mouth
+    - id: mt-kb-004
+      visible_to: [workshop-floor]
+      text: hone a chisel until the edge no longer catches on a thumbnail
+    - id: mt-kb-005
+      visible_to: [all-staff]
+      text: connect extraction before cutting and empty the bag at the end of a run
+    - id: mt-kb-006
+      visible_to: [workshop-floor, supervisors]
+      text: wear defenders where a machine runs above the daily limit
+    - id: mt-kb-007
+      visible_to: [all-staff]
+      text: report every injury on the day it happens however small it looks
+    - id: mt-kb-008
+      visible_to: [supervisors]
+      text: incident records name the people involved and are held by the supervisor only
+    - id: mt-kb-009
+      visible_to: [all-staff]
+      text: lift with the load close to the body and turn with the feet not the waist
+    - id: mt-kb-010
+      visible_to: [workshop-floor]
+      text: a guard removed for setting up is refitted before the machine is started

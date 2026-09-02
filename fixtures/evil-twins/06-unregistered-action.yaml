@@ -1,0 +1,4 @@
+# an action the registry does not contain. refused at the first step of the
+# membrane, before any policy question is asked.
+expect: {refused_by: registry, artifact: unknown-action}
+action: {name: delete-course, actor: author-1, course: mt-course-001}

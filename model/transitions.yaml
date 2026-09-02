@@ -1,0 +1,797 @@
+artifact: transitions
+question: "What is permitted in each state?"
+owner: "system architect"
+updated_when: "any row of the transition tables changes"
+source: "transitions.html §2 (revision) and §3 (node)"
+generated: "2026-09-02"
+generator: "model/export-model.py"
+
+# 56 revision transitions + 24 node transitions.
+# Every endpoint is kept verbatim as *_raw; *_kind says how far it parsed.
+#   state         a single named state
+#   alternatives  several named states, any of which matches
+#   other_object  a state of a DIFFERENT object (a spawned revision)
+#   expression    resolved at runtime, not a name (e.g. the state that blocked)
+#   cross_machine an effect on the other machine rather than a target here
+
+revision:
+  - event: "BriefSubmitted"
+    from_raw: "AwaitingBrief"
+    from_kind: state
+    from: ["AwaitingBrief"]
+    guard: "—"
+    layer: "—"
+    to_raw: "BriefValidation"
+    to_kind: state
+    to: ["BriefValidation"]
+  - event: "(auto)"
+    from_raw: "BriefValidation"
+    from_kind: state
+    from: ["BriefValidation"]
+    guard: "¬schema_valid(brief)"
+    layer: "JSON Schema"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+  - event: "(auto)"
+    from_raw: "BriefValidation"
+    from_kind: state
+    from: ["BriefValidation"]
+    guard: "schema_valid ∧ ¬policy_allows(author, audience)"
+    layer: "OPA"
+    to_raw: "BlockedFinal"
+    to_kind: state
+    to: ["BlockedFinal"]
+  - event: "GuardrailVerdict(deny)"
+    from_raw: "BriefValidation"
+    from_kind: state
+    from: ["BriefValidation"]
+    guard: "schema_valid ∧ policy_allows ∧ ¬guardrail_clean(brief)"
+    layer: "Guardrail"
+    to_raw: "BlockedFinal"
+    to_kind: state
+    to: ["BlockedFinal"]
+  - event: "GuardrailVerdict(allow)"
+    from_raw: "BriefValidation"
+    from_kind: state
+    from: ["BriefValidation"]
+    guard: "schema_valid ∧ policy_allows"
+    layer: "Schema · OPA"
+    to_raw: "BriefFeasibility"
+    to_kind: state
+    to: ["BriefFeasibility"]
+  - event: "Timeout · ServiceUnreachable"
+    from_raw: "BriefValidation"
+    from_kind: state
+    from: ["BriefValidation"]
+    guard: "—"
+    layer: "—"
+    to_raw: "ErrorRecovery"
+    to_kind: state
+    to: ["ErrorRecovery"]
+  - event: "(auto)"
+    from_raw: "BriefFeasibility"
+    from_kind: state
+    from: ["BriefFeasibility"]
+    guard: "feasible(brief)"
+    layer: "Z3"
+    to_raw: "OutlineDrafting"
+    to_kind: state
+    to: ["OutlineDrafting"]
+  - event: "(auto)"
+    from_raw: "BriefFeasibility"
+    from_kind: state
+    from: ["BriefFeasibility"]
+    guard: "¬feasible(brief) — unsat core"
+    layer: "Z3"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+  - event: "OutlineRevised"
+    from_raw: "ContentInProgress · BlockedRecoverable"
+    from_kind: alternatives
+    from: ["ContentInProgress", "BlockedRecoverable"]
+    guard: "is_draft_revision ∧ has_outline(revision)"
+    layer: "Human"
+    to_raw: "OutlineChecks"
+    to_kind: state
+    to: ["OutlineChecks"]
+  - event: "BriefSubmitted"
+    from_raw: "BlockedRecoverable"
+    from_kind: state
+    from: ["BlockedRecoverable"]
+    guard: "blocked_at = brief"
+    layer: "State store"
+    to_raw: "BriefValidation"
+    to_kind: state
+    to: ["BriefValidation"]
+  - event: "BlockedInputFixed"
+    from_raw: "BlockedRecoverable"
+    from_kind: state
+    from: ["BlockedRecoverable"]
+    guard: "blocked_at = outline ∧ ¬has_outline(revision)"
+    layer: "State store"
+    to_raw: "OutlineDrafting"
+    to_kind: state
+    to: ["OutlineDrafting"]
+  - event: "BlockedInputFixed"
+    from_raw: "BlockedRecoverable"
+    from_kind: state
+    from: ["BlockedRecoverable"]
+    guard: "blocked_at ∉ {brief, outline}"
+    layer: "State store"
+    to_raw: "the state that blocked"
+    to_kind: expression
+    to_expression: "the state that blocked"
+  - event: "OutlineGenerated"
+    from_raw: "OutlineDrafting"
+    from_kind: state
+    from: ["OutlineDrafting"]
+    guard: "—"
+    layer: "—"
+    to_raw: "OutlineGuardrail"
+    to_kind: state
+    to: ["OutlineGuardrail"]
+  - event: "Timeout · ModelError"
+    from_raw: "OutlineDrafting"
+    from_kind: state
+    from: ["OutlineDrafting"]
+    guard: "—"
+    layer: "—"
+    to_raw: "ErrorRecovery"
+    to_kind: state
+    to: ["ErrorRecovery"]
+  - event: "Timeout · ServiceUnreachable"
+    from_raw: "OutlineGuardrail"
+    from_kind: state
+    from: ["OutlineGuardrail"]
+    guard: "—"
+    layer: "—"
+    to_raw: "ErrorRecovery"
+    to_kind: state
+    to: ["ErrorRecovery"]
+  - event: "GuardrailVerdict(allow)"
+    from_raw: "OutlineGuardrail"
+    from_kind: state
+    from: ["OutlineGuardrail"]
+    guard: "guardrail_clean(outline)"
+    layer: "Guardrail"
+    to_raw: "OutlineChecks"
+    to_kind: state
+    to: ["OutlineChecks"]
+  - event: "GuardrailVerdict(deny)"
+    from_raw: "OutlineGuardrail"
+    from_kind: state
+    from: ["OutlineGuardrail"]
+    guard: "¬guardrail_clean(outline)"
+    layer: "Guardrail"
+    to_raw: "OutlineRepair"
+    to_kind: state
+    to: ["OutlineRepair"]
+  - event: "(auto)"
+    from_raw: "OutlineChecks"
+    from_kind: state
+    from: ["OutlineChecks"]
+    guard: "schema_valid ∧ skills_grounded ∧ policy_allows ∧ feasible"
+    layer: "Schema · Datalog · OPA · Z3"
+    to_raw: "OutlineReview"
+    to_kind: state
+    to: ["OutlineReview"]
+  - event: "CheckFailed(opa, …)"
+    from_raw: "OutlineChecks"
+    from_kind: state
+    from: ["OutlineChecks"]
+    guard: "¬policy_allows(structure)"
+    layer: "OPA"
+    to_raw: "BlockedFinal"
+    to_kind: state
+    to: ["BlockedFinal"]
+  - event: "CheckFailed(datalog · z3 · schema)"
+    from_raw: "OutlineChecks"
+    from_kind: state
+    from: ["OutlineChecks"]
+    guard: "policy_allows ∧ constraint violated"
+    layer: "Datalog · Z3"
+    to_raw: "OutlineRepair"
+    to_kind: state
+    to: ["OutlineRepair"]
+  - event: "(auto)"
+    from_raw: "OutlineRepair"
+    from_kind: state
+    from: ["OutlineRepair"]
+    guard: "retry_budget_left(revision) ∧ ¬has_nodes(revision)"
+    layer: "State store"
+    to_raw: "OutlineDrafting"
+    to_kind: state
+    to: ["OutlineDrafting"]
+  - event: "(auto)"
+    from_raw: "OutlineRepair"
+    from_kind: state
+    from: ["OutlineRepair"]
+    guard: "has_nodes(revision)"
+    layer: "State store"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+  - event: "(auto)"
+    from_raw: "OutlineRepair"
+    from_kind: state
+    from: ["OutlineRepair"]
+    guard: "¬retry_budget_left(revision) ∧ ¬has_nodes(revision)"
+    layer: "State store"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+  - event: "OutlineRejected"
+    from_raw: "OutlineReview"
+    from_kind: state
+    from: ["OutlineReview"]
+    guard: "reason_given ∧ ¬has_nodes(revision)"
+    layer: "Human"
+    to_raw: "OutlineDrafting"
+    to_kind: state
+    to: ["OutlineDrafting"]
+  - event: "OutlineRejected"
+    from_raw: "OutlineReview"
+    from_kind: state
+    from: ["OutlineReview"]
+    guard: "reason_given ∧ has_nodes(revision)"
+    layer: "Human"
+    to_raw: "ContentInProgress (proposal discarded; outline_version unchanged)"
+    to_kind: state
+    to: ["ContentInProgress"]
+    to_note: "proposal discarded; outline_version unchanged"
+  - event: "OutlineApproved"
+    from_raw: "OutlineReview"
+    from_kind: state
+    from: ["OutlineReview"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "ContentInProgress (outline_version +1)"
+    to_kind: state
+    to: ["ContentInProgress"]
+    to_note: "outline_version +1"
+  - event: "(node → BlockedFinal)"
+    from_raw: "ContentInProgress"
+    from_kind: state
+    from: ["ContentInProgress"]
+    guard: "∃ node: BlockedFinal"
+    layer: "State store"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+  - event: "(node → NodeRecovery)"
+    from_raw: "ContentInProgress"
+    from_kind: state
+    from: ["ContentInProgress"]
+    guard: "∃ node: NodeRecovery ∧ ¬retry_budget_left(node)"
+    layer: "State store"
+    to_raw: "BlockedRecoverable (blocked_at = node)"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+    to_note: "blocked_at = node"
+  - event: "(node state changed)"
+    from_raw: "ContentInProgress"
+    from_kind: state
+    from: ["ContentInProgress"]
+    guard: "all_nodes_approved ∧ no_stale_nodes ∧ differs_from_live"
+    layer: "State store"
+    to_raw: "ReadyForReview"
+    to_kind: state
+    to: ["ReadyForReview"]
+  - event: "NodeEdited(any)"
+    from_raw: "ReadyForReview"
+    from_kind: state
+    from: ["ReadyForReview"]
+    guard: "is_draft_revision"
+    layer: "State store"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
+  - event: "NodeEdited(any)"
+    from_raw: "WholeCourseChecks · PendingApproval · Approved"
+    from_kind: alternatives
+    from: ["WholeCourseChecks", "PendingApproval", "Approved"]
+    guard: "is_draft_revision"
+    layer: "State store"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
+  - event: "CourseChecksRequested"
+    from_raw: "ReadyForReview"
+    from_kind: state
+    from: ["ReadyForReview"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "WholeCourseChecks"
+    to_kind: state
+    to: ["WholeCourseChecks"]
+  - event: "(auto)"
+    from_raw: "WholeCourseChecks"
+    from_kind: state
+    from: ["WholeCourseChecks"]
+    guard: "objectives_covered ∧ ordering_acyclic ∧ no_permission_leak ∧ trace_satisfies_ltl"
+    layer: "Prolog · Datalog · LTL"
+    to_raw: "PendingApproval"
+    to_kind: state
+    to: ["PendingApproval"]
+  - event: "CheckFailed(layer, nodes)"
+    from_raw: "WholeCourseChecks"
+    from_kind: state
+    from: ["WholeCourseChecks"]
+    guard: "any of the above fails"
+    layer: "Prolog · Datalog · LTL"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
+  - event: "ApprovalRejected"
+    from_raw: "PendingApproval"
+    from_kind: state
+    from: ["PendingApproval"]
+    guard: "reason_given"
+    layer: "Human"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
+  - event: "ApprovalGranted"
+    from_raw: "PendingApproval"
+    from_kind: state
+    from: ["PendingApproval"]
+    guard: "approval_chain_satisfied"
+    layer: "OPA"
+    to_raw: "Approved"
+    to_kind: state
+    to: ["Approved"]
+  - event: "ReturnedToWork"
+    from_raw: "Approved"
+    from_kind: state
+    from: ["Approved"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
+  - event: "PublishRequested"
+    from_raw: "Approved"
+    from_kind: state
+    from: ["Approved"]
+    guard: "all_nodes_approved ∧ no_stale_nodes ∧ versions_current ∧ differs_from_live"
+    layer: "State store"
+    to_raw: "Published"
+    to_kind: state
+    to: ["Published"]
+  - event: "ReviseRequested"
+    from_raw: "Published"
+    from_kind: state
+    from: ["Published"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "rev n+1 · ContentInProgress (spawn; this revision does not move)"
+    to_kind: other_object
+    to: ["ContentInProgress"]
+    to_qualifier: "rev n+1"
+    to_note: "spawn; this revision does not move"
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
+    from_raw: "Published"
+    from_kind: state
+    from: ["Published"]
+    guard: "affected(revision)"
+    layer: "Datalog · Guardrail"
+    to_raw: "StaleReview"
+    to_kind: state
+    to: ["StaleReview"]
+  - event: "WithdrawRequested"
+    from_raw: "any state in the live lineage"
+    from_kind: expression
+    from_expression: "any state in the live lineage"
+    guard: "in_live_lineage(revision) ∧ reason_given"
+    layer: "Human"
+    to_raw: "Withdrawn"
+    to_kind: state
+    to: ["Withdrawn"]
+  - event: "LivePointerMoved"
+    from_raw: "Published"
+    from_kind: state
+    from: ["Published"]
+    guard: "lost_live_pointer(revision)"
+    layer: "System"
+    to_raw: "Superseded"
+    to_kind: state
+    to: ["Superseded"]
+  - event: "LearnersNotified"
+    from_raw: "Published"
+    from_kind: state
+    from: ["Published"]
+    guard: "notice_approved(recipient_set)"
+    layer: "Human · State store"
+    to_raw: "Published (no move; the notice is recorded)"
+    to_kind: state
+    to: ["Published"]
+    to_note: "no move; the notice is recorded"
+  - event: "(auto)"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions"
+    layer: "All layers"
+    to_raw: "Published (re-stamped)"
+    to_kind: state
+    to: ["Published"]
+    to_note: "re-stamped"
+  - event: "(auto)"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "any of the above fails"
+    layer: "All layers"
+    to_raw: "Withdrawn"
+    to_kind: state
+    to: ["Withdrawn"]
+  - event: "Timeout · ServiceUnreachable"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "—"
+    layer: "—"
+    to_raw: "ErrorRecovery"
+    to_kind: state
+    to: ["ErrorRecovery"]
+  - event: "WithdrawRequested"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "reason_given"
+    layer: "Human"
+    to_raw: "Withdrawn"
+    to_kind: state
+    to: ["Withdrawn"]
+  - event: "RollbackRequested"
+    from_raw: "Superseded"
+    from_kind: state
+    from: ["Superseded"]
+    guard: "reason_given"
+    layer: "Human"
+    to_raw: "StaleReview"
+    to_kind: state
+    to: ["StaleReview"]
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
+    from_raw: "Superseded"
+    from_kind: state
+    from: ["Superseded"]
+    guard: "affected(revision) ∧ has_active_readers"
+    layer: "Datalog · Guardrail"
+    to_raw: "StaleReview"
+    to_kind: state
+    to: ["StaleReview"]
+  - event: "ArchiveRequested"
+    from_raw: "Superseded"
+    from_kind: state
+    from: ["Superseded"]
+    guard: "¬has_active_readers"
+    layer: "State store · Human"
+    to_raw: "Archived"
+    to_kind: state
+    to: ["Archived"]
+  - event: "ArchiveRequested"
+    from_raw: "Withdrawn"
+    from_kind: state
+    from: ["Withdrawn"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "Archived"
+    to_kind: state
+    to: ["Archived"]
+  - event: "ReviseRequested"
+    from_raw: "Withdrawn"
+    from_kind: state
+    from: ["Withdrawn"]
+    guard: "—"
+    layer: "Human"
+    to_raw: "rev n+1 · ContentInProgress (spawn)"
+    to_kind: other_object
+    to: ["ContentInProgress"]
+    to_qualifier: "rev n+1"
+    to_note: "spawn"
+  - event: "DraftDiscarded"
+    from_raw: "any non-terminal draft state"
+    from_kind: expression
+    from_expression: "any non-terminal draft state"
+    guard: "is_draft_revision"
+    layer: "Human"
+    to_raw: "Archived"
+    to_kind: state
+    to: ["Archived"]
+  - event: "(auto)"
+    from_raw: "ErrorRecovery"
+    from_kind: state
+    from: ["ErrorRecovery"]
+    guard: "¬idempotency_key_unused(op) — the write landed"
+    layer: "State store"
+    to_raw: "the state after the operation"
+    to_kind: expression
+    to_expression: "the state after the operation"
+  - event: "(auto)"
+    from_raw: "ErrorRecovery"
+    from_kind: state
+    from: ["ErrorRecovery"]
+    guard: "idempotency_key_unused(op) ∧ retry_budget_left"
+    layer: "State store"
+    to_raw: "the state that issued the operation"
+    to_kind: expression
+    to_expression: "the state that issued the operation"
+  - event: "(auto)"
+    from_raw: "ErrorRecovery"
+    from_kind: state
+    from: ["ErrorRecovery"]
+    guard: "idempotency_key_unused(op) ∧ ¬retry_budget_left"
+    layer: "State store"
+    to_raw: "BlockedRecoverable"
+    to_kind: state
+    to: ["BlockedRecoverable"]
+node:
+  - event: "NodeGenerationRequested"
+    from_raw: "Planned"
+    from_kind: state
+    from: ["Planned"]
+    guard: "course_state = ContentInProgress ∧ is_draft_revision ∧ policy_allows(generate, node) ∧ content_approved(topics(node))"
+    layer: "State store · OPA · Datalog"
+    to_raw: "ContentDrafting"
+    to_kind: state
+    to: ["ContentDrafting"]
+  - event: "NodeGenerated"
+    from_raw: "ContentDrafting"
+    from_kind: state
+    from: ["ContentDrafting"]
+    guard: "course_state = ContentInProgress"
+    layer: "State store"
+    to_raw: "Generated"
+    to_kind: state
+    to: ["Generated"]
+  - event: "Timeout · ModelError"
+    from_raw: "ContentDrafting"
+    from_kind: state
+    from: ["ContentDrafting"]
+    guard: "—"
+    layer: "State store"
+    to_raw: "NodeRecovery (recovery_from = generation)"
+    to_kind: state
+    to: ["NodeRecovery"]
+    to_note: "recovery_from = generation"
+  - event: "(auto)"
+    from_raw: "Generated"
+    from_kind: state
+    from: ["Generated"]
+    guard: "—"
+    layer: "—"
+    to_raw: "OutputGuardrail"
+    to_kind: state
+    to: ["OutputGuardrail"]
+  - event: "Timeout · ServiceUnreachable"
+    from_raw: "OutputGuardrail"
+    from_kind: state
+    from: ["OutputGuardrail"]
+    guard: "—"
+    layer: "State store"
+    to_raw: "NodeRecovery (recovery_from = guardrail)"
+    to_kind: state
+    to: ["NodeRecovery"]
+    to_note: "recovery_from = guardrail"
+  - event: "(auto)"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "recovery_from(node) = generation ∧ ¬idempotency_key_unused(op) — the write landed"
+    layer: "State store"
+    to_raw: "Generated"
+    to_kind: state
+    to: ["Generated"]
+  - event: "(auto)"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "course_state = ContentInProgress ∧ recovery_from(node) = generation ∧ idempotency_key_unused(op) ∧ retry_budget_left(node)"
+    layer: "State store"
+    to_raw: "ContentDrafting (repair_count +1)"
+    to_kind: state
+    to: ["ContentDrafting"]
+    to_note: "repair_count +1"
+  - event: "(auto)"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "course_state = ContentInProgress ∧ recovery_from(node) = guardrail ∧ retry_budget_left(node) — a screening writes no course state, so there is nothing to reconcile; it does cost a paid call, so it costs a retry"
+    layer: "State store"
+    to_raw: "OutputGuardrail (repair_count +1)"
+    to_kind: state
+    to: ["OutputGuardrail"]
+    to_note: "repair_count +1"
+  - event: "BlockedInputFixed"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = generation"
+    layer: "Human · State store"
+    to_raw: "ContentDrafting (repair_count = 0)"
+    to_kind: state
+    to: ["ContentDrafting"]
+    to_note: "repair_count = 0"
+  - event: "BlockedInputFixed"
+    from_raw: "NodeRecovery"
+    from_kind: state
+    from: ["NodeRecovery"]
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = guardrail"
+    layer: "Human · State store"
+    to_raw: "OutputGuardrail (repair_count = 0)"
+    to_kind: state
+    to: ["OutputGuardrail"]
+    to_note: "repair_count = 0"
+  - event: "GuardrailVerdict(allow)"
+    from_raw: "OutputGuardrail"
+    from_kind: state
+    from: ["OutputGuardrail"]
+    guard: "guardrail_clean(text ∧ images)"
+    layer: "Guardrail"
+    to_raw: "NodeChecks"
+    to_kind: state
+    to: ["NodeChecks"]
+  - event: "GuardrailVerdict(deny)"
+    from_raw: "OutputGuardrail"
+    from_kind: state
+    from: ["OutputGuardrail"]
+    guard: "¬guardrail_clean(text ∧ images)"
+    layer: "Guardrail"
+    to_raw: "NodeRepair"
+    to_kind: state
+    to: ["NodeRepair"]
+  - event: "(auto)"
+    from_raw: "NodeChecks"
+    from_kind: state
+    from: ["NodeChecks"]
+    guard: "block_schemas_valid ∧ grounded ∧ references_live ∧ arithmetic_consistent ∧ no_permission_leak ∧ objectives_covered"
+    layer: "Schema · Datalog · Z3 · Prolog"
+    to_raw: "Validated"
+    to_kind: state
+    to: ["Validated"]
+  - event: "CheckFailed(opa, …)"
+    from_raw: "NodeChecks"
+    from_kind: state
+    from: ["NodeChecks"]
+    guard: "¬policy_allows(content)"
+    layer: "OPA"
+    to_raw: "BlockedFinal"
+    to_kind: state
+    to: ["BlockedFinal"]
+  - event: "CheckFailed(datalog · z3 · schema)"
+    from_raw: "NodeChecks"
+    from_kind: state
+    from: ["NodeChecks"]
+    guard: "policy_allows ∧ constraint violated"
+    layer: "Datalog · Z3"
+    to_raw: "NodeRepair"
+    to_kind: state
+    to: ["NodeRepair"]
+  - event: "(auto)"
+    from_raw: "NodeRepair"
+    from_kind: state
+    from: ["NodeRepair"]
+    guard: "course_state = ContentInProgress ∧ retry_budget_left(node)"
+    layer: "State store"
+    to_raw: "ContentDrafting"
+    to_kind: state
+    to: ["ContentDrafting"]
+  - event: "(auto)"
+    from_raw: "NodeRepair"
+    from_kind: state
+    from: ["NodeRepair"]
+    guard: "¬retry_budget_left(node)"
+    layer: "State store"
+    to_raw: "course → BlockedRecoverable"
+    to_kind: cross_machine
+    to_expression: "course → BlockedRecoverable"
+  - event: "NodeApproved"
+    from_raw: "Validated"
+    from_kind: state
+    from: ["Validated"]
+    guard: "all_visuals_reviewed(node)"
+    layer: "Catalog flag · Human"
+    to_raw: "NodeApproved"
+    to_kind: state
+    to: ["NodeApproved"]
+  - event: "NodeRejected"
+    from_raw: "Validated"
+    from_kind: state
+    from: ["Validated"]
+    guard: "reason_given"
+    layer: "Human"
+    to_raw: "NodeRepair"
+    to_kind: state
+    to: ["NodeRepair"]
+  - event: "NodeEdited"
+    from_raw: "NodeApproved"
+    from_kind: state
+    from: ["NodeApproved"]
+    guard: "is_draft_revision"
+    layer: "State store"
+    to_raw: "NeedsRevalidation"
+    to_kind: state
+    to: ["NeedsRevalidation"]
+  - event: "(dependency changed)"
+    from_raw: "NodeApproved"
+    from_kind: state
+    from: ["NodeApproved"]
+    guard: "depends_on(node, edited ∨ removed)"
+    layer: "Datalog"
+    to_raw: "NeedsRevalidation"
+    to_kind: state
+    to: ["NeedsRevalidation"]
+  - event: "(auto)"
+    from_raw: "NeedsRevalidation"
+    from_kind: state
+    from: ["NeedsRevalidation"]
+    guard: "hand_edited(node)"
+    layer: "State store"
+    to_raw: "OutputGuardrail"
+    to_kind: state
+    to: ["OutputGuardrail"]
+  - event: "(auto)"
+    from_raw: "NeedsRevalidation"
+    from_kind: state
+    from: ["NeedsRevalidation"]
+    guard: "¬hand_edited(node)"
+    layer: "State store"
+    to_raw: "NodeChecks"
+    to_kind: state
+    to: ["NodeChecks"]
+  - event: "OutlineApproved"
+    from_raw: "any state but Removed"
+    from_kind: expression
+    from_expression: "any state but Removed"
+    guard: "is_draft_revision ∧ ¬in_outline(node, committed_outline) ∧ reason_given"
+    layer: "Human · State store"
+    to_raw: "Removed"
+    to_kind: state
+    to: ["Removed"]
+
+open_questions:
+  note: "The endpoints below are not state names. Each needs a resolution rule before this file can drive a simulation."
+  cross_machine_leak:
+    status: resolved
+    was: "Two node transitions targeted ErrorRecovery, a revision state the node machine neither declared nor left, so a node that timed out had no exit at all."
+    now: "The node machine declares NodeRecovery and leaves it three ways: the write landed, a retry inside budget, or a person clearing the cause once the budget is spent."
+    found_by: "exporting the tables into files; a month of prose and four rounds of review never surfaced it"
+  unresolved_endpoints:
+    - machine: revision
+      event: "BlockedInputFixed"
+      side: to
+      raw: "the state that blocked"
+      kind: expression
+    - machine: revision
+      event: "WithdrawRequested"
+      side: from
+      raw: "any state in the live lineage"
+      kind: expression
+    - machine: revision
+      event: "DraftDiscarded"
+      side: from
+      raw: "any non-terminal draft state"
+      kind: expression
+    - machine: revision
+      event: "(auto)"
+      side: to
+      raw: "the state after the operation"
+      kind: expression
+    - machine: revision
+      event: "(auto)"
+      side: to
+      raw: "the state that issued the operation"
+      kind: expression
+    - machine: node
+      event: "(auto)"
+      side: to
+      raw: "course → BlockedRecoverable"
+      kind: cross_machine
+    - machine: node
+      event: "OutlineApproved"
+      side: from
+      raw: "any state but Removed"
+      kind: expression

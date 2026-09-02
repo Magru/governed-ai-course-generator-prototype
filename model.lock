@@ -1,0 +1,20 @@
+{
+  "files": {
+    "README.md": "69244b0e66f6d642e679be04432d6e81be922cc20fd7eaf0776c90996328dfcd",
+    "assumptions.yaml": "01266fa9b25222c47635ecadb922c9cc137a7d736a535a3c475caa1cc5defe08",
+    "context-diagram.mmd": "23678037774e427d48e00e7ef1651016785d2aed621d7a10a4a03c322e371be3",
+    "diagrams.md": "e4c7127ff5a1775f84270f1655a4a394fa84784764eafc39de59bc38f08956da",
+    "event-catalog.yaml": "e8d208a8f4f144857eb6b66fff039e8e9197cb1bec6410dbe206fc6babcec7ad",
+    "failure-scenarios.yaml": "909bcbf040c8f74db21d3c91fb7c7a4916c87de4110b45b588034d08c9337aeb",
+    "functional-model.yaml": "aae17aedae001a8214bc571ee09f0f3014beb874b7c5e73450d45a5758177c3e",
+    "invariants.yaml": "be04accde40b13a980b8e4d412cb35ad8537c816dceacd72a29bd4476a1aba3d",
+    "latency-budget.yaml": "a52ff3e2993a6ee1d7771f61306707c603da41d41fe9dca0b1d23826f1bd02b4",
+    "state-inventory.yaml": "1620ab5f8f7eb91dc4c8d7eb5894014a1da91d4bbdbf8cd57e1c2bf4fb169941",
+    "state-machine-node.mmd": "b191f7bb1bfbe55dccbfa07ec30114a2358bb89fe96c1094d624b1a5bd29f34c",
+    "state-machine-revision.mmd": "f834fee69b9d1bf2f2dee241be79a14602a3c0cee28da2aeea4f6f933cecdde1",
+    "system-definition.yaml": "f7252c487d91ee9caa58791078767d0f749763e2ef1e72f9e2b476b512e58584",
+    "transitions.yaml": "98b62fe4059dce549d712f332add284fe551e86aa04ae72c691571e0beab33b4"
+  },
+  "repo": "Magru/governed-ai-course-generator",
+  "tag": "spec-v2.2"
+}

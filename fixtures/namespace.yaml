@@ -1,0 +1,60 @@
+# The fictional universe. Everything under fixtures/ must be built out of this
+# vocabulary and nothing else.
+#
+# Why an allowlist and not a denylist of customer names: a denylist catches what
+# someone remembered. This catches what they did not — a real UUID pasted from a
+# database, a competency model copied wholesale, a course title in the wrong
+# language. And a denylist of tenants, committed to a public repository, is
+# itself the list it exists to protect.
+#
+# The organisation below does not exist. It was invented for this prototype and
+# has no relation to any customer of any platform.
+
+organisation:
+  slug: meridian-tools
+  name: Meridian Tools
+  domain: meridian-tools.example
+  about: A fictional manufacturer of hand tools, used only to have somewhere for courses to live.
+
+people:
+  # Roles, not persons. No fixture carries a human name.
+  - id: author-1
+    role: course-author
+    label: Author One
+  - id: admin-1
+    role: training-administrator
+    label: Administrator One
+  - id: compliance-1
+    role: compliance-officer
+    label: Compliance One
+
+audiences: [all-staff, workshop-floor, apprentices, supervisors]
+
+skills:
+  - bench-safety
+  - tool-inspection
+  - hand-plane-setup
+  - chisel-sharpening
+  - dust-extraction
+  - noise-exposure
+  - first-aid-basics
+  - lifting-technique
+  - machine-guarding
+  - waste-disposal
+  - ppe-selection
+  - incident-reporting
+
+block_types: [heading, paragraph, image, checklist, quiz, callout]
+
+# Identifier shapes. A token that begins with one of these and continues with
+# digits or an ordinary word is licensed — mt-kb-001, cat-7. Anything else that
+# looks like an identifier has to be a word from the lists above.
+id_prefixes: [mt-kb, mt-course, mt-node, cat, kb, pol, guard, rev]
+
+# Ordinary English that may appear in prose without belonging to the universe.
+generic:
+  - Author, Administrator, Compliance, One, Two, Three
+  - Meridian, Tools, Safety, Workshop, Apprentice, Supervisor
+  - Course, Revision, Node, Topic, Exam, Lesson, Brief, Outline
+  - Draft, Published, Approved, Blocked, Removed, Planned, Generated, Validated
+  - True, False, None, Yes, No
