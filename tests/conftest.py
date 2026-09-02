@@ -20,20 +20,25 @@ SINK = {
 }
 
 
-@pytest.fixture(autouse=True, scope="session")
-def _no_real_aws():
-    if os.environ.get("LIVE") == "1":
-        yield
-        return
-    saved = {k: os.environ.get(k) for k in list(SINK) + ["AWS_PROFILE", "AWS_BEARER_TOKEN_BEDROCK"]}
+# Applied at import time, not in a fixture. A session fixture runs after every
+# test module has been imported, so anything that touched credentials at module
+# level — or `--collect-only`, or running a test file directly — would already
+# have seen the machine's real chain.
+if os.environ.get("LIVE") != "1":
     os.environ.update(SINK)
     os.environ.pop("AWS_PROFILE", None)
     os.environ.pop("AWS_BEARER_TOKEN_BEDROCK", None)
-    try:
-        yield
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "live: needs the real provider; skipped unless LIVE=1")
+
+
+def pytest_collection_modifyitems(config, items):
+    if os.environ.get("LIVE") == "1":
+        return
+    skip = pytest.mark.skip(reason="needs LIVE=1")
+    for item in items:
+        if "live" in item.keywords:
+            item.add_marker(skip)

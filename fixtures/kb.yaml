@@ -1,35 +1,32 @@
-# the knowledge base a node may cite. visibility is per audience, and a chunk
-# used outside it is the leak the dependency check exists to find.
+# the knowledge base a node may cite.
+#
+# visibility is NOT modelled here as a rule. the specification is explicit that
+# the generator must not re-implement the platform's predicate — it asks the
+# platform and treats the answer as a fact. so what a fixture carries is the
+# platform's *answer*, resolved per audience, and nothing about how it was
+# reached. a fixture that encoded the seven clauses would be the copy that
+# drifts, deciding who sees restricted material.
 knowledge_base:
   version: kb-4
   chunks:
-    - id: mt-kb-001
-      visible_to: [all-staff]
-      text: keep the bench clear of offcuts and wipe spills before starting work
-    - id: mt-kb-002
-      visible_to: [all-staff]
-      text: check a tool for splits and loose handles before every use
-    - id: mt-kb-003
-      visible_to: [workshop-floor, apprentices]
-      text: set the plane iron so a thin shaving lifts evenly across the mouth
-    - id: mt-kb-004
-      visible_to: [workshop-floor]
-      text: hone a chisel until the edge no longer catches on a thumbnail
-    - id: mt-kb-005
-      visible_to: [all-staff]
-      text: connect extraction before cutting and empty the bag at the end of a run
-    - id: mt-kb-006
-      visible_to: [workshop-floor, supervisors]
-      text: wear defenders where a machine runs above the daily limit
-    - id: mt-kb-007
-      visible_to: [all-staff]
-      text: report every injury on the day it happens however small it looks
-    - id: mt-kb-008
-      visible_to: [supervisors]
-      text: incident records name the people involved and are held by the supervisor only
-    - id: mt-kb-009
-      visible_to: [all-staff]
-      text: lift with the load close to the body and turn with the feet not the waist
-    - id: mt-kb-010
-      visible_to: [workshop-floor]
-      text: a guard removed for setting up is refitted before the machine is started
+    - {id: mt-kb-001, text: keep the bench clear of offcuts and wipe spills before starting work}
+    - {id: mt-kb-002, text: check a tool for splits and loose handles before every use}
+    - {id: mt-kb-003, text: set the plane iron so a thin shaving lifts evenly across the mouth}
+    - {id: mt-kb-004, text: hone a chisel until the edge no longer catches on a thumbnail}
+    - {id: mt-kb-005, text: connect extraction before cutting and empty the bag at the end of a run}
+    - {id: mt-kb-006, text: wear defenders where a machine runs above the daily limit}
+    - {id: mt-kb-007, text: report every injury on the day it happens however small it looks}
+    - {id: mt-kb-008, text: incident records name the people involved and are held by the supervisor only}
+    - {id: mt-kb-009, text: lift with the load close to the body and turn with the feet not the waist}
+    - {id: mt-kb-010, text: a guard removed for setting up is refitted before the machine is started}
+
+# the platform's answer to "can every member of this audience see this chunk",
+# already resolved. the generator asks; it does not derive.
+resolved_visibility:
+  source: platform predicate, asked per audience, answer treated as fact
+  all-staff:      [mt-kb-001, mt-kb-002, mt-kb-005, mt-kb-007, mt-kb-009]
+  workshop-floor: [mt-kb-001, mt-kb-002, mt-kb-003, mt-kb-004, mt-kb-005, mt-kb-006,
+                   mt-kb-007, mt-kb-009, mt-kb-010]
+  apprentices:    [mt-kb-001, mt-kb-002, mt-kb-003, mt-kb-005, mt-kb-007, mt-kb-009]
+  supervisors:    [mt-kb-001, mt-kb-002, mt-kb-005, mt-kb-006, mt-kb-007, mt-kb-008,
+                   mt-kb-009]

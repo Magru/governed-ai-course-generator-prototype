@@ -48,6 +48,11 @@ STRUCTURAL = {
     "minutes_per_lesson", "nodes_per_course", "audience_breadth", "action",
     "actor", "course", "artifact", "invariant", "state", "skill", "cites",
     "expect", "reason", "refused_by", "cites", "src", "alt", "caption",
+    "owner", "denied_topics", "personal_data", "image_policy", "definition",
+    "layer", "guard", "matches", "core", "generation", "screened_on",
+    "recorded", "proceeds", "admission", "requested_nodes", "topics",
+    "evaluation_points", "resolved_visibility", "guardrail", "category",
+    "interactive", "system", "kb", "content_modal", "modality", "ends",
     "question", "options", "answer", "points", "items", "heading", "paragraph",
     "image", "checklist", "quiz", "callout", "minutes", "topics", "exam",
     # JSON Schema
@@ -94,9 +99,33 @@ def vocabulary(namespace: pathlib.Path = NAMESPACE) -> set[str]:
     if inventory.exists():
         model = yaml.safe_load(inventory.read_text(encoding="utf-8"))
         for variable in model.get("variables", []):
+            words.add(str(variable.get("variable", "")).lower())
             values = variable.get("valid_values")
             if isinstance(values, list):
                 words.update(str(v).lower() for v in values)
+
+    # Guard and layer names are the specification's too. A fixture that says
+    # which guard must refuse it is quoting the model, not inventing a name.
+    transitions = ROOT / "model" / "transitions.yaml"
+    if transitions.exists():
+        rows = yaml.safe_load(transitions.read_text(encoding="utf-8"))
+        for machine in ("revision", "node"):
+            for row in rows.get(machine) or []:
+                for field in ("guard", "layer", "event"):
+                    for word in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", str(row.get(field, ""))):
+                        words.add(word.lower())
+
+    guards = ROOT / "model" / "guards.yaml"
+    if guards.exists():
+        for word in re.findall(r"[A-Za-z_][A-Za-z0-9_]*",
+                               guards.read_text(encoding="utf-8")):
+            words.add(word.lower())
+
+    events = ROOT / "model" / "event-catalog.yaml"
+    if events.exists():
+        for word in re.findall(r"[A-Za-z_][A-Za-z0-9_]*",
+                               events.read_text(encoding="utf-8")):
+            words.add(word.lower())
     return words | STRUCTURAL
 
 

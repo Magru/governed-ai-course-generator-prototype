@@ -16,10 +16,23 @@ catalog:
     - {id: ppe-selection, label: Ppe selection}
     - {id: incident-reporting, label: Incident reporting}
 
+  # a block row carries what the platform's registry carries, plus the two the
+  # specification adds: what a guardrail must inspect, and whether a person has
+  # to look at it before approval.
   blocks:
     - id: heading
+      category: text
+      interactive: false
+      kb: true
+      modality: text
+      requires_visual_review: false
       schema: {type: object, required: [text], properties: {text: {type: string}}}
     - id: paragraph
+      category: text
+      interactive: false
+      kb: true
+      modality: text
+      requires_visual_review: false
       schema:
         type: object
         required: [text, cites]
@@ -27,6 +40,10 @@ catalog:
           text: {type: string}
           cites: {type: array, items: {type: string}}
     - id: image
+      category: image
+      interactive: false
+      kb: true
+      modality: image
       requires_visual_review: true
       schema:
         type: object
@@ -37,11 +54,21 @@ catalog:
           caption: {type: string}
           cites: {type: array, items: {type: string}}
     - id: checklist
+      category: text
+      interactive: false
+      kb: true
+      modality: text
+      requires_visual_review: false
       schema:
         type: object
         required: [items]
         properties: {items: {type: array, items: {type: string}}}
     - id: quiz
+      category: assessment
+      interactive: true
+      kb: true
+      modality: text
+      requires_visual_review: false
       schema:
         type: object
         required: [question, options, answer, points]
@@ -51,4 +78,9 @@ catalog:
           answer: {type: integer}
           points: {type: integer}
     - id: callout
+      category: text
+      interactive: false
+      kb: true
+      modality: text
+      requires_visual_review: false
       schema: {type: object, required: [text], properties: {text: {type: string}}}

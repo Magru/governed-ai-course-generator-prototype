@@ -1,11 +1,19 @@
-# refused by z3 before generation. the unsat core names the smallest set of
-# requirements that cannot hold together.
-expect: {refused_by: z3, state: BlockedRecoverable, artifact: unsat-core}
+# z3 refuses before generation. the brief asks for more nodes than the
+# organisation allows and longer lessons than it allows, and the two limits
+# together with the request cannot hold — the unsat core names the smallest set.
+expect:
+  refused_by: z3
+  layer: Z3
+  guard: feasible(brief)
+  ends: BlockedRecoverable
+  artifact: unsat-core
+  core: [requested_nodes, max_nodes_per_course, minutes_per_lesson, max_minutes_per_lesson]
 brief:
   id: mt-course-102
-  title: everything about the workshop
-  audience: apprentices
-  objectives: [bench-safety, tool-inspection, dust-extraction, noise-exposure,
-               lifting-technique, machine-guarding, waste-disposal, ppe-selection]
-  minutes_per_lesson: 5
-  nodes: []
+  title: everything about the workshop in one course
+  audience: [apprentices]
+  objectives: [bench-safety, tool-inspection, hand-plane-setup, chisel-sharpening,
+               dust-extraction, noise-exposure, first-aid-basics, lifting-technique,
+               machine-guarding, waste-disposal, ppe-selection, incident-reporting]
+  requested_nodes: 14        # organisation allows 12
+  minutes_per_lesson: 40     # organisation allows 25

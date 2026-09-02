@@ -13,7 +13,8 @@ from __future__ import annotations
 import os, pathlib
 from functools import lru_cache
 
-from .port import GuardrailUnavailable, Provider, ProviderUnavailable, Verdict
+from .port import (Generated, Generator, GuardrailNotConfigured, Modality,
+                   Point, Prompt, ProviderUnavailable, Screener, Verdict)
 
 
 class WrongAccount(RuntimeError):
@@ -71,18 +72,39 @@ def session():
     return s
 
 
-class BedrockProvider(Provider):
+def client(service: str):
+    """Every client comes from here, with the signer pinned.
+
+    botocore reads AWS_BEARER_TOKEN_BEDROCK from the environment on each
+    bedrock-runtime request and switches signer accordingly. Caching the session
+    does not pin that: a token set after the identity check would silently
+    authenticate the calls as somebody else while the check still reported the
+    account we expected. Fixing the signature version at construction closes it.
+    """
+    from botocore.config import Config
+    return session().client(service, config=Config(signature_version="v4"))
+
+
+class BedrockGenerator(Generator):
     def __init__(self) -> None:
         self._model = _required("BEDROCK_MODEL_ID")
 
-    def generate(self, prompt: str, schema: dict) -> dict:
+    def generate(self, prompt: Prompt, schema: dict) -> Generated:
         raise NotImplementedError("generation lands with the gateway, phase 03")
 
-    def screen(self, text: str) -> Verdict:
-        guardrail = os.environ.get("BEDROCK_GUARDRAIL_ID", "").strip()
-        if not guardrail:
-            raise GuardrailUnavailable(
-                "no guardrail is configured. The specification forbids reading a "
-                "missing verdict as a permissive one, so this stops rather than "
-                "returns.")
+
+class BedrockScreener(Screener):
+    """Separate from the generator so the pair that development actually runs —
+    Gemini generating, Bedrock screening — can be expressed at all."""
+
+    def __init__(self) -> None:
+        self._guardrail = os.environ.get("BEDROCK_GUARDRAIL_ID", "").strip()
+        self._version = os.environ.get("BEDROCK_GUARDRAIL_VERSION", "").strip()
+
+    def screen(self, content: str, modality: Modality, point: Point) -> Verdict:
+        if not self._guardrail:
+            raise GuardrailNotConfigured(
+                "no guardrail is configured. A deployment error rather than a "
+                "runtime one — but still not a reason to proceed, because the "
+                "absence of a verdict is not a permissive verdict.")
         raise NotImplementedError("screening lands with the gateway, phase 03")

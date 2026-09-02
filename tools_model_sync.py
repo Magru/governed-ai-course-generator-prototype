@@ -17,9 +17,9 @@ MODEL = ROOT / "model"
 LOCK = ROOT / "model.lock"
 REPO = "Magru/governed-ai-course-generator"
 FILES = ["system-definition.yaml", "functional-model.yaml", "context-diagram.mmd",
-         "state-inventory.yaml", "transitions.yaml", "event-catalog.yaml",
-         "invariants.yaml", "failure-scenarios.yaml", "assumptions.yaml",
-         "latency-budget.yaml", "state-machine-revision.mmd",
+         "state-inventory.yaml", "transitions.yaml", "guards.yaml",
+         "event-catalog.yaml", "invariants.yaml", "failure-scenarios.yaml",
+         "assumptions.yaml", "latency-budget.yaml", "state-machine-revision.mmd",
          "state-machine-node.mmd", "diagrams.md", "README.md"]
 
 
@@ -57,7 +57,7 @@ def sync(tag: str) -> None:
     print(f"vendored {len(FILES)} artifacts at {tag}")
 
 
-def verify() -> int:
+def verify(remote: bool = False) -> int:
     if not LOCK.exists():
         print("model.lock is missing — run `make model-sync`", file=sys.stderr)
         return 1
@@ -71,20 +71,29 @@ def verify() -> int:
         got = canonical(name, local.read_text(encoding="utf-8"))
         if got != want:
             bad.append(f"{name}: local copy differs from {lock['tag']}")
-        upstream = canonical(name, fetch(lock["tag"], name))
-        if upstream != want:
-            bad.append(f"{name}: the tag {lock['tag']} itself has moved")
+        if remote:
+            # A different question from the one above: not "has our copy
+            # changed" but "has the tag we pinned been moved under us". It needs
+            # the network, so it is not what `make test` runs.
+            try:
+                upstream = canonical(name, fetch(lock["tag"], name))
+            except Exception as exc:                    # noqa: BLE001
+                bad.append(f"{name}: could not re-fetch {lock['tag']}: {exc}")
+                continue
+            if upstream != want:
+                bad.append(f"{name}: the tag {lock['tag']} itself has moved")
     if bad:
         print("MODEL DRIFT — the prototype is not running the published specification:",
               file=sys.stderr)
         for b in bad:
             print(f"  ✗ {b}", file=sys.stderr)
         return 1
-    print(f"model: {len(lock['files'])} artifacts match {lock['tag']}")
+    where = "the tag" if remote else "the lock"
+    print(f"model: {len(lock['files'])} artifacts match {where} ({lock['tag']})")
     return 0
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "verify":
-        raise SystemExit(verify())
+        raise SystemExit(verify(remote="--remote" in sys.argv))
     sync(sys.argv[1] if len(sys.argv) > 1 else "spec-v2.2")

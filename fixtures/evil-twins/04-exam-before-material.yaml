@@ -1,10 +1,16 @@
-# an exam generated before the topics it tests are approved. the guard quantifies
-# over the committed outline, so this is refused rather than deadlocked.
-expect: {refused_by: state-store, artifact: outstanding-topics}
+# forbidden chain 2. datalog owns this, not the state store: the guard quantifies
+# over the topics in the committed outline, so a topic dropped from the skeleton
+# stops being a precondition instead of becoming one that can never be met.
+expect:
+  refused_by: datalog
+  layer: Datalog
+  guard: content_approved(topics(exam))
+  ends: Planned
+  artifact: outstanding-topics
 brief:
   id: mt-course-104
   title: bench safety exam
-  audience: apprentices
+  audience: [apprentices]
   objectives: [bench-safety]
   nodes:
     - {id: mt-node-104, type: exam, topics: [mt-node-105]}

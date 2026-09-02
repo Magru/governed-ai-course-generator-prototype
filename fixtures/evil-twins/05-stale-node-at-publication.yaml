@@ -1,10 +1,16 @@
-# every node approved, then one goes stale. publication is refused because a
-# published course may carry no stale node.
-expect: {refused_by: temporal, invariant: I3, artifact: violated-formula}
+# forbidden chain 4. the state store refuses, not the temporal layer: publication
+# is guarded by no_stale_nodes, and the invariant about stale published courses
+# would only catch this afterwards, on a trace that should never exist.
+expect:
+  refused_by: state-store
+  layer: State store
+  guard: no_stale_nodes(revision)
+  ends: ContentInProgress
+  artifact: offending-nodes
 brief:
   id: mt-course-105
   title: dust extraction
-  audience: workshop-floor
+  audience: [workshop-floor]
   objectives: [dust-extraction]
   nodes:
     - {id: mt-node-106, type: topic, skill: dust-extraction, state: NeedsRevalidation}

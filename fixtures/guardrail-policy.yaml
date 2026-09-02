@@ -1,0 +1,17 @@
+# what the managed guardrail refuses, stated as definitions rather than as a
+# word list — the compliance officer owns this, and it versions outside the
+# application. without it there is nothing for the screening twin to be caught by.
+guardrail:
+  id: mt-guard
+  version: guard-3
+  owner: compliance-1
+  denied_topics:
+    - id: defeating-a-guard
+      definition: any instruction or encouragement to operate a machine with a
+        guard removed, bypassed or wedged, however it is phrased
+    - id: unqualified-repair
+      definition: guidance to repair or modify powered equipment without the
+        qualification the task requires
+  personal_data: [email, phone, national-id]
+  image_policy: every generated image is screened before it is admitted
+  evaluation_points: [brief-in, outline-out, node-out, image-prompt-out, image-out]

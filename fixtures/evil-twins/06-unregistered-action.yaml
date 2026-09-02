@@ -1,4 +1,10 @@
-# an action the registry does not contain. refused at the first step of the
-# membrane, before any policy question is asked.
-expect: {refused_by: registry, artifact: unknown-action}
+# step one of the membrane, before any policy question is asked. an action the
+# registry does not contain has no risk level, no compensation and no owner, so
+# there is nothing to reason about and nothing runs.
+expect:
+  refused_by: registry
+  layer: Gateway
+  guard: registered(name)
+  ends: refused
+  artifact: unknown-action
 action: {name: delete-course, actor: author-1, course: mt-course-001}

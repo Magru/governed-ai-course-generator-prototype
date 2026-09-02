@@ -2,7 +2,7 @@
 brief:
   id: mt-course-001
   title: Bench safety for apprentices
-  audience: apprentices
+  audience: [apprentices]
   objectives: [bench-safety, tool-inspection]
   minutes_per_lesson: 20
   nodes:

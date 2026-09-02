@@ -18,6 +18,7 @@ someone revise it. That is the whole convention.
 | [`state-machine-revision.mmd`](state-machine-revision.mmd) · [`state-machine-node.mmd`](state-machine-node.mmd) | the same, as pictures — [rendered](diagrams.md) | exported |
 | [`failure-scenarios.yaml`](failure-scenarios.yaml) | How do we fail safely? | exported |
 | [`invariants.yaml`](invariants.yaml) | What must be true of every trace, and what does each rule forbid? | by hand, **linted** |
+| [`guards.yaml`](guards.yaml) | Which layer owns each guard, and what does it hand back when it refuses? | exported |
 | [`assumptions.yaml`](assumptions.yaml) | What does the model depend on, and how would we notice it stopped being true? | by hand |
 | [`latency-budget.yaml`](latency-budget.yaml) | Can the path meet a deadline, and how many editors fit? | by hand |
 

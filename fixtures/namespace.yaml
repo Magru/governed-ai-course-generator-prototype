@@ -46,6 +46,22 @@ skills:
 
 block_types: [heading, paragraph, image, checklist, quiz, callout]
 
+# what the guardrail refuses, named. the definitions themselves are prose.
+denied_topic_ids: [defeating-a-guard, unqualified-repair]
+personal_data_kinds: [email, phone, national-id]
+evaluation_point_ids: [brief-in, outline-out, node-out, image-prompt-out, image-out]
+modalities: [text, image]
+block_categories: [text, image, assessment]
+
+# the vocabulary the evil twins use to say what must happen to them. the guard
+# and layer names they quote come from the model and are not repeated here.
+refusal_artifacts: [category, unsat-core, leak-path, outstanding-topics,
+                    offending-nodes, unknown-action, audit-entry, violated-formula,
+                    proof-tree, named-rule, injection-attempt]
+refused_by_values: [guardrail, z3, datalog, prolog, temporal, state-store,
+                    registry, opa, nothing]
+gateway_terms: [registry, registered, membrane, gateway, refused, architecture]
+
 # Identifier shapes. A token that begins with one of these and continues with
 # digits or an ordinary word is licensed — mt-kb-001, cat-7. Anything else that
 # looks like an identifier has to be a word from the lists above.

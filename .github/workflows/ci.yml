@@ -1,6 +1,9 @@
 name: ci
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   guarantees:
     runs-on: ubuntu-latest
@@ -21,9 +24,9 @@ jobs:
         run: python tools_allowlist_scan.py
 
       - name: the prototype runs the published specification
-        run: python tools_model_sync.py verify
+        run: python tools_model_sync.py verify --remote
 
       # No credentials are configured for this job on purpose. If a test could
       # reach an account from CI, it could reach one from a laptop.
       - name: tests
-        run: python -m pytest tests -q
+        run: python -m pytest tests -q -m "not live"

@@ -7,7 +7,7 @@ implementations behind one port is the only way to know the port is a port.
 from __future__ import annotations
 import json, os, pathlib
 
-from .port import Provider, ProviderUnavailable, Verdict
+from .port import Generated, Generator, Prompt, ProviderUnavailable
 
 
 def _key() -> str:
@@ -24,36 +24,41 @@ def _key() -> str:
     raise ProviderUnavailable("GEMINI_API_KEY is not set")
 
 
-class GeminiProvider(Provider):
+class GeminiGenerator(Generator):
     MODEL = "gemini-2.5-flash"
 
     def __init__(self) -> None:
         from google import genai
         self._client = genai.Client(api_key=_key())
 
-    def generate(self, prompt: str, schema: dict) -> dict:
-        """The model returns a structure because it was given one to fill, not
-        because the prompt asked politely for JSON."""
+    def generate(self, prompt: Prompt, schema: dict) -> Generated:
+        """The three positions are handed to the API in the places it keeps
+        apart: instructions go to the system field, the author's text is the
+        turn, and sources are separate parts the model may read and may not
+        obey. They are never joined into one string here."""
         from google.genai import types
+        parts = [prompt.author] if prompt.author else []
+        parts += [f"<source>{s}</source>" for s in prompt.sources]
         try:
             response = self._client.models.generate_content(
                 model=self.MODEL,
-                contents=prompt,
+                contents=parts or [""],
                 config=types.GenerateContentConfig(
+                    system_instruction=prompt.instructions,
                     response_mime_type="application/json",
                     response_schema=schema,
                 ),
             )
         except Exception as exc:                  # noqa: BLE001
             raise ProviderUnavailable(f"generation failed: {exc}") from exc
-        return json.loads(response.text)
+        usage = getattr(response, "usage_metadata", None)
+        return Generated(
+            content=json.loads(response.text),
+            model_id=self.MODEL,
+            usage={"total_tokens": getattr(usage, "total_token_count", 0)} if usage else {},
+        )
 
-    def screen(self, text: str) -> Verdict:
-        """Gemini has no managed guardrail of the kind the specification names.
-        Rather than approximate one and let a weaker check pass for the real
-        thing, this refuses — the same way a missing Bedrock guardrail does."""
-        from .port import GuardrailUnavailable
-        raise GuardrailUnavailable(
-            "this provider has no managed guardrail. Screening is Bedrock's, and "
-            "an approximation here would be a weaker check wearing the name of a "
-            "stronger one.")
+    # No screen() here on purpose. This provider has no managed guardrail, and
+    # a Screener is a separate port precisely so that Gemini can generate while
+    # Bedrock screens. Approximating one here would be a weaker check wearing a
+    # stronger one's name.
