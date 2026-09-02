@@ -15,12 +15,12 @@ export BEDROCK_ACCOUNT_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.3
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures test live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals test live aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
 	$(PY) -m pip -q install --upgrade pip
-	$(PY) -m pip -q install pyyaml pytest z3-solver boto3 google-genai
+	$(PY) -m pip -q install pyyaml pytest z3-solver pyDatalog boto3 google-genai
 	@command -v opa   >/dev/null || { echo "opa is missing: brew install opa"; exit 1; }
 	@command -v swipl >/dev/null || { echo "swipl is missing: brew install swi-prolog"; exit 1; }
 	@echo "setup ok"
@@ -42,6 +42,15 @@ fixtures:                  ## parse every fixture and check it against the unive
 	[yaml.safe_load(p.read_text(encoding='utf-8')) for p in pathlib.Path('fixtures').rglob('*.yaml')]; \
 	print('fixtures parse')"
 	$(PY) tools_allowlist_scan.py
+
+engines-smoke:             ## every engine answers, and none has a fallback
+	@command -v opa   >/dev/null || { echo "opa missing"; exit 1; }
+	@command -v swipl >/dev/null || { echo "swipl missing"; exit 1; }
+	@$(PY) -c "import z3, pyDatalog; print('z3 and pyDatalog import')"
+	@opa check engines/opa/policy.rego && echo "rego is valid"
+
+refusals:                  ## the five refusals, each from the engine that owns it
+	@$(PY) scenarios/refusals.py
 
 test:                      ## unit tests; no network, no AWS account reachable
 	$(PY) -m pytest tests -q -m "not live"

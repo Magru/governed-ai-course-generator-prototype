@@ -51,6 +51,7 @@ STRUCTURAL = {
     "owner", "denied_topics", "personal_data", "image_policy", "definition",
     "layer", "guard", "matches", "core", "generation", "screened_on",
     "recorded", "proceeds", "admission", "requested_nodes", "topics",
+    "core_contains", "matches",
     "evaluation_points", "resolved_visibility", "guardrail", "category",
     "interactive", "system", "kb", "content_modal", "modality", "ends",
     "question", "options", "answer", "points", "items", "heading", "paragraph",
