@@ -27,14 +27,26 @@ audience_permitted if {
 	}
 }
 
+# One owner per question. Lesson length and audience breadth are parts of "is
+# this brief satisfiable", which belongs to Z3 — and asking both meant OPA
+# refused first and terminally, so the unsat core Z3 exists to produce could
+# never be reached.
 within_limits if {
 	input.brief.node_count <= data.org.thresholds.max_nodes_per_course
-	input.brief.minutes_per_lesson <= data.org.thresholds.max_minutes_per_lesson
-	count(input.brief.audience) <= data.org.thresholds.max_audience_breadth
+}
+
+# Only generation is gated on state here. Which states an action is legal in is
+# the transition table's question, and an earlier version of this file answered
+# it too — refusing BriefSubmitted from BlockedRecoverable, a recovery path the
+# table guarantees. A policy refusal is terminal, so that turned a recoverable
+# stop into the end of the revision.
+state_permits if {
+	input.action != "generate_node"
 }
 
 state_permits if {
-	input.course_state in {"AwaitingBrief", "BriefValidation", "OutlineDrafting", "ContentInProgress"}
+	input.action == "generate_node"
+	input.course_state == "ContentInProgress"
 }
 
 # Refusing with the rule that denied and a sentence a person can act on. A bare
@@ -60,18 +72,42 @@ deny contains reason if {
 }
 
 deny contains reason if {
-	input.brief.minutes_per_lesson > data.org.thresholds.max_minutes_per_lesson
+	input.action == "generate_node"
+	input.course_state != "ContentInProgress"
+	reason := {
+		"rule": "state_permits",
+		"message": sprintf("a node cannot be generated while the revision is %v", [input.course_state]),
+	}
+}
+
+# Every way of failing needs its own reason, or `allow` is false with nothing in
+# `deny` and the caller has to invent one. A refusal a Python function wrote is
+# not a refusal the policy engine made.
+deny contains reason if {
+	not input.actor.role in {"course-author", "training-administrator"}
+	reason := {
+		"rule": "known_role",
+		"message": sprintf("%v is not a role that may author", [input.actor.role]),
+	}
+}
+
+# `not is_number(input.brief.node_count)` looks right and is not: with the key
+# absent the inner call is undefined, and the negation of an undefined expression
+# is undefined too — so the clause never fired and the refusal had no reason.
+# Testing the reference itself is the idiom that holds.
+deny contains reason if {
+	not input.brief.node_count
 	reason := {
 		"rule": "within_limits",
-		"message": sprintf("%v minutes per lesson, the limit is %v", [input.brief.minutes_per_lesson, data.org.thresholds.max_minutes_per_lesson]),
+		"message": "the brief does not say how many nodes it asks for",
 	}
 }
 
 deny contains reason if {
-	not input.course_state in {"AwaitingBrief", "BriefValidation", "OutlineDrafting", "ContentInProgress"}
+	not data.org.thresholds.max_nodes_per_course
 	reason := {
-		"rule": "state_permits",
-		"message": sprintf("%v is not a state this action is legal in", [input.course_state]),
+		"rule": "within_limits",
+		"message": "the organisation's node limit is not configured",
 	}
 }
 

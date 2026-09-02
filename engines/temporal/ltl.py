@@ -24,6 +24,16 @@ class Violation:
     step: int
     event: str
     why: str
+    kind: str = "violated"
+    # "violated"   — the run did something the property forbids.
+    # "unfulfilled" — an F that never came true before the trace ended. On a
+    #                 finite trace that is not the same as false, and saying so
+    #                 is the difference between "this run is illegal" and "this
+    #                 run is not finished".
+    # "unrecorded"  — the run does not carry what it would take to decide. It
+    #                 refuses like the others, because absence of a verdict is
+    #                 never a permissive verdict, but it names a gap in the
+    #                 recorder rather than a fault in the run.
 
     def __str__(self) -> str:
         return f"step {self.step} ({self.event}): {self.why}"
@@ -58,6 +68,21 @@ def once(trace: Sequence[Step], i: int, phi: Predicate) -> bool:
     """O φ — φ at some step strictly before i. The only past-tense operator the
     specification uses, and the one most of its invariants are built from."""
     return any(phi(trace[j]) for j in range(i))
+
+
+def once_now(trace: Sequence[Step], i: int, phi: Predicate) -> bool:
+    """O φ, inclusive of the present step.
+
+    The specification's past-tense obligations are mostly discharged by the same
+    transition that creates them: the outline commit that drops a node *is* the
+    removal, and the guardrail verdict that admits content *is* the admission.
+    Read strictly, those obligations can never have been met, and a check built
+    on the strict operator refuses every legal run — which four of them did.
+
+    Where the evidence must genuinely predate the event, `once` is still the
+    right operator and is still used.
+    """
+    return any(phi(trace[j]) for j in range(i + 1))
 
 
 def until(trace: Sequence[Step], phi: Predicate, psi: Predicate) -> bool:

@@ -1,0 +1,231 @@
+artifact: trace-schema
+question: "What shape does a run have, so that a property can be decided about it?"
+owner: "system architect"
+updated_when: "an invariant starts reading a fact the trace does not yet carry, or a state variable is renamed"
+source: "states.html §2 (the state variables); event-catalog.yaml (the envelope); invariants.yaml (who reads what)"
+authored: "2026-09-02"
+
+# Why this file exists.
+#
+# The fifteen invariants are checked by walking a run. Until now the shape of
+# that run was never written down: it was invented while the checks were being
+# written, and it drifted — one property read a boolean where another read a
+# list, and a single "course_state" per step had to stand for both the state an
+# event arrived in and the state it produced. A property decided against an
+# undeclared shape is not decided.
+#
+# This is the declaration. Every field a check may read is named here, and a
+# check that reads a field not named here is a check reading something nobody
+# promised to record.
+
+shape:
+  events: >-
+    Every event name is the catalog's. A transition the tables mark "(auto)"
+    carries the reserved name "(auto)": a guard firing is not an event, and
+    inventing a name to stand for one puts a claim in the record that no
+    producer is authorised to make.
+  step: >-
+    A step is one event and the state it produced. Step 0 is the initial state
+    and carries the reserved event "(initial)"; every later step carries a real
+    event from the catalog.
+  before_and_after: >-
+    The state an event arrived in is the previous step's state. Nothing is
+    written twice, and "before" and "after" stop being ambiguous — which they
+    were while a step carried one course_state and the reader had to guess.
+  initial_state: >-
+    Step 0 is the premise of the run, not a step of it. An obligation discharged
+    by a transition — a guardrail verdict before admission, an outline committed
+    before a removal — cannot attach to a state that arrived without one, so the
+    walks that compare a step against the one before it start at step 1.
+  finiteness: >-
+    A trace ends. G is decided over the steps that exist; F can only mean
+    "before the end", so an F that never comes true is reported as unfulfilled
+    rather than as false. Both refuse. They are not the same artifact.
+
+# ------------------------------------------------------------------ envelope
+
+envelope:
+  owner: "event-catalog.yaml — this file only says the trace must carry what the catalog requires"
+  required_on_every_event: ["event", "event_id", "event_time", "producer",
+                            "correlation_id", "causation_id", "schema_version"]
+  note: >-
+    The step's "event" key is the catalog's event_type; the catalog's "payload"
+    is the step's payload fields, written inline rather than nested.
+  idempotency_key:
+    required_on: "side_effecting"
+    why: "the catalog requires it on any event recording a side effect, and does not enumerate them"
+
+side_effecting:
+  why: >-
+    The catalog says idempotency_key is required "on any event recording a side
+    effect" and stops there. Somebody has to name them, and an enumeration
+    living in a checker is an enumeration nobody can review. It lives here.
+  events: ["OutlineGenerated", "NodeGenerated", "GuardrailVerdict",
+           "LivePointerMoved", "LearnersNotified"]
+  excluded_deliberately:
+    - event: "NodeEdited"
+      why: "a person's act on our own store — replaying it is not a second charge or a second send"
+    - event: "CheckFailed"
+      why: "a verdict about work already done; it spends nothing"
+
+# --------------------------------------------------------------- state facts
+
+state_fields:
+  - name: "revision"
+    type: "int"
+    means: "the revision this state belongs to"
+    read_by: ["I10"]
+
+  - name: "course_state"
+    type: "one of revision.state in state-inventory.yaml"
+    means: "where the revision machine stands after this event"
+    read_by: ["I1", "I3", "I14"]
+
+  - name: "node_states"
+    type: "map node -> one of node.state in state-inventory.yaml"
+    means: "where every node of this revision stands"
+    note: >-
+      The single source for everything about a node. approved, admitted, held,
+      removed and needs_revalidation are all read off this map rather than
+      stored beside it, because two fields describing one fact drift.
+    read_by: ["I3", "I4", "I5", "I6", "I14"]
+
+  - name: "retry_budget_left"
+    type: "map node -> bool"
+    means: "whether the node has a repair left to spend"
+    read_by: ["I14"]
+
+  - name: "committed_outline"
+    type: "list of node, or null before the first outline is approved"
+    means: "the skeleton the editor has signed off"
+    read_by: ["I5"]
+
+  - name: "approved_nodes"
+    type: "list of node"
+    means: "nodes approved as of this state — the set shrinks when an approval is withdrawn"
+    note: "derived from node_states in a real store; carried explicitly so a trace can state it"
+    read_by: ["I2"]
+
+  - name: "permission_checked"
+    type: "list of node"
+    means: "nodes whose source rights were checked against the audience"
+    read_by: ["I8"]
+
+  - name: "used_restricted"
+    type: "list of node"
+    means: "nodes citing a chunk that is not open to every audience of this course"
+    read_by: ["I8"]
+
+  - name: "stale_nodes"
+    type: "list of node"
+    means: "nodes whose stamp is behind what is in force"
+    note: "the one name for staleness. An earlier trace carried a bool here and a list there."
+    read_by: ["I3", "I7", "I15"]
+
+  - name: "policy_version"
+    type: "str"
+    means: "the policy bundle this revision was verified under"
+    read_by: ["I7"]
+
+  - name: "current_policy_version"
+    type: "str"
+    means: "the bundle in force now"
+    read_by: ["I7"]
+
+  - name: "guardrail_version"
+    type: "str"
+    means: "the guardrail definition this revision was screened under"
+    read_by: ["I15"]
+
+  - name: "current_guardrail_version"
+    type: "str"
+    means: "the definition in force now"
+    read_by: ["I15"]
+
+  - name: "affected"
+    type: "bool"
+    means: "whether the change between the stamped and the current version touches this revision"
+    read_by: ["I7", "I15"]
+
+  - name: "live_pointer"
+    type: "revision, or null when the course has never been published"
+    means: "the revision learners are served"
+    read_by: ["I11"]
+
+  - name: "revision_states"
+    type: "map revision -> one of revision.state"
+    means: "every revision in the lineage, not only the one this step is about"
+    read_by: ["I11", "I12"]
+
+  - name: "forked_from"
+    type: "map revision -> revision"
+    means: "the provenance edge; successor(R2, R1) is forked_from[R2] = R1"
+    read_by: ["I12"]
+
+  - name: "re_verified"
+    type: "list of revision"
+    means: "revisions that have passed the full checks again since they last entered StaleReview"
+    read_by: ["I13"]
+
+# ------------------------------------------------------------ event payloads
+
+payload_fields:
+  - name: "node"
+    type: "node"
+    on_events: ["NodeGenerated", "NodeEdited", "NodeApproved", "NodeRejected"]
+    read_by: ["I4"]
+  - name: "artifact"
+    type: "node or the literal \"outline\""
+    on_events: ["GuardrailVerdict"]
+    means: "what was screened"
+    note: >-
+      The verdict events *are* the record of what was screened. An earlier
+      schema also carried a running guardrail_checked list beside them, which is
+      the same fact written twice and therefore the same fact free to drift.
+    read_by: ["I6"]
+  - name: "node_type"
+    type: "str — \"exam\" marks the one this model reasons about"
+    on_events: ["NodeGenerated"]
+    read_by: ["I2"]
+  - name: "topics"
+    type: "list of node"
+    means: "the nodes an exam tests"
+    on_events: ["NodeGenerated"]
+    read_by: ["I2"]
+  - name: "rolled_back_to"
+    type: "revision"
+    on_events: ["LivePointerMoved"]
+    means: "set only when the pointer moved backwards, by rollback rather than by publication"
+    read_by: ["I13"]
+
+# ------------------------------------------------------------------- derived
+
+derived:
+  - name: "all_nodes_approved(C)"
+    from: "node_states"
+    is: "every node is NodeApproved or Removed"
+  - name: "admitted(A)"
+    from: "node_states"
+    is: "the node has moved past OutputGuardrail — NodeChecks, NodeRepair, Validated, NodeApproved, NeedsRevalidation or BlockedFinal"
+    why: >-
+      "generated(A)" in I6 is not the NodeGenerated event. The node machine runs
+      ContentDrafting -> Generated -> OutputGuardrail, so a guardrail verdict is
+      never in the past of that event and a check keyed on it refuses every
+      legal run. What I6 forbids is admitting output to the record, and
+      admission is the step out of OutputGuardrail.
+  - name: "node_held(N)"
+    from: "node_states, retry_budget_left"
+    is: "N is in NodeRecovery and has no budget left — the definition in invariants.yaml"
+  - name: "removed(N)"
+    from: "node_states"
+    is: "N is Removed"
+  - name: "needs_revalidation(N)"
+    from: "node_states"
+    is: "N is NeedsRevalidation"
+  - name: "published(R)"
+    from: "course_state, revision_states"
+    is: "the state is Published"
+
+open_questions:
+  - "A trace carries one revision's course_state and every revision's state in revision_states. A run that interleaves work on two draft revisions of the same course has no place to put the second one's node_states."
+  - "re_verified is the one list here that no state name encodes. It is a fact the store would have to keep deliberately, and today nothing writes it."

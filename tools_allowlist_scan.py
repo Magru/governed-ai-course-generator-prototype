@@ -145,7 +145,18 @@ def scan(root: pathlib.Path = FIXTURES,
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.name == "namespace.yaml":
             continue
-        text = path.read_text(encoding="utf-8", errors="replace")
+        # Compiled bytecode is a build product, not fixture data: it holds a
+        # mangled copy of the source and reads as gibberish, so every scan of it
+        # is noise. Scanning what a human wrote is the whole point.
+        if "__pycache__" in path.parts or path.suffix in {".pyc", ".pyo"}:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            # Not text. A binary in the fixtures is worth a look by a person —
+            # silently skipping it is how something gets carried in unread.
+            problems.append(f"{path.name}: not text, so it was not scanned")
+            continue
         rel = path.relative_to(root.parent) if root.parent in path.parents else path.name
         for m in UUID.finditer(text):
             problems.append(f"{rel}: a real-looking UUID — {m.group(0)}")

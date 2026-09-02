@@ -9,7 +9,8 @@ policy engine it claims to run on.
 from __future__ import annotations
 import json, pathlib, shutil, subprocess
 
-from ..contract import EngineUnavailable, Verdict, allowed, refused
+from ..contract import (EngineUnavailable, RefusalWithoutArtifact, Verdict,
+                        allowed, refused)
 
 HERE = pathlib.Path(__file__).parent
 POLICY = HERE / "policy.rego"
@@ -28,8 +29,14 @@ def check(action: str, actor: dict, brief: dict, course_state: str, org: dict) -
         denials = _eval("data.course.policy.deny", input_doc, data_path) or []
 
     if not denials:
-        denials = [{"rule": "allow",
-                    "message": "no clause of the policy permitted this action"}]
+        # The policy said no and gave no reason. Inventing one here would put a
+        # Python string where an engine's verdict belongs — the caller would read
+        # "the policy denied because…" about a sentence the policy never wrote.
+        # Every way of failing is supposed to have a `deny` clause; that one does
+        # not is a hole in the policy, and a hole is not a refusal.
+        raise RefusalWithoutArtifact(
+            "the policy refused without naming a rule. Add a deny clause for "
+            f"this case: action={action!r}, state={course_state!r}")
     first = denials[0]
     return refused(
         kind="named-rule",

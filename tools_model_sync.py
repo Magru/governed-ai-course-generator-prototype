@@ -18,7 +18,8 @@ LOCK = ROOT / "model.lock"
 REPO = "Magru/governed-ai-course-generator"
 FILES = ["system-definition.yaml", "functional-model.yaml", "context-diagram.mmd",
          "state-inventory.yaml", "transitions.yaml", "guards.yaml",
-         "event-catalog.yaml", "invariants.yaml", "failure-scenarios.yaml",
+         "event-catalog.yaml", "invariants.yaml", "trace-schema.yaml",
+         "failure-scenarios.yaml",
          "assumptions.yaml", "latency-budget.yaml", "state-machine-revision.mmd",
          "state-machine-node.mmd", "diagrams.md", "README.md"]
 
@@ -96,4 +97,7 @@ def verify(remote: bool = False) -> int:
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "verify":
         raise SystemExit(verify(remote="--remote" in sys.argv))
-    sync(sys.argv[1] if len(sys.argv) > 1 else "spec-v2.2")
+    arg = sys.argv[1] if len(sys.argv) > 1 else "spec-v2.4"
+    if arg.startswith("-"):   # otherwise a mistyped flag is fetched as a tag
+        raise SystemExit(f"unknown option {arg!r}; usage: tools_model_sync.py [tag | verify [--remote]]")
+    sync(arg)

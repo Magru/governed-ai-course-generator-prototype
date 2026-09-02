@@ -21,8 +21,14 @@ ENGINE = "prolog"
 
 
 def _atom(value: str) -> str:
-    """Anything with a hyphen has to be quoted, and every id here has one."""
-    return "'" + str(value).replace("'", "\\'") + "'"
+    """Anything with a hyphen has to be quoted, and every id here has one.
+
+    The backslash has to be escaped before the quote, or a value ending in one
+    escapes the closing quote and breaks the file. That is not a cosmetic bug:
+    swipl skips what it cannot parse, exits zero, and the caller reads an empty
+    result as "nothing is uncovered"."""
+    text = str(value).replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ")
+    return "'" + text + "'"
 
 
 def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
@@ -57,7 +63,12 @@ def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
         facts_path = fh.name
     try:
         proc = subprocess.run(
-            ["swipl", "-q", "-g", goal, "-t", "halt", str(PROGRAM), facts_path],
+            # --on-error=status makes a load error an exit code. Without it swipl
+            # prints a warning, skips the clauses it could not read, exits zero,
+            # and an unparsable fact file becomes the answer "nothing is
+            # uncovered" — a formal engine reporting a pass it never computed.
+            ["swipl", "--on-error=status", "-q", "-g", goal, "-t", "halt",
+             str(PROGRAM), facts_path],
             capture_output=True, text=True, timeout=20)
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise EngineUnavailable(f"swipl did not run: {exc}") from exc
@@ -65,6 +76,11 @@ def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
         os.unlink(facts_path)
     if proc.returncode != 0:
         raise EngineUnavailable(f"swipl exited {proc.returncode}: {proc.stderr.strip()[:300]}")
+    if proc.stderr.strip():
+        # Belt as well as braces: a warning on stderr means something in the
+        # program was not read, and a partial program answers a different
+        # question from the one asked.
+        raise EngineUnavailable(f"swipl complained: {proc.stderr.strip()[:300]}")
 
     lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("explanation(")]
     if not lines:

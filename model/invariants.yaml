@@ -133,3 +133,19 @@ open_questions:
     nothing stays in recovery forever. It is not in the list above because the
     specification does not yet claim it, and this file reproduces claims rather than
     inventing them. Worth adding to states.html §8 before the defence.
+  - >-
+    I12 and the rollback contradict each other, and the contradiction was found by
+    implementing them. §7 of transitions.html sets out the legal rollback and ends it
+    "rev 1 → Published, rev 2 → Superseded". I12 says a revision only becomes
+    superseded because a successor was published — and revision 2 has no successor;
+    the pointer went back to its parent. Both statements are in this model. Either
+    "superseded" covers losing the pointer for any reason, in which case I12 forbids
+    nothing it was written to forbid, or a rollback needs a state of its own. Not a
+    thing to decide quietly.
+  - >-
+    I2 says O(∧ₜ approved(t)) — one past moment at which every topic was approved
+    together. That is what it forbids, and it is weaker than what it means: a moment
+    in the past satisfies it even if an approval has since been withdrawn, so an exam
+    over since-unapproved material passes. The property that would catch it is about
+    the present, not the past, and stating it is a change to the model rather than to
+    the checker.

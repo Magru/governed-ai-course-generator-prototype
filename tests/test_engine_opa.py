@@ -38,9 +38,56 @@ def test_a_threshold_refusal_says_which_number_and_what_the_limit_is():
     assert "99" in v.refusal.summary and "12" in v.refusal.summary
 
 
-def test_a_state_the_action_is_illegal_in_is_refused():
+def test_generating_a_node_outside_the_content_phase_is_refused():
     v = engine.check("generate_node", AUTHOR, brief(), "Published", DATA)
     assert not v.ok and v.refusal.detail[0]["rule"] == "state_permits"
+
+
+def test_a_recovery_the_table_guarantees_is_not_refused():
+    """transitions.yaml has BlockedRecoverable --BriefSubmitted--> BriefValidation.
+    An earlier version of the policy gated every action on a fixed set of states
+    and refused this one — terminally, since a policy refusal ends the revision.
+    Which states an action is legal in is the table's question, not the policy's."""
+    assert engine.check("submit_brief", AUTHOR, brief(), "BlockedRecoverable", DATA).ok
+
+
+def test_lesson_length_is_not_asked_here():
+    """One owner per question: it is part of satisfiability, and Z3 owns that.
+    Asking both meant OPA refused first and terminally, and the unsat core Z3
+    exists to produce could never be reached."""
+    assert engine.check("submit_brief", AUTHOR, brief(minutes_per_lesson=999),
+                        "AwaitingBrief", DATA).ok
+
+
+ADVERSARIAL = [
+    ("an unknown role", {"id": "author-1", "role": "intruder"}, brief(), "AwaitingBrief", DATA),
+    ("an unknown actor", {"id": "nobody", "role": "course-author"}, brief(), "AwaitingBrief", DATA),
+    ("no node count", AUTHOR, {"audience": ["apprentices"], "minutes_per_lesson": 20},
+     "AwaitingBrief", DATA),
+    ("no audience", AUTHOR, {"node_count": 3, "minutes_per_lesson": 20}, "AwaitingBrief", DATA),
+    ("an empty audience", AUTHOR, brief(audience=[]), "AwaitingBrief", DATA),
+    ("no thresholds", AUTHOR, brief(), "AwaitingBrief", {"grants": DATA["grants"], "thresholds": {}}),
+    ("an unknown action", AUTHOR, brief(), "AwaitingBrief", DATA),
+    ("a node in the wrong phase", AUTHOR, brief(), "Withdrawn", DATA),
+]
+
+
+@pytest.mark.parametrize("label,actor,b,state,data",
+                         [(a, b, c, d, e) for a, b, c, d, e in ADVERSARIAL],
+                         ids=[a for a, *_ in ADVERSARIAL])
+def test_a_refusal_always_names_a_rule(label, actor, b, state, data):
+    """The property, rather than one hole in it: wherever the policy says no it
+    must say why. An earlier version returned `allow=false` with an empty `deny`
+    for seven input classes and Python wrote the reason — which reads to a caller
+    as the policy's verdict about a sentence the policy never produced."""
+    action = "delete_course" if label == "an unknown action" else "submit_brief"
+    if label == "a node in the wrong phase":
+        action = "generate_node"
+    verdict = engine.check(action, actor, b, state, data)
+    if verdict.ok:
+        return
+    assert verdict.refusal.detail, f"{label}: refused with no rule named"
+    assert verdict.refusal.detail[0].get("rule"), f"{label}: a reason with no rule"
 
 
 def test_thresholds_come_from_configuration_not_from_the_policy():
