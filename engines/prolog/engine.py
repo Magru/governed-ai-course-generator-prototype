@@ -38,16 +38,19 @@ def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
             "swipl is not on PATH. No Python path computes this instead: a "
             "fallback would make 'Prolog answered' unprovable.")
 
-    facts = [f"requires({_atom(course_id)}, {_atom(o)})." for o in objectives]
-    for node in nodes:
-        facts.append(f"contains({_atom(course_id)}, {_atom(node['id'])}).")
-        if node.get("state") == "NodeApproved":
-            facts.append(f"approved({_atom(node['id'])}).")
-        if node.get("skill"):
-            facts.append(f"teaches({_atom(node['id'])}, {_atom(node['skill'])}).")
-    for skill, objs in develops.items():
-        for objective in objs:
-            facts.append(f"develops({_atom(skill)}, {_atom(objective)}).")
+    # Grouped by predicate, not by node. Prolog wants a predicate's clauses
+    # together in a file; emitting them interleaved is legal but makes swipl
+    # warn on every load, and a stream of warnings is where a real complaint
+    # goes to hide.
+    requires = [f"requires({_atom(course_id)}, {_atom(o)})." for o in objectives]
+    contains = [f"contains({_atom(course_id)}, {_atom(n['id'])})." for n in nodes]
+    approved = [f"approved({_atom(n['id'])})." for n in nodes
+                if n.get("state") == "NodeApproved"]
+    teaches = [f"teaches({_atom(n['id'])}, {_atom(n['skill'])})." for n in nodes
+               if n.get("skill")]
+    develops_facts = [f"develops({_atom(skill)}, {_atom(objective)})."
+                      for skill, objs in develops.items() for objective in objs]
+    facts = requires + contains + approved + teaches + develops_facts
 
     goal = (
         f"forall(why_uncovered({_atom(course_id)}, O, E), (print(E), nl)), halt."
@@ -76,11 +79,14 @@ def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
         os.unlink(facts_path)
     if proc.returncode != 0:
         raise EngineUnavailable(f"swipl exited {proc.returncode}: {proc.stderr.strip()[:300]}")
-    if proc.stderr.strip():
-        # Belt as well as braces: a warning on stderr means something in the
+    complaints = [ln for ln in proc.stderr.splitlines()
+                  if ln.strip() and not ln.startswith("Warning:")
+                  and not ln.startswith("Warning:\t") and not ln.startswith("\t")]
+    if complaints:
+        # Belt as well as braces: a complaint on stderr means something in the
         # program was not read, and a partial program answers a different
         # question from the one asked.
-        raise EngineUnavailable(f"swipl complained: {proc.stderr.strip()[:300]}")
+        raise EngineUnavailable("swipl complained: " + " ".join(complaints)[:300])
 
     lines = [ln for ln in proc.stdout.splitlines() if ln.startswith("explanation(")]
     if not lines:

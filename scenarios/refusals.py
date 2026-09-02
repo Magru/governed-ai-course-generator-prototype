@@ -18,6 +18,7 @@ from engines.datalog import engine as datalog                # noqa: E402
 from engines.opa import engine as opa                        # noqa: E402
 from engines.prolog import engine as prolog                  # noqa: E402
 from engines.temporal import engine as temporal              # noqa: E402
+from scenarios.legal_run import N1, find, legal_run, mutate  # noqa: E402
 from engines.z3 import engine as z3engine                    # noqa: E402
 
 F = ROOT / "fixtures"
@@ -62,26 +63,34 @@ def objective_not_covered() -> Verdict:
 
 
 def published_with_a_stale_node() -> Verdict:
-    return temporal.check([
-        {"event": "NodeEdited", "node": "mt-node-106", "revision": 1,
-         "needs_revalidation": ["mt-node-106"]},
-        {"event": "PublishRequested", "course_state": "Published", "revision": 1,
-         "stale_nodes": ["mt-node-106"]},
-    ])
+    """The legal run, with one node stale at the moment of publication.
+
+    An earlier version of this scene was two hand-written steps. It refused —
+    but for the shape of the trace, not for the staleness, and the runner below
+    could not tell the difference. A scene that passes for the wrong reason is
+    worse than one that fails.
+    """
+    run = legal_run()
+    return temporal.check(mutate(run, find(run, "PublishRequested"),
+                                 stale_nodes=[N1]))
 
 
+# Each scene names the refusal it must produce. Without that a scene passes on
+# any refusal at all — including one about the shape of its own input, which is
+# how the last one here quietly stopped demonstrating what it claimed to.
 SCENES = [
-    ("a brief that cannot be satisfied", unsatisfiable_brief),
-    ("an audience the author was not granted", audience_not_granted),
-    ("a node citing a source the audience cannot see", restricted_source),
-    ("an objective nothing approved covers", objective_not_covered),
-    ("a course published with a stale node", published_with_a_stale_node),
+    ("a brief that cannot be satisfied", unsatisfiable_brief, "z3", "unsat-core"),
+    ("an audience the author was not granted", audience_not_granted, "opa", "named-rule"),
+    ("a node citing a source the audience cannot see", restricted_source, "datalog", "leak-path"),
+    ("an objective nothing approved covers", objective_not_covered, "prolog", "proof-tree"),
+    ("a course published with a stale node", published_with_a_stale_node,
+     "temporal", "violated-formula"),
 ]
 
 
 def main() -> int:
     failures = 0
-    for title, scene in SCENES:
+    for title, scene, engine, kind in SCENES:
         try:
             verdict = scene()
         except EngineUnavailable as exc:
@@ -93,6 +102,12 @@ def main() -> int:
             failures += 1
             continue
         r = verdict.refusal
+        if (r.engine, r.kind) != (engine, kind):
+            print(f"  ✗ {title}\n      was refused by {r.engine} with a "
+                  f"{r.kind}, and this scene exists to show {engine} refuse "
+                  f"with a {kind}: {r.summary}")
+            failures += 1
+            continue
         print(f"  · {title}")
         print(f"      {r.engine} refuses with a {r.kind}: {r.summary}")
     print()
