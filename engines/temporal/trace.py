@@ -200,10 +200,6 @@ def _state_name_problems(i: int, event: str, fields: Mapping) -> list[str]:
 
 # ------------------------------------------------------- derived predicates
 
-def approved(step: Step, ident: str) -> set[str]:
-    return {n for n, s in step.nodes(ident).items() if s == "NodeApproved"}
-
-
 def unapproved(step: Step, ident: str) -> set[str]:
     return {n for n, s in step.nodes(ident).items()
             if s not in ("NodeApproved", "Removed")}

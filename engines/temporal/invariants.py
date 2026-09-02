@@ -236,10 +236,10 @@ def i10(trace: Trace) -> list[Violation]:
     bad, published = [], set()
     for s in trace:
         if s.maybe("course_state") == "Published" and s.maybe("revision") is not None:
-            published.add(s.fields["revision"])
+            published.add(s.state("revision", "I10"))
         if s.event == "NodeEdited" and s.state("revision", "I10") in published:
-            bad.append(_v(i10, s, f"revision {s.fields['revision']} was edited "
-                                  f"after publication"))
+            bad.append(_v(i10, s, f"revision {s.state('revision', 'I10')} was "
+                                  f"edited after publication"))
     return bad
 
 

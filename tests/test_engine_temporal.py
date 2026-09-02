@@ -54,17 +54,47 @@ def test_no_check_reads_a_fact_the_schema_does_not_declare():
                             f"neither state_fields nor payload_fields")
 
 
-def test_no_declared_field_goes_unread():
-    """The other direction. A field nobody reads is a field nobody maintains.
+def _fields_actually_requested() -> set[str]:
+    """Every field the walks ask for while checking every run this suite has.
 
-    Read off the schema's own `read_by` rather than the source, because two of
-    the version fields are reached through a computed name and a regex would
-    call them dead. The claim is then checked against the registry below, so
-    `read_by` cannot lie its way past this by naming a property that is gone.
+    Watched at the boundary rather than read off the source, because two of the
+    version fields are reached through a computed name — a regex calls those
+    dead, and the schema's own `read_by` is a claim rather than a fact. This is
+    the fact.
     """
-    idle = [f["name"] for f in T.SCHEMA["state_fields"] + T.SCHEMA["payload_fields"]
-            if not f.get("read_by")]
-    assert not idle, f"trace-schema.yaml declares {idle} and says nothing reads it"
+    seen: set[str] = set()
+    real_state, real_maybe = T.Step.state, T.Step.maybe
+
+    def state(self, field, ident):
+        seen.add(field)
+        return real_state(self, field, ident)
+
+    def maybe(self, field):
+        seen.add(field)
+        return real_maybe(self, field)
+
+    T.Step.state, T.Step.maybe = state, maybe
+    try:
+        runs = [fn() for fn in LEGAL.values()] + [legal_rollback()]
+        runs += [m(legal_run()) for m in MUTATIONS.values()]
+        for run in runs:
+            engine.check(run)
+    finally:
+        T.Step.state, T.Step.maybe = real_state, real_maybe
+    return seen
+
+
+def test_no_declared_field_goes_unread():
+    """A field nobody reads is a field nobody maintains.
+
+    An earlier version of this test asserted only that each field carried a
+    non-empty `read_by` in the YAML — which is the schema restating its own
+    claim, not evidence. It passed while `approved()` sat in trace.py reading
+    nothing.
+    """
+    unread = (T.STATE_FIELDS | T.PAYLOAD_FIELDS) - _fields_actually_requested()
+    assert not unread, (f"trace-schema.yaml declares {sorted(unread)} and no "
+                        f"walk asked for it across every run in this suite")
 
 
 def test_the_schema_does_not_claim_a_reader_that_no_longer_exists():
@@ -84,6 +114,14 @@ def test_the_envelope_is_the_catalogs_and_not_this_files():
     assert ours <= required | {"event_type"}, (
         f"{sorted(ours - required)} is demanded of every event and the catalog "
         f"does not require it")
+    # And the direction that actually protects I9. Dropping a field from the
+    # schema silently stops I9 checking it — causation_id above all, whose
+    # absence lets an out-of-order arrival drive a transition that never
+    # legally happened.
+    folded = {"event_type", "payload"}          # carried as the step's own shape
+    assert required - folded <= ours, (
+        f"the catalog requires {sorted(required - folded - ours)} of every "
+        f"event and nothing here checks for it")
 
 
 # ------------------------------------------------------------- the legal runs
