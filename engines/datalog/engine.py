@@ -11,8 +11,12 @@ generator must not re-implement the platform's predicate; it asks and treats the
 answer as a fact. So the facts below come from the fixture's resolved answer,
 and this engine reasons over them rather than about them.
 
-The refusal is a path — node, source, audience — because "denied" tells an author
-nothing and a path tells them which citation to drop.
+The refusal is a path — node, chunk, article, audience — because "denied" tells
+an author nothing and a path tells them which citation to drop and which
+document it came out of. Four steps, not three: permissions attach to articles,
+and a chunk is a fragment of one. An earlier version went straight from chunk to
+audience, which meant the artifact could not say what the author had actually
+reached into.
 """
 from __future__ import annotations
 
@@ -34,49 +38,83 @@ def _pydatalog():
 # works at import time and silently does not inside a function — and because a
 # relation is easier to review when it looks like one.
 RULES = """
-leak(N, C, A) <= cites(N, C) & in_audience(A) & ~visible(C, A)
+leak(N, C, R, A) <= cites(N, C) & in_article(C, R) & in_audience(A) & ~visible(R, A)
+ungrounded(N, C) <= cites(N, C) & ~in_kb(C)
 """
 
+# pyDatalog will not resolve a negated predicate that has no clauses at all: an
+# audience that can see nothing made `visible/2` undefined and the query raised
+# instead of answering — the exact case the check exists for. Every negated
+# relation is therefore seeded with a row that no real datum can equal.
+NOTHING = "\x00 no such id"
 
-def check_permission_leak(nodes: list[dict], audiences: list[str],
-                          resolved_visibility: dict) -> Verdict:
-    """Is there a source in this course some member of the audience cannot see?"""
+
+def _seed(pd, **arities: int) -> None:
+    for relation, arity in arities.items():
+        pd.assert_fact(relation, *[NOTHING] * arity)
+
+
+def _load(nodes: list[dict], *, articles: list[dict] | None = None,
+          audiences: list[str] | None = None,
+          resolved_visibility: dict | None = None) -> object:
+    """One place where facts become facts, so no query runs on a half-loaded base."""
     pd = _pydatalog()
     pd.clear()
-    pd.create_terms("cites, visible, in_audience, leak, N, C, A")
-
+    pd.create_terms("cites, in_article, in_kb, visible, in_audience, "
+                    "leak, ungrounded, N, C, R, A")
+    _seed(pd, visible=2, in_article=2, in_kb=1)
     for node in nodes:
         for chunk in node.get("cites") or []:
             pd.assert_fact("cites", node["id"], chunk)
-    for name in audiences:
+    for article in articles or []:
+        for chunk in article.get("chunks") or []:
+            pd.assert_fact("in_article", chunk, article["id"])
+            pd.assert_fact("in_kb", chunk)
+    for name in audiences or []:
         pd.assert_fact("in_audience", name)
-        for chunk in resolved_visibility.get(name) or []:
-            pd.assert_fact("visible", chunk, name)
-
+        for article_id in (resolved_visibility or {}).get(name) or []:
+            pd.assert_fact("visible", article_id, name)
     pd.load(RULES)
-    answer = pd.ask("leak(N, C, A)")
+    return pd
+
+
+def check_permission_leak(nodes: list[dict], articles: list[dict],
+                          audiences: list[str],
+                          resolved_visibility: dict) -> Verdict:
+    """Is there a source in this course some member of the audience cannot see?"""
+    pd = _load(nodes, articles=articles, audiences=audiences,
+               resolved_visibility=resolved_visibility)
+    answer = pd.ask("leak(N, C, R, A)")
     rows = sorted(answer.answers) if answer else []
-    paths = [{"node": n, "source": c, "audience": a} for n, c, a in rows]
+    paths = [{"node": n, "chunk": c, "article": r, "audience": a}
+             for n, c, r, a in rows]
     if not paths:
         return allowed(engine=ENGINE, checked=len(nodes))
     first = paths[0]
     return refused(
         kind="leak-path",
-        summary=(f"{first['node']} cites {first['source']}, which "
-                 f"{first['audience']} cannot see"),
+        summary=(f"{first['node']} cites {first['chunk']} from "
+                 f"{first['article']}, which {first['audience']} cannot see"),
         detail=paths,
         engine=ENGINE)
 
 
-def check_grounding(nodes: list[dict], known_chunks: set[str]) -> Verdict:
-    """Does every claim hang on a chunk that exists?"""
-    ungrounded = [{"node": n["id"], "source": c}
-                  for n in nodes for c in (n.get("cites") or [])
-                  if c not in known_chunks]
-    if not ungrounded:
+def check_grounding(nodes: list[dict], articles: list[dict]) -> Verdict:
+    """Does every claim hang on a chunk that exists?
+
+    This was a list comprehension wearing the label `engine="datalog"`. It gave
+    the right answer and it was not the engine it said it was — and the point of
+    naming a layer in a refusal is that a reader can go and read the rule.
+    """
+    pd = _load(nodes, articles=articles)
+    answer = pd.ask("ungrounded(N, C)")
+    rows = sorted(answer.answers) if answer else []
+    missing = [{"node": n, "chunk": c} for n, c in rows]
+    if not missing:
         return allowed(engine=ENGINE, checked=len(nodes))
     return refused(
-        kind="leak-path",
-        summary=f"{ungrounded[0]['node']} cites {ungrounded[0]['source']}, which is not in the knowledge base",
-        detail=ungrounded,
+        kind="ungrounded-claim",
+        summary=(f"{missing[0]['node']} cites {missing[0]['chunk']}, which is "
+                 f"not in the knowledge base"),
+        detail=missing,
         engine=ENGINE)

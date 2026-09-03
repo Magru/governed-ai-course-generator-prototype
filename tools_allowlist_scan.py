@@ -40,7 +40,7 @@ STRUCTURAL = {
     # keys
     "organisation", "people", "audiences", "skills", "block_types", "blocks",
     "generic", "kb_namespace", "course_namespace", "knowledge_base", "catalog",
-    "chunks", "thresholds", "slug", "name", "domain", "about", "role", "label",
+    "chunks", "articles", "thresholds", "slug", "name", "domain", "about", "role", "label",
     "id", "title", "objectives", "audience", "state", "type", "version",
     "chunk", "text", "source", "visible", "settings", "brief", "nodes", "node",
     "may_author_for", "visible_to", "requires_visual_review", "repair_budget",

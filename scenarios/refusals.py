@@ -50,7 +50,7 @@ def audience_not_granted() -> Verdict:
 
 def restricted_source() -> Verdict:
     twin = _load("evil-twins/03-restricted-source.yaml")
-    return datalog.check_permission_leak(twin["brief"]["nodes"],
+    return datalog.check_permission_leak(twin["brief"]["nodes"], KB["articles"],
                                          twin["brief"]["audience"], VISIBILITY)
 
 

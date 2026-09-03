@@ -65,7 +65,7 @@ gateway_terms: [registry, registered, membrane, gateway, refused, architecture]
 # Identifier shapes. A token that begins with one of these and continues with
 # digits or an ordinary word is licensed — mt-kb-001, cat-7. Anything else that
 # looks like an identifier has to be a word from the lists above.
-id_prefixes: [mt-kb, mt-course, mt-node, cat, kb, pol, guard, rev]
+id_prefixes: [mt-kb, mt-art, mt-course, mt-node, cat, kb, pol, guard, rev]
 
 # Ordinary English that may appear in prose without belonging to the universe.
 generic:

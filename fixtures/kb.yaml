@@ -20,13 +20,41 @@ knowledge_base:
     - {id: mt-kb-009, text: lift with the load close to the body and turn with the feet not the waist}
     - {id: mt-kb-010, text: a guard removed for setting up is refitted before the machine is started}
 
-# the platform's answer to "can every member of this audience see this chunk",
+# an article is the thing permissions are actually attached to. a chunk is a
+# fragment of one, and it is retrieved and cited individually — which is why the
+# derivation path has four steps and not three: the node cites a chunk, the
+# chunk belongs to an article, and the article is what an audience may or may
+# not see.
+articles:
+  - {id: mt-art-bench-and-lifting,  chunks: [mt-kb-001, mt-kb-009]}
+  - {id: mt-art-tool-inspection,    chunks: [mt-kb-002]}
+  - {id: mt-art-plane-setup,        chunks: [mt-kb-003]}
+  - {id: mt-art-sharpening,         chunks: [mt-kb-004]}
+  - {id: mt-art-dust-extraction,    chunks: [mt-kb-005]}
+  - {id: mt-art-noise-exposure,     chunks: [mt-kb-006]}
+  - {id: mt-art-injury-reporting,   chunks: [mt-kb-007]}
+  - {id: mt-art-incident-records,   chunks: [mt-kb-008]}
+  - {id: mt-art-machine-guarding,   chunks: [mt-kb-010]}
+
+# the platform's answer to "can every member of this audience see this article",
 # already resolved. the generator asks; it does not derive.
+#
+# an earlier version of this file listed chunks here. that read as though the
+# platform answered per fragment, and it hid the hop the refusal is supposed to
+# name. the chunk-level answer is not written down at all now — it follows from
+# the article, and it follows inside the datalog rule where a reader can see it
+# is a rule.
 resolved_visibility:
-  source: platform predicate, asked per audience, answer treated as fact
-  all-staff:      [mt-kb-001, mt-kb-002, mt-kb-005, mt-kb-007, mt-kb-009]
-  workshop-floor: [mt-kb-001, mt-kb-002, mt-kb-003, mt-kb-004, mt-kb-005, mt-kb-006,
-                   mt-kb-007, mt-kb-009, mt-kb-010]
-  apprentices:    [mt-kb-001, mt-kb-002, mt-kb-003, mt-kb-005, mt-kb-007, mt-kb-009]
-  supervisors:    [mt-kb-001, mt-kb-002, mt-kb-005, mt-kb-006, mt-kb-007, mt-kb-008,
-                   mt-kb-009]
+  source: platform predicate, asked per audience per article, answer treated as fact
+  all-staff:      [mt-art-bench-and-lifting, mt-art-tool-inspection,
+                   mt-art-dust-extraction, mt-art-injury-reporting]
+  workshop-floor: [mt-art-bench-and-lifting, mt-art-tool-inspection,
+                   mt-art-plane-setup, mt-art-sharpening, mt-art-dust-extraction,
+                   mt-art-noise-exposure, mt-art-injury-reporting,
+                   mt-art-machine-guarding]
+  apprentices:    [mt-art-bench-and-lifting, mt-art-tool-inspection,
+                   mt-art-plane-setup, mt-art-dust-extraction,
+                   mt-art-injury-reporting]
+  supervisors:    [mt-art-bench-and-lifting, mt-art-tool-inspection,
+                   mt-art-dust-extraction, mt-art-noise-exposure,
+                   mt-art-injury-reporting, mt-art-incident-records]
