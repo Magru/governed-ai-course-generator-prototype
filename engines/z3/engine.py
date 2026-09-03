@@ -24,6 +24,46 @@ from ..contract import EngineUnavailable, Verdict, allowed, refused
 ENGINE = "z3"
 
 
+def variables():
+    """The three quantities a brief is judged on, and the reason the grouping
+    below works: they are independent, and nothing constrains two at once."""
+    import z3
+    return z3.Int("requested_nodes"), z3.Int("minutes_per_lesson"), z3.Int("audience_breadth")
+
+
+def constraint_groups(brief: dict, thresholds: dict) -> dict[str, dict]:
+    """Every tracked constraint, partitioned by the variable it constrains.
+
+    Exposed rather than built inline so a test can check the partition holds:
+    each core is minimal within its group, and their union is every conflict,
+    only because no constraint mentions two of the variables.
+    """
+    nodes, minutes, breadth = variables()
+    groups = {
+        "nodes": {
+            "max_nodes_per_course": nodes <= int(thresholds["max_nodes_per_course"]),
+            "a_course_has_at_least_one_node": nodes > 0,
+        },
+        "minutes": {
+            "minutes_per_lesson": minutes == int(brief["minutes_per_lesson"]),
+            "max_minutes_per_lesson": minutes <= int(thresholds["max_minutes_per_lesson"]),
+            "a_lesson_has_positive_length": minutes > 0,
+        },
+        "audience": {
+            "audience_breadth": breadth == len(brief["audience"]),
+            "max_audience_breadth": breadth <= int(thresholds["max_audience_breadth"]),
+        },
+    }
+    # A brief may say how many nodes it wants and then list them. Both are
+    # asserted; if they disagree, z3 names both and the author sees which two
+    # statements collide, instead of this function silently preferring one.
+    if brief.get("requested_nodes") is not None:
+        groups["nodes"]["requested_nodes"] = nodes == int(brief["requested_nodes"])
+    if brief.get("nodes") is not None:
+        groups["nodes"]["nodes_the_brief_lists"] = nodes == len(brief["nodes"])
+    return groups
+
+
 def check(brief: dict, thresholds: dict) -> Verdict:
     try:
         import z3
@@ -54,46 +94,50 @@ def check(brief: dict, thresholds: dict) -> Verdict:
             detail={"brief_does_not_state": unstated, "no_limit_set": absent_limits},
             engine=ENGINE)
 
-    solver = z3.Solver()
-    solver.set(unsat_core=True)
+    nodes, minutes, breadth = variables()
+    groups = constraint_groups(brief, thresholds)
 
-    nodes = z3.Int("requested_nodes")
-    minutes = z3.Int("minutes_per_lesson")
-    breadth = z3.Int("audience_breadth")
+    # Grouped by the variable they constrain, and solved a group at a time.
+    #
+    # One solve over all of them returns one minimal core, which is correct and
+    # not enough: a brief that breaks three limits was told about one, the
+    # author fixed it, and the next solve told them about the second. §9 hands
+    # the core to the editor precisely so the fix happens once.
+    #
+    # Solving per group finds every conflict *and* keeps each core minimal,
+    # because no constraint here mentions two of these variables — so a conflict
+    # cannot straddle two groups. That is a property of this constraint set, not
+    # a general fact about unsat cores, and a test holds it in place.
+    conflicts, model_values = [], {}
+    for group, tracked in groups.items():
+        solver = z3.Solver()
+        solver.set(unsat_core=True)
+        for name, claim in tracked.items():
+            solver.assert_and_track(claim, z3.Bool(name))
+        result = solver.check()
+        if result == z3.sat:
+            for var in (nodes, minutes, breadth):
+                value = solver.model()[var]
+                if value is not None:
+                    model_values[str(var)] = value.as_long()
+            continue
+        if result != z3.unsat:
+            raise EngineUnavailable(
+                f"z3 returned {result} for the {group} constraints, "
+                f"which is neither sat nor unsat")
+        conflicts.append({"about": group,
+                          "core": sorted(str(c) for c in solver.unsat_core())})
 
-    # Every assertion is tracked, and the name is what the author will read back.
-    tracked = {
-        "minutes_per_lesson": minutes == int(stated_minutes),
-        "audience_breadth": breadth == len(audience),
-        "max_nodes_per_course": nodes <= int(thresholds["max_nodes_per_course"]),
-        "max_minutes_per_lesson": minutes <= int(thresholds["max_minutes_per_lesson"]),
-        "max_audience_breadth": breadth <= int(thresholds["max_audience_breadth"]),
-        "a_lesson_has_positive_length": minutes > 0,
-        "a_course_has_at_least_one_node": nodes > 0,
-    }
-    # A brief may say how many nodes it wants and then list them. Both are
-    # asserted; if they disagree, z3 names both and the author sees which two
-    # statements collide, instead of this function silently preferring one.
-    if stated_count is not None:
-        tracked["requested_nodes"] = nodes == int(stated_count)
-    if listed_nodes is not None:
-        tracked["nodes_the_brief_lists"] = nodes == len(listed_nodes)
-    for name, claim in tracked.items():
-        solver.assert_and_track(claim, z3.Bool(name))
-
-    result = solver.check()
-    if result == z3.sat:
-        model = solver.model()
+    if not conflicts:
         return allowed(engine=ENGINE,
-                       nodes=model[nodes].as_long(),
-                       minutes=model[minutes].as_long())
-    if result != z3.unsat:
-        raise EngineUnavailable(f"z3 returned {result}, which is neither sat nor unsat")
+                       nodes=model_values.get("requested_nodes"),
+                       minutes=model_values.get("minutes_per_lesson"))
 
-    core = sorted(str(c) for c in solver.unsat_core())
+    core = sorted({name for conflict in conflicts for name in conflict["core"]})
     return refused(
         kind="unsat-core",
-        summary="these requirements cannot hold together: " + ", ".join(core),
+        summary="these requirements cannot hold together: " + "; ".join(
+            ", ".join(conflict["core"]) for conflict in conflicts),
         detail=core,
         engine=ENGINE)
 

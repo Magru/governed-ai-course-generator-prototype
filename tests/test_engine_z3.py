@@ -120,3 +120,59 @@ def test_half_a_statement_is_refused_rather_than_passed():
     nobody can mark."""
     v = engine.check_arithmetic({"id": "n3", "questions": [{"points": 4}]}, ARITH_TH)
     assert not v.ok and v.refusal.kind == "unstated-requirement"
+
+
+# ------------------------------------------------------- every conflict, once
+
+THREE_WAYS_WRONG = {"requested_nodes": 14, "minutes_per_lesson": 40,
+                    "audience": ["a", "b", "c", "d", "e"]}
+
+
+def test_a_brief_breaking_three_limits_is_told_about_three():
+    """One solve over every constraint returns one minimal core, which is
+    correct and not enough: the author fixes it, resubmits, and is told about
+    the second. §9 hands the core over so the fix happens once."""
+    v = engine.check(THREE_WAYS_WRONG, TH)
+    assert not v.ok
+    assert {"max_nodes_per_course", "max_minutes_per_lesson",
+            "max_audience_breadth"} <= set(v.refusal.detail)
+
+
+def test_each_conflict_is_reported_separately_rather_than_as_one_heap():
+    v = engine.check(THREE_WAYS_WRONG, TH)
+    assert v.refusal.summary.count(";") == 2, v.refusal.summary
+
+
+def test_no_constraint_links_two_of_the_grouped_variables():
+    """The property that makes solving per group both complete and minimal.
+
+    Each core is minimal within its group, and the union is every conflict, only
+    because no constraint mentions two of the three variables — a conflict
+    cannot then straddle a group boundary. Asked of z3 rather than of the source
+    text, so it stays true however the constraints are written.
+    """
+    from z3.z3util import get_vars
+    owner = {"nodes": "requested_nodes", "minutes": "minutes_per_lesson",
+             "audience": "audience_breadth"}
+    for group, constraints in engine.constraint_groups(BRIEF, TH).items():
+        for name, claim in constraints.items():
+            mentioned = {str(v) for v in get_vars(claim)}
+            assert mentioned <= {owner[group]}, (
+                f"{name} in the {group} group mentions "
+                f"{sorted(mentioned - {owner[group]})}, so its core is no longer "
+                f"minimal and a conflict can straddle two groups")
+
+
+def test_the_grouping_leaves_no_constraint_behind():
+    """A partition, not a selection. A constraint dropped while regrouping is a
+    requirement that silently stops being checked."""
+    # A brief that states its count *and* lists its nodes, so every constraint
+    # this engine can raise is present at once.
+    groups = engine.constraint_groups(BRIEF | {"requested_nodes": 3}, TH)
+    names = [n for constraints in groups.values() for n in constraints]
+    assert len(names) == len(set(names)), "a constraint is in two groups"
+    assert set(names) == {
+        "requested_nodes", "nodes_the_brief_lists", "max_nodes_per_course",
+        "a_course_has_at_least_one_node", "minutes_per_lesson",
+        "max_minutes_per_lesson", "a_lesson_has_positive_length",
+        "audience_breadth", "max_audience_breadth"}
