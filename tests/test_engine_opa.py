@@ -102,3 +102,54 @@ def test_a_missing_binary_raises_rather_than_passing(monkeypatch):
     monkeypatch.setattr(shutil, "which", lambda name: None)
     with pytest.raises(EngineUnavailable, match="no Python fallback"):
         engine.check("submit_brief", AUTHOR, brief(), "AwaitingBrief", DATA)
+
+
+# ------------------------------------------------- approval_chain_satisfied
+
+APPROVAL_ORG = DATA | {"approval": ORG["approval"]}
+FULL_CHAIN = [{"actor": "admin-1", "role": "training-administrator"},
+              {"actor": "compliance-1", "role": "compliance-officer"}]
+
+
+def test_a_complete_signature_chain_is_allowed():
+    assert engine.check_approval(1, FULL_CHAIN, APPROVAL_ORG).ok
+
+
+def test_a_missing_signature_names_the_role_that_is_missing():
+    v = engine.check_approval(1, FULL_CHAIN[:1], APPROVAL_ORG)
+    assert not v.ok and v.refusal.kind == "named-rule"
+    assert any("compliance-officer" in d["message"] for d in v.refusal.detail)
+    assert all(d["rule"] == "approval_chain_satisfied" for d in v.refusal.detail)
+
+
+def test_the_right_number_of_the_wrong_signatures_is_still_refused():
+    """Two signatures, neither from compliance. The count clause is satisfied
+    and the roles clause is not, which is the case a count-only guard misses."""
+    wrong = [{"actor": "admin-1", "role": "training-administrator"},
+             {"actor": "author-1", "role": "course-author"}]
+    v = engine.check_approval(1, wrong, APPROVAL_ORG)
+    assert not v.ok
+    assert any("compliance-officer" in d["message"] for d in v.refusal.detail)
+
+
+def test_an_organisation_that_has_not_said_whose_signatures_cannot_publish():
+    """Silence about the approval rule is not consent to publish."""
+    v = engine.check_approval(1, FULL_CHAIN, DATA | {"approval": {}})
+    assert not v.ok
+    assert all(d["rule"] == "approval_chain_satisfied" for d in v.refusal.detail)
+
+
+def test_an_approval_is_not_refused_for_anything_about_a_brief():
+    """The brief-shaped deny clauses had no action guard, so an approval — which
+    carries no brief — was refused for not saying how many nodes it wanted."""
+    v = engine.check_approval(1, [], APPROVAL_ORG)
+    assert not v.ok
+    assert not any("node" in d["message"] for d in v.refusal.detail), v.refusal.detail
+
+
+def test_the_same_refusal_reads_the_same_way_twice():
+    """`deny` is a set; an artifact that names a different rule each run is not
+    an audit record."""
+    runs = [engine.check_approval(1, FULL_CHAIN[:1], APPROVAL_ORG).refusal.summary
+            for _ in range(3)]
+    assert len(set(runs)) == 1

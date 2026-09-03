@@ -83,3 +83,40 @@ def test_an_organisation_with_no_limits_gets_no_verdict():
     v = engine.check(BRIEF, {})
     assert not v.ok and v.refusal.kind == "unstated-requirement"
     assert "max_nodes_per_course" in v.refusal.summary
+
+
+# ------------------------------------------------------ arithmetic_consistent
+
+ARITH_TH = TH | {"minutes_per_block": 5}
+
+
+def test_an_exam_whose_points_add_up_is_allowed():
+    exam = {"id": "n3", "questions": [{"points": 4}, {"points": 6}], "points_total": 10}
+    assert engine.check_arithmetic(exam, ARITH_TH).ok
+
+
+def test_an_exam_whose_points_do_not_reach_the_stated_maximum_names_both_sums():
+    """§4 says the refusal is "the failing sum". Naming only the total tells an
+    author the total is wrong; naming both tells them which of the two to move."""
+    exam = {"id": "n3", "questions": [{"points": 4}, {"points": 5}], "points_total": 10}
+    v = engine.check_arithmetic(exam, ARITH_TH)
+    assert not v.ok and v.refusal.kind == "failing-sum"
+    assert set(v.refusal.detail["core"]) == {"points_sum_to_the_total",
+                                             "points_total_is_as_stated"}
+
+
+def test_a_duration_that_does_not_match_the_block_count_is_refused():
+    v = engine.check_arithmetic({"id": "n1", "blocks": [1, 2, 3], "minutes": 20}, ARITH_TH)
+    assert not v.ok and "duration_matches_the_block_count" in v.refusal.detail["core"]
+
+
+def test_a_node_with_no_numbers_in_it_has_nothing_to_check():
+    assert engine.check_arithmetic({"id": "n2"}, ARITH_TH).ok
+
+
+def test_half_a_statement_is_refused_rather_than_passed():
+    """Questions and no stated total. Reading the absent total as zero would
+    refuse for the wrong reason; reading it as "no claim" would pass an exam
+    nobody can mark."""
+    v = engine.check_arithmetic({"id": "n3", "questions": [{"points": 4}]}, ARITH_TH)
+    assert not v.ok and v.refusal.kind == "unstated-requirement"

@@ -17,9 +17,26 @@ POLICY = HERE / "policy.rego"
 ENGINE = "opa"
 
 
+def check_approval(revision, signatures: list[dict], org: dict) -> Verdict:
+    """Are the signatures this organisation requires for publication present?
+
+    A separate entry point rather than another argument on `check`, because it
+    is a different question over different input — the brief is not involved and
+    the state is not either.
+    """
+    return _decide({"action": "grant_approval", "revision": revision,
+                    "signatures": signatures}, org)
+
+
 def check(action: str, actor: dict, brief: dict, course_state: str, org: dict) -> Verdict:
     """May this actor take this action, over this audience, in this state?"""
-    input_doc = {"action": action, "actor": actor, "brief": brief, "course_state": course_state}
+    return _decide({"action": action, "actor": actor, "brief": brief,
+                    "course_state": course_state}, org)
+
+
+def _decide(input_doc: dict, org: dict) -> Verdict:
+    """One evaluation, whatever the question. The two entry points differ only in
+    what they put in front of the policy."""
     data = {"org": org}
 
     with _tempdata(data) as data_path:
@@ -27,6 +44,9 @@ def check(action: str, actor: dict, brief: dict, course_state: str, org: dict) -
         if allow is True:
             return allowed(engine=ENGINE, rule="allow")
         denials = _eval("data.course.policy.deny", input_doc, data_path) or []
+    # `deny` is a set, and a set comes back in whatever order it comes back in.
+    # An artifact that names a different rule on each run is not an audit record.
+    denials = sorted(denials, key=lambda d: (d["rule"], d["message"]))
 
     if not denials:
         # The policy said no and gave no reason. Inventing one here would put a
@@ -36,7 +56,7 @@ def check(action: str, actor: dict, brief: dict, course_state: str, org: dict) -
         # not is a hole in the policy, and a hole is not a refusal.
         raise RefusalWithoutArtifact(
             "the policy refused without naming a rule. Add a deny clause for "
-            f"this case: action={action!r}, state={course_state!r}")
+            f"this case: {input_doc!r}")
     first = denials[0]
     return refused(
         kind="named-rule",

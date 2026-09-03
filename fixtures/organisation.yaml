@@ -23,6 +23,13 @@ people:
     role: compliance-officer
     may_author_for: []
 
+# who has to sign before a revision may be published. the guard only checks that
+# the signatures are here; which ones are needed is a decision this organisation
+# makes, not one the model makes for it.
+approval:
+  required_roles: [training-administrator, compliance-officer]
+  minimum_signatures: 2
+
 thresholds:
   repair_budget: 2
   max_nodes_per_course: 12

@@ -49,6 +49,55 @@ state_permits if {
 	input.course_state == "ContentInProgress"
 }
 
+# Publication needs signatures. Which ones, and how many, is configuration —
+# this only checks that what the organisation asked for is present. An earlier
+# draft had no rule at all here, so the transition PendingApproval →
+# ApprovalGranted named OPA as its layer and OPA had nothing to say about it.
+allow if {
+	input.action == "grant_approval"
+	approval_chain_satisfied
+}
+
+approval_chain_satisfied if {
+	every role in data.org.approval.required_roles {
+		some signature in input.signatures
+		signature.role == role
+	}
+	count(input.signatures) >= data.org.approval.minimum_signatures
+}
+
+deny contains reason if {
+	input.action == "grant_approval"
+	missing := [role |
+		some role in data.org.approval.required_roles
+		not role in {s.role | some s in input.signatures}
+	]
+	count(missing) > 0
+	reason := {
+		"rule": "approval_chain_satisfied",
+		"message": sprintf("publication needs a signature from %v", [missing]),
+	}
+}
+
+deny contains reason if {
+	input.action == "grant_approval"
+	count(input.signatures) < data.org.approval.minimum_signatures
+	reason := {
+		"rule": "approval_chain_satisfied",
+		"message": sprintf("%v signatures present, %v required", [count(input.signatures), data.org.approval.minimum_signatures]),
+	}
+}
+
+# Silence about the approval rule is not consent to publish.
+deny contains reason if {
+	input.action == "grant_approval"
+	not data.org.approval.required_roles
+	reason := {
+		"rule": "approval_chain_satisfied",
+		"message": "the organisation has not said whose signatures publication needs",
+	}
+}
+
 # Refusing with the rule that denied and a sentence a person can act on. A bare
 # `allow = false` would tell an author nothing about what to change.
 deny contains reason if {
@@ -84,6 +133,7 @@ deny contains reason if {
 # `deny` and the caller has to invent one. A refusal a Python function wrote is
 # not a refusal the policy engine made.
 deny contains reason if {
+	input.action in {"submit_brief", "generate_outline", "generate_node"}
 	not input.actor.role in {"course-author", "training-administrator"}
 	reason := {
 		"rule": "known_role",
@@ -95,7 +145,11 @@ deny contains reason if {
 # absent the inner call is undefined, and the negation of an undefined expression
 # is undefined too — so the clause never fired and the refusal had no reason.
 # Testing the reference itself is the idiom that holds.
+# Both of these are about a brief, so both are gated on there being one. Without
+# the gate they fired on an approval — which carries no brief — and a revision
+# short of a signature was refused for not saying how many nodes it wanted.
 deny contains reason if {
+	input.action in {"submit_brief", "generate_outline", "generate_node"}
 	not input.brief.node_count
 	reason := {
 		"rule": "within_limits",
@@ -104,6 +158,7 @@ deny contains reason if {
 }
 
 deny contains reason if {
+	input.action in {"submit_brief", "generate_outline", "generate_node"}
 	not data.org.thresholds.max_nodes_per_course
 	reason := {
 		"rule": "within_limits",
@@ -112,7 +167,7 @@ deny contains reason if {
 }
 
 deny contains reason if {
-	not input.action in {"submit_brief", "generate_outline", "generate_node"}
+	not input.action in {"submit_brief", "generate_outline", "generate_node", "grant_approval"}
 	reason := {
 		"rule": "known_action",
 		"message": sprintf("%v is not an action this policy governs", [input.action]),

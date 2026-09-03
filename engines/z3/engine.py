@@ -96,3 +96,75 @@ def check(brief: dict, thresholds: dict) -> Verdict:
         summary="these requirements cannot hold together: " + ", ".join(core),
         detail=core,
         engine=ENGINE)
+
+
+def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
+    """Do the numbers inside a node add up?
+
+    §4: "exam points reach the stated maximum, durations match the block count".
+    Two sums, and z3 rather than Python because the refusal has to be the
+    failing sum rather than a boolean — an author told "the arithmetic is wrong"
+    about a twelve-question exam is being told to go and add it up themselves.
+
+    Both sums are optional in the sense that a node may have neither. Neither is
+    optional once the node states one side of it: a node with questions and no
+    stated maximum, or blocks and no stated duration, is refused for saying half
+    of something rather than passed for saying nothing.
+    """
+    try:
+        import z3
+    except ImportError as exc:                    # noqa: BLE001
+        raise EngineUnavailable(f"z3 is not installed: {exc}") from exc
+
+    questions = node.get("questions")
+    blocks = node.get("blocks")
+    stated_total = node.get("points_total")
+    stated_minutes = node.get("minutes")
+
+    half_said = []
+    if questions is not None and stated_total is None:
+        half_said.append("the exam lists questions and states no total")
+    if stated_total is not None and questions is None:
+        half_said.append("the exam states a total and lists no questions")
+    if blocks is not None and stated_minutes is None:
+        half_said.append("the node has blocks and states no duration")
+    if half_said:
+        return refused(kind="unstated-requirement",
+                       summary=f"{node.get('id')}: " + "; ".join(half_said),
+                       detail={"node": node.get("id"), "incomplete": half_said},
+                       engine=ENGINE)
+
+    solver = z3.Solver()
+    solver.set(unsat_core=True)
+    tracked = {}
+
+    if questions is not None:
+        total = z3.Int("points_total")
+        tracked["points_total_is_as_stated"] = total == int(stated_total)
+        tracked["points_sum_to_the_total"] = total == sum(
+            int(q.get("points", 0)) for q in questions)
+        tracked["an_exam_is_worth_something"] = total > 0
+
+    if blocks is not None:
+        minutes = z3.Int("minutes")
+        per_block = int(thresholds.get("minutes_per_block") or 0)
+        tracked["duration_is_as_stated"] = minutes == int(stated_minutes)
+        if per_block:
+            tracked["duration_matches_the_block_count"] = (
+                minutes == per_block * len(blocks))
+        tracked["a_node_takes_time"] = minutes > 0
+
+    if not tracked:
+        return allowed(engine=ENGINE, node=node.get("id"), sums=0)
+
+    for name, claim in tracked.items():
+        solver.assert_and_track(claim, z3.Bool(name))
+
+    if solver.check() == z3.sat:
+        return allowed(engine=ENGINE, node=node.get("id"), sums=len(tracked))
+    core = sorted(str(c) for c in solver.unsat_core())
+    return refused(
+        kind="failing-sum",
+        summary=f"{node.get('id')}: " + ", ".join(core),
+        detail={"node": node.get("id"), "core": core},
+        engine=ENGINE)
