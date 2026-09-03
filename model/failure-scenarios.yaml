@@ -3,7 +3,7 @@ question: "How do we fail safely?"
 owner: "system architect"
 updated_when: "a failure mode is discovered, or a situation changes its outcome"
 source: "states.html §5 (nine situations) and safety.html §10 (failure matrix)"
-generated: "2026-09-02"
+generated: "2026-09-03"
 generator: "model/export-model.py"
 
 situations:  # 9, each walked event by event

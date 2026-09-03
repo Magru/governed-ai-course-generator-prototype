@@ -20,7 +20,7 @@ SPEC_TAG ?= spec-v2.3
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
 	$(PY) -m pip -q install --upgrade pip
-	$(PY) -m pip -q install pyyaml pytest z3-solver pyDatalog boto3 google-genai
+	$(PY) -m pip -q install pyyaml pytest z3-solver pyDatalog jsonschema boto3 google-genai
 	@command -v opa   >/dev/null || { echo "opa is missing: brew install opa"; exit 1; }
 	@command -v swipl >/dev/null || { echo "swipl is missing: brew install swi-prolog"; exit 1; }
 	@echo "setup ok"

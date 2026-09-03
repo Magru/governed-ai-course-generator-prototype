@@ -3,7 +3,7 @@ question: "What is permitted in each state?"
 owner: "system architect"
 updated_when: "any row of the transition tables changes"
 source: "transitions.html §2 (revision) and §3 (node)"
-generated: "2026-09-02"
+generated: "2026-09-03"
 generator: "model/export-model.py"
 
 # 56 revision transitions + 24 node transitions.

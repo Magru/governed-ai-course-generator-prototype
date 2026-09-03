@@ -1,6 +1,6 @@
 # State machines
 
-Generated from the tables in `../transitions.html` by `export-model.py` on 2026-09-02.
+Generated from the tables in `../transitions.html` by `export-model.py` on 2026-09-03.
 Do not edit: change `../transitions.html` and re-run the exporter.
 
 ## Revision machine

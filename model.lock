@@ -3,11 +3,11 @@
     "README.md": "8385c241556588b5c4b85db8d03b0189eaa515a053c2f1b36857e6552ade77ec",
     "assumptions.yaml": "01266fa9b25222c47635ecadb922c9cc137a7d736a535a3c475caa1cc5defe08",
     "context-diagram.mmd": "23678037774e427d48e00e7ef1651016785d2aed621d7a10a4a03c322e371be3",
-    "diagrams.md": "e4c7127ff5a1775f84270f1655a4a394fa84784764eafc39de59bc38f08956da",
+    "diagrams.md": "b674ed1469b0d063c961087b502916576e128f33feebba2316db86adfddef929",
     "event-catalog.yaml": "e8d208a8f4f144857eb6b66fff039e8e9197cb1bec6410dbe206fc6babcec7ad",
     "failure-scenarios.yaml": "909bcbf040c8f74db21d3c91fb7c7a4916c87de4110b45b588034d08c9337aeb",
     "functional-model.yaml": "aae17aedae001a8214bc571ee09f0f3014beb874b7c5e73450d45a5758177c3e",
-    "guards.yaml": "3de6fa6b89d01bf838379e3feebd0798fced5749103cf7b159b2132850e26b2c",
+    "guards.yaml": "54a139c327bc680cbcf8443c859c876bbe5f36a620d70212ff00b2cf2ca91135",
     "invariants.yaml": "e7d7dd7e6c41fc1995f3d065345550feccf3b0ad1c84f1f954b72a0eacbc5465",
     "latency-budget.yaml": "a52ff3e2993a6ee1d7771f61306707c603da41d41fe9dca0b1d23826f1bd02b4",
     "state-inventory.yaml": "1620ab5f8f7eb91dc4c8d7eb5894014a1da91d4bbdbf8cd57e1c2bf4fb169941",
@@ -18,5 +18,5 @@
     "transitions.yaml": "98b62fe4059dce549d712f332add284fe551e86aa04ae72c691571e0beab33b4"
   },
   "repo": "Magru/governed-ai-course-generator",
-  "tag": "spec-v2.6"
+  "tag": "spec-v2.7"
 }

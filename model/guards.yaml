@@ -3,7 +3,7 @@ question: "Which layer owns each guard, and what does it hand back when it refus
 owner: "system architect"
 updated_when: "a guard is added, renamed, or changes owner"
 source: "transitions.html §4 — the guard glossary, one entry per name"
-generated: "2026-09-02"
+generated: "2026-09-03"
 generator: "model/export-model.py"
 
 # The transition tables' Layer column lists everything that runs at a
@@ -35,7 +35,7 @@ guards:
     refuses_with: "naming the reference and the outline version that dropped its target"
   - name: "no_permission_leak(scope)"
     owner: "Datalog"
-    refuses_with: "the path: node → source → the audience that lacks rights"
+    refuses_with: "the path: node → chunk → article → the audience that lacks rights. Four hops, because permissions attach to the article and the chunk is the fragment that was retrieved — an author who is only told th"
   - name: "ordering_acyclic(course)"
     owner: "Datalog"
     refuses_with: "the cycle"
