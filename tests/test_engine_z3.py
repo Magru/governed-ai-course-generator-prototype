@@ -2,6 +2,7 @@
 import pathlib, sys
 import pytest, yaml
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from engines.contract import EngineUnavailable
 from engines.z3 import engine
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -22,10 +23,19 @@ def test_the_contradictory_brief_is_refused_with_a_core():
         assert name in v.refusal.detail, f"{name} missing from {v.refusal.detail}"
 
 
-def test_the_core_is_minimal_not_the_whole_problem():
-    """A core that listed every assertion would be no explanation at all."""
+def test_each_conflict_names_only_the_requirements_that_collide():
+    """Minimality is now per conflict, not over the whole refusal.
+
+    `detail` is the union of the per-group cores, so it grows with the number of
+    conflicts and a bound on its length says nothing. What must stay true is
+    that each individual conflict names only what actually collides — two
+    requirements, here, not the group they came from.
+    """
     v = engine.check(TWIN["brief"], TH)
-    assert len(v.refusal.detail) < 8
+    assert v.refusal.detail == ["max_minutes_per_lesson", "max_nodes_per_course",
+                                "minutes_per_lesson", "requested_nodes"]
+    for conflict in v.refusal.summary.split("; "):
+        assert len(conflict.split(", ")) == 2, conflict
 
 
 def test_an_untracked_assertion_would_be_invisible():
@@ -176,3 +186,21 @@ def test_the_grouping_leaves_no_constraint_behind():
         "a_course_has_at_least_one_node", "minutes_per_lesson",
         "max_minutes_per_lesson", "a_lesson_has_positive_length",
         "audience_breadth", "max_audience_breadth"}
+
+
+def test_an_absent_solver_is_unavailable_rather_than_a_pass(monkeypatch):
+    """The refactor moved the import into two helpers. A layer that cannot run
+    must say so; the one thing it may never do is answer."""
+    import builtins
+    real = builtins.__import__
+
+    def no_z3(name, *args, **kwargs):
+        if name == "z3":
+            raise ImportError("no z3 here")
+        return real(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", no_z3)
+    with pytest.raises(EngineUnavailable):
+        engine.check(BRIEF, TH)
+    with pytest.raises(EngineUnavailable):
+        engine.check_arithmetic({"id": "n", "blocks": [1], "minutes": 5}, TH)

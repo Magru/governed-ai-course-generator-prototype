@@ -27,6 +27,7 @@ from .z3 import engine as z3
 
 IMPLEMENTED = {
     "schema_valid(artifact)": schema.check,
+    "block_schemas_valid(node)": schema.check_blocks,
     "policy_allows(action, role, state)": opa.check,
     "approval_chain_satisfied(revision)": opa.check_approval,
     "feasible(brief)": z3.check,

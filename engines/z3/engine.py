@@ -27,7 +27,10 @@ ENGINE = "z3"
 def variables():
     """The three quantities a brief is judged on, and the reason the grouping
     below works: they are independent, and nothing constrains two at once."""
-    import z3
+    try:
+        import z3
+    except ImportError as exc:                    # noqa: BLE001
+        raise EngineUnavailable(f"z3 is not installed: {exc}") from exc
     return z3.Int("requested_nodes"), z3.Int("minutes_per_lesson"), z3.Int("audience_breadth")
 
 

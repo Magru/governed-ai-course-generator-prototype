@@ -14,8 +14,11 @@ GUARDS = yaml.safe_load((ROOT / "model" / "guards.yaml").read_text(encoding="utf
 
 #: Owners this package does not answer for. The state store is the running
 #: system; a person is a person; a catalog rule belongs to the platform.
-NOT_OURS = {"State store", "Human", "Catalog schema", "Catalog flag · Human",
-            "unstated", "—"}
+#: "Catalog schema" is ours after all: the catalog decides what a block may be,
+#: and this package validates against the list the organisation publishes. It sat
+#: here while `engines/schema` validated blocks anyway, so the registry's
+#: two-direction check passed only because the guard name never came up.
+NOT_OURS = {"State store", "Human", "Catalog flag · Human", "unstated", "—"}
 ENGINE_GUARDS = {g["name"]: g["owner"] for g in GUARDS if g["owner"] not in NOT_OURS}
 
 

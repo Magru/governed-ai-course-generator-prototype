@@ -42,6 +42,34 @@ def _expected(error) -> str:
     return error.validator or "a different shape"
 
 
+def check_blocks(node: dict, block_types: list[str]) -> Verdict:
+    """Does every content block in this node have a shape the catalog defines?
+
+    A separate guard from `schema_valid`, with a separate owner: the catalog
+    decides what a block may be, and this validates against the list the
+    organisation publishes rather than one written here. Kept apart because the
+    glossary keeps them apart, and a package that answers a question the guard
+    registry does not list is a map with a road missing from it.
+    """
+    failures = []
+    for index, one in enumerate(node.get("blocks") or []):
+        verdict = check(one, "block", block_types=block_types)
+        if not verdict.ok:
+            for failure in verdict.refusal.detail if isinstance(
+                    verdict.refusal.detail, list) else []:
+                failures.append({**failure,
+                                 "path": f"{node.get('id')}.blocks[{index}]"
+                                         f".{failure['path'].removeprefix('block.')}"})
+    if not failures:
+        return allowed(engine=ENGINE, node=node.get("id"),
+                       blocks=len(node.get("blocks") or []))
+    return refused(
+        kind="failing-path",
+        summary=f"{failures[0]['path']}: expected {failures[0]['expected']}",
+        detail=failures,
+        engine=ENGINE)
+
+
 def check(artifact: dict, shape: str, *, block_types: list[str] | None = None) -> Verdict:
     """Validate one artifact against one named shape.
 
