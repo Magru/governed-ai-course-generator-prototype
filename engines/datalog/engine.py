@@ -20,17 +20,11 @@ reached into.
 """
 from __future__ import annotations
 
-from ..contract import EngineUnavailable, Verdict, allowed, refused
-
-ENGINE = "datalog"
-
-
-def _pydatalog():
-    try:
-        from pyDatalog import pyDatalog
-    except ImportError as exc:                    # noqa: BLE001
-        raise EngineUnavailable(f"pyDatalog is not installed: {exc}") from exc
-    return pyDatalog
+from ..contract import Verdict, allowed, refused
+from .base import ENGINE, answers, pydatalog, rules, session
+from .structure import (cascade, check_content_approved,                 # noqa: F401
+                        check_ordering_acyclic, check_references_live,
+                        check_skills_grounded)
 
 
 # The rules, as rules. Written as text rather than through the operator API
@@ -42,27 +36,16 @@ leak(N, C, R, A) <= cites(N, C) & in_article(C, R) & in_audience(A) & ~visible(R
 ungrounded(N, C) <= cites(N, C) & ~in_kb(C)
 """
 
-# pyDatalog will not resolve a negated predicate that has no clauses at all: an
-# audience that can see nothing made `visible/2` undefined and the query raised
-# instead of answering — the exact case the check exists for. Every negated
-# relation is therefore seeded with a row that no real datum can equal.
-NOTHING = "\x00 no such id"
-
-
-def _seed(pd, **arities: int) -> None:
-    for relation, arity in arities.items():
-        pd.assert_fact(relation, *[NOTHING] * arity)
+TERMS = ("cites, in_article, in_kb, visible, in_audience, "
+         "leak, ungrounded, N, C, R, A")
+SEED = {"visible": 2, "in_article": 2, "in_kb": 1}
 
 
 def _load(nodes: list[dict], *, articles: list[dict] | None = None,
           audiences: list[str] | None = None,
           resolved_visibility: dict | None = None) -> object:
     """One place where facts become facts, so no query runs on a half-loaded base."""
-    pd = _pydatalog()
-    pd.clear()
-    pd.create_terms("cites, in_article, in_kb, visible, in_audience, "
-                    "leak, ungrounded, N, C, R, A")
-    _seed(pd, visible=2, in_article=2, in_kb=1)
+    pd = session(TERMS, SEED)
     for node in nodes:
         for chunk in node.get("cites") or []:
             pd.assert_fact("cites", node["id"], chunk)
@@ -74,8 +57,7 @@ def _load(nodes: list[dict], *, articles: list[dict] | None = None,
         pd.assert_fact("in_audience", name)
         for article_id in (resolved_visibility or {}).get(name) or []:
             pd.assert_fact("visible", article_id, name)
-    pd.load(RULES)
-    return pd
+    return rules(pd, RULES)
 
 
 def check_permission_leak(nodes: list[dict], articles: list[dict],
@@ -84,8 +66,7 @@ def check_permission_leak(nodes: list[dict], articles: list[dict],
     """Is there a source in this course some member of the audience cannot see?"""
     pd = _load(nodes, articles=articles, audiences=audiences,
                resolved_visibility=resolved_visibility)
-    answer = pd.ask("leak(N, C, R, A)")
-    rows = sorted(answer.answers) if answer else []
+    rows = answers(pd, "leak(N, C, R, A)")
     paths = [{"node": n, "chunk": c, "article": r, "audience": a}
              for n, c, r, a in rows]
     if not paths:
@@ -106,9 +87,9 @@ def check_grounding(nodes: list[dict], articles: list[dict]) -> Verdict:
     the right answer and it was not the engine it said it was — and the point of
     naming a layer in a refusal is that a reader can go and read the rule.
     """
+    pydatalog()          # so an absent library is EngineUnavailable, not a pass
     pd = _load(nodes, articles=articles)
-    answer = pd.ask("ungrounded(N, C)")
-    rows = sorted(answer.answers) if answer else []
+    rows = answers(pd, "ungrounded(N, C)")
     missing = [{"node": n, "chunk": c} for n, c in rows]
     if not missing:
         return allowed(engine=ENGINE, checked=len(nodes))

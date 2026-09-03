@@ -83,6 +83,6 @@ def test_grounding_is_the_engine_it_says_it_is(monkeypatch):
     """
     def no_datalog():
         raise EngineUnavailable("pyDatalog is not installed")
-    monkeypatch.setattr(engine, "_pydatalog", no_datalog)
+    monkeypatch.setattr(engine, "pydatalog", no_datalog)
     with pytest.raises(EngineUnavailable):
         engine.check_grounding(OPEN, ARTICLES)
