@@ -1,10 +1,17 @@
-# forbidden chain 4. the state store refuses, not the temporal layer: publication
-# is guarded by no_stale_nodes, and the invariant about stale published courses
-# would only catch this afterwards, on a trace that should never exist.
+# forbidden chain 4. the state store refuses, not the temporal layer: the
+# invariant about stale published courses would only catch this afterwards, on a
+# trace that should never exist.
+#
+# the deciding guard is all_nodes_approved, not no_stale_nodes. the table passes
+# NeedsRevalidation by two complementary (auto) rows, so a node an edit sent back
+# is re-checked at once and waits in Validated for a person — it never rests in
+# NeedsRevalidation, and stale_nodes is written only when a live revision goes to
+# StaleReview. no_stale_nodes stands beside it in the same guard as a second line
+# that the model, as written, never needs.
 expect:
   refused_by: state-store
   layer: State store
-  guard: no_stale_nodes(revision)
+  guard: all_nodes_approved(revision)
   ends: ContentInProgress
   artifact: offending-nodes
 brief:
