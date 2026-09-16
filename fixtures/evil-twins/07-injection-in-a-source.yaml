@@ -13,7 +13,6 @@ expect:
   layer: Prompt architecture
   generation: proceeds
   screened_on: admission
-  position: sources
   artifact: prompt-positions
 chunk:
   id: mt-kb-011
