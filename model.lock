@@ -3,20 +3,20 @@
     "README.md": "8385c241556588b5c4b85db8d03b0189eaa515a053c2f1b36857e6552ade77ec",
     "assumptions.yaml": "01266fa9b25222c47635ecadb922c9cc137a7d736a535a3c475caa1cc5defe08",
     "context-diagram.mmd": "23678037774e427d48e00e7ef1651016785d2aed621d7a10a4a03c322e371be3",
-    "diagrams.md": "2c914cfa4ed6712fff6666969f7738d5d25fedb6bce3335324f0b87d0f1eca8c",
+    "diagrams.md": "8d2cb3a61eecab98cd6243274f73930d720ee21572e176086b05738fe99495ce",
     "event-catalog.yaml": "e8d208a8f4f144857eb6b66fff039e8e9197cb1bec6410dbe206fc6babcec7ad",
     "failure-scenarios.yaml": "909bcbf040c8f74db21d3c91fb7c7a4916c87de4110b45b588034d08c9337aeb",
     "functional-model.yaml": "aae17aedae001a8214bc571ee09f0f3014beb874b7c5e73450d45a5758177c3e",
-    "guards.yaml": "c2a6c91c37b7616849b82d68b6537c7e417f5f8ccc245d5fa03cfdad32070d62",
+    "guards.yaml": "3ca2267a371ea072531259b62aba154fb2b6ac940b059db609968a8e8095716d",
     "invariants.yaml": "b03cd757d32c69a0d58a226bee9c3b9d16b75530f83bdfb20a2c94eac331b890",
     "latency-budget.yaml": "a52ff3e2993a6ee1d7771f61306707c603da41d41fe9dca0b1d23826f1bd02b4",
-    "state-inventory.yaml": "1620ab5f8f7eb91dc4c8d7eb5894014a1da91d4bbdbf8cd57e1c2bf4fb169941",
-    "state-machine-node.mmd": "a0168f809ab74643a10f4257ab6595333ad9d97d36a4485ccad35647dc3f7717",
+    "state-inventory.yaml": "600c0f04ef30276ae6bff475c59354db84e56ebcf48afbf2dd59bbc94413f81a",
+    "state-machine-node.mmd": "ad478465c8f4b307d3ccc9661f89015bc005c1bdcf26261f6f5be4d189d12b4d",
     "state-machine-revision.mmd": "f0d4be03a8dc401d0daf41f426628471ccd9b04dfd1c12736c330fb66672fb63",
     "system-definition.yaml": "f7252c487d91ee9caa58791078767d0f749763e2ef1e72f9e2b476b512e58584",
-    "trace-schema.yaml": "d2fe3982ef5056c50b551ea1acdb6073b43ab891f07621c7dc32bc8893e17faf",
-    "transitions.yaml": "3b8759efd40d62749722da36758f158fd67fe1bd4fd0f64c34638c8d63bec035"
+    "trace-schema.yaml": "a0f96a070b8dee23771d84dbfc2595cf9b2dcc8f9c2cc1d13c138b6289871685",
+    "transitions.yaml": "d67e616a03781915d4af31789f13897d67b41ceed55ec818e87e7f5d8878487b"
   },
   "repo": "Magru/governed-ai-course-generator",
-  "tag": "spec-v2.10"
+  "tag": "spec-v2.11"
 }

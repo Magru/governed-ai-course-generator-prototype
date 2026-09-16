@@ -70,8 +70,10 @@ NODE_STATES = set(_inventory["node.state"]["valid_values"])
 
 # Past the output guardrail: the node's content is in the record. This is what
 # "generated(A)" means in I6 — not the NodeGenerated event, which the node
-# machine places *before* screening.
-ADMITTED = {"NodeChecks", "NodeRepair", "Validated", "NodeApproved",
+# machine places *before* screening. NodeRepair is not in it: denied output was
+# not admitted, and an exam sent back to wait for its topics never reached the
+# guardrail at all.
+ADMITTED = {"NodeChecks", "Validated", "NodeApproved",
             "NeedsRevalidation", "BlockedFinal"}
 
 

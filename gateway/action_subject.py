@@ -43,9 +43,11 @@ def subject_of(machine, args: dict, event: str | None) -> dict:
     """A generation is named by its prompt digest and by how many times its
     object was sent to be drafted. A call that never answered is retried from
     recovery, which is not a new request, so it keeps the key and the provider
-    deduplicates it; a second press of the same request keeps it too and is
-    'already done'. A repair, a rejection or a release from a block asks again
-    — and may ask with the same prompt — so it is a new act with a new key."""
+    deduplicates it — also when a person releases it from a block, because the
+    call still never answered. A second press of the same request keeps it too
+    and is 'already done'. A repair, a rejection, or an answer in the wrong shape
+    asks again — and may ask with the same prompt — so it is a new act with a
+    new key."""
     rev = machine.current
     node = rev.nodes.get(args.get("node")) if args.get("node") else None
     if event in DRAFTING:

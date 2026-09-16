@@ -49,7 +49,7 @@ block_types: [heading, paragraph, image, checklist, quiz, callout]
 # what the guardrail refuses, named. the definitions themselves are prose.
 denied_topic_ids: [defeating-a-guard, unqualified-repair]
 personal_data_kinds: [email, phone, national-id]
-evaluation_point_ids: [brief-in, outline-out, node-out, image-prompt-out, image-out]
+evaluation_point_ids: [brief-in, outline-out, node-out, image-prompt-out, image-out, notice-out]
 modalities: [text, image]
 block_categories: [text, image, assessment]
 

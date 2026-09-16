@@ -73,11 +73,13 @@ def test_an_edit_reverted_to_its_first_wording_is_screened_and_approved_again(co
 
 def test_a_notice_sent_is_not_sent_again_by_a_restarted_gateway():
     p = run.the_course()
-    args = {"notice": run.NOTICE, "notice_approved": True, "recipients": 40}
+    args = {"notice": run.NOTICE, "recipients": 40}
+    clean = lambda key: {"notice_screening": {"verdict": "allow", "guardrail_version": "guard-1"}}
     restarted = Membrane(p.machine, p.course)
-    again = restarted.request("notify_learners", args, run.ADMIN)
+    again = restarted.request("notify_learners", args, run.ADMIN, perform=clean)
     assert (again.ran, again.check) == (False, "idempotency_key_unused")
-    correction = restarted.request("notify_learners", {**args, "notice": "A correction."}, run.ADMIN)
+    correction = restarted.request("notify_learners", {**args, "notice": "A correction."}, run.ADMIN,
+                                   perform=clean)
     assert correction.ran
 
 

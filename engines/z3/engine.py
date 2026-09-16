@@ -186,6 +186,16 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
                        detail={"node": node.get("id"), "incomplete": half_said},
                        engine=ENGINE)
 
+    not_numbers = _not_integers(node, questions)
+    if not_numbers:
+        # A model that writes "minutes": "20 minutes" has made an ordinary
+        # mistake, not an attack. Coercing it raised inside the check, rolled
+        # the step back and left the node waiting for a verdict nobody would
+        # send; refused, it goes to repair with the path it got wrong.
+        return refused(kind="failing-path",
+                       summary=f"{not_numbers[0]['path']}: expected an integer",
+                       detail=not_numbers, engine=ENGINE)
+
     solver = z3.Solver()
     solver.set(unsat_core=True)
     tracked = {}
@@ -220,3 +230,21 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
         summary=f"{node.get('id')}: " + ", ".join(core),
         detail={"node": node.get("id"), "core": core},
         engine=ENGINE)
+
+
+def _integer(value) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _not_integers(node: dict, questions) -> list[dict]:
+    """Every number the sums read that is not a whole number, by path."""
+    ident = node.get("id")
+    found = [{"path": f"{ident}.{field}", "expected": "integer", "found": repr(node[field])}
+             for field in ("points_total", "minutes")
+             if node.get(field) is not None and not _integer(node[field])]
+    for i, q in enumerate(questions or []):
+        points = q.get("points", 0) if isinstance(q, dict) else q
+        if not _integer(points):
+            found.append({"path": f"{ident}.questions[{i}].points", "expected": "integer",
+                          "found": repr(points)})
+    return found

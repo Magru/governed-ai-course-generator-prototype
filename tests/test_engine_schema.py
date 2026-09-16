@@ -73,7 +73,7 @@ def test_an_unknown_shape_is_unavailable_rather_than_allowed():
 @pytest.mark.parametrize("block", [
     {"type": "paragraph", "text": " ", "cites": ["mt-kb-001"]},
     {"type": "paragraph", "text": "​", "cites": ["mt-kb-001"]},
-    {"type": "checklist", "items": ["."]},
+    {"type": "checklist", "items": ["\u200b"]},
     {"type": "quiz", "question": "q", "options": ["same", "same"], "answer": 0, "points": 1},
     {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 2, "points": 1},
 ])
@@ -90,3 +90,20 @@ def test_a_refusal_names_the_rule_that_failed_not_the_first_one_present():
     v = engine.check_blocks({"id": "n", "blocks": [{"type": "heading", "text": ""}]},
                             world.block_types, world.block_schemas)
     assert v.refusal.detail[0]["expected"] == "minLength: 1"
+
+
+def test_a_block_carries_only_what_its_catalog_row_defines():
+    from machine.world import load
+    world = load()
+    extra = {"type": "paragraph", "text": "clean", "src": "anything at all", "cites": ["mt-kb-001"]}
+    assert not engine.check_blocks({"id": "n", "blocks": [extra]}, world.block_types,
+                                   world.block_schemas).ok
+
+
+@pytest.mark.parametrize("options", [["<", "=", ">"], ["—", "✓"], ["==", "!="]])
+def test_an_answer_option_needs_a_visible_character_not_a_letter(options):
+    from machine.world import load
+    world = load()
+    quiz = {"type": "quiz", "question": "which is it?", "options": options, "answer": 0, "points": 1}
+    assert engine.check_blocks({"id": "n", "blocks": [quiz]}, world.block_types,
+                               world.block_schemas).ok

@@ -71,13 +71,15 @@ def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None 
             # The type says which block it is; the catalog's own row says what
             # that block must carry. Checking the type alone passed a paragraph
             # with no text — a lesson made of empty blocks.
-            verdict = _against(one, block_schemas[one["type"]], "block")
+            verdict = _against(one, closed(block_schemas[one["type"]]), "block")
             if verdict.ok and one["type"] == "quiz" and not (
                     isinstance(one.get("answer"), int) and 0 <= one["answer"] < len(one["options"])):
                 # A schema cannot say "an index into the list beside it".
-                verdict = refused(kind="failing-path", summary="block.answer: out of range",
+                expected = (f"an index below {len(one['options'])}"
+                            if isinstance(one.get("answer"), int) else "an integer index")
+                verdict = refused(kind="failing-path", summary=f"block.answer: expected {expected}",
                                   detail=[{"path": "block.answer", "found": one.get("answer"),
-                                           "expected": f"an index below {len(one['options'])}"}],
+                                           "expected": expected}],
                                   engine=ENGINE)
         if not verdict.ok:
             for failure in verdict.refusal.detail if isinstance(
@@ -93,6 +95,14 @@ def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None 
         summary=f"{failures[0]['path']}: expected {failures[0]['expected']}",
         detail=failures,
         engine=ENGINE)
+
+
+def closed(schema: dict) -> dict:
+    """A block carries what its catalog row defines, its type and its citations
+    — nothing else. An open schema let a field no renderer names ride along in
+    published content, and what the catalog does not name, nobody screens."""
+    return {**schema, "additionalProperties": False,
+            "properties": {"type": {}, "cites": {}, **schema.get("properties", {})}}
 
 
 def check(artifact: dict, shape: str, *, block_types: list[str] | None = None) -> Verdict:

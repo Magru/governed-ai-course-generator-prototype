@@ -26,10 +26,13 @@ stateDiagram-v2
     NodeRepair --> ContentDrafting : auto
     NodeRepair --> XcourseBlockedRecoverable : auto
     NodeRepair --> ContentDrafting : BlockedInputFixed
+    NodeRepair --> NodeRepair : BlockedInputFixed
     Validated --> NodeApproved : NodeApproved
     Validated --> NodeRepair : NodeRejected
     NodeApproved --> NeedsRevalidation : NodeEdited
     NodeApproved --> NeedsRevalidation : (dependency changed)
+    ContentDrafting --> NodeRepair : (dependency changed)
+    NodeRecovery --> NodeRepair : (dependency changed)
     NeedsRevalidation --> OutputGuardrail : auto
     NeedsRevalidation --> NodeChecks : auto
     XanystatebutRemoved --> Removed : OutlineApproved

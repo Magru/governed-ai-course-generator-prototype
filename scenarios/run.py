@@ -81,8 +81,7 @@ def the_course() -> Pipeline:
     p.generate_node(w.E1, AUTHOR)
     approve(p, w.E1)
     publish(p)
-    out = p.membrane.request("notify_learners", {"notice": NOTICE, "notice_approved": True,
-                                                 "recipients": 40}, ADMIN)
+    out = p.notify_learners(NOTICE, 40, ADMIN)
     assert out.ran, out
     return p
 

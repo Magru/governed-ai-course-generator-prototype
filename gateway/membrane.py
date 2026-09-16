@@ -28,6 +28,7 @@ from typing import Any
 import jsonschema
 
 from engines.opa import engine as opa
+from machine.refusal import MachineRefused
 
 from .action_subject import key_of, subject_of
 from .actions import PERSON, PRODUCED, REGISTRY, SYSTEM
@@ -147,7 +148,15 @@ class Membrane:
                 return Outcome(False, "answer", wrong, NEXT["answer"], key)
             payload.update(answer)
         if action.event is not None:
-            m.fire(action.event, {**payload, "idempotency_key": key})
+            try:
+                m.fire(action.event, {**payload, "idempotency_key": key})
+            except MachineRefused as exc:
+                if perform is None:
+                    raise
+                # The course moved while the provider was answering — an exam
+                # whose topic was edited mid-call is sent back to wait. The
+                # answer was paid for and does not land; the key stays unused.
+                return Outcome(False, "legal_in_state", str(exc), NEXT["legal_in_state"], key)
             # Recorded only once the step is: a refusal inside the machine rolls
             # the store back and leaves the key unused, so the act can be retried.
             m.store.used_keys.add(key)
@@ -174,7 +183,14 @@ class Membrane:
         """Is the event legal now, asked before its result exists. A screening's
         verdict is not known until the call is made, so the question is whether
         some verdict has a row here — asking with none would find no row at all."""
-        if PRODUCED.get(event) != "verdict":
+        produced = PRODUCED.get(event)
+        in_force = self.machine.store.current["guardrail"]
+        if produced == "notice_screening":
+            # Only a clean screening lets a notice go; if even that has no row
+            # here, nothing is worth screening.
+            return self.machine.permits(event, {**payload, produced: {
+                "verdict": "allow", "guardrail_version": in_force}})
+        if produced != "verdict":
             return self.machine.permits(event, payload)
         answers = [self.machine.permits(event, {**payload, "verdict": v}) for v in ("allow", "deny")]
         return next((a for a in answers if a[0]), answers[0])
@@ -189,11 +205,20 @@ def _answer(event: str, result) -> tuple[dict, str | None]:
     checks judged."""
     produced = PRODUCED[event]
     value = (result or {}).get(produced) if isinstance(result, dict) else None
+    if produced == "notice_screening":
+        screening, wrong = _answer("GuardrailVerdict", value)
+        return ({} if wrong else {produced: screening}), wrong
     if produced == "verdict":
         category = result.get("category") if isinstance(result, dict) else None
+        version = result.get("guardrail_version") if isinstance(result, dict) else None
         if value not in ("allow", "deny") or not (category is None or isinstance(category, str)):
             return {}, "the screening answered with no verdict"
-        return {"verdict": value, **({"category": category} if category else {})}, None
+        if not isinstance(version, str) or not version:
+            # A verdict is stamped with the version that gave it; one that
+            # cannot say which version it came from cannot be stamped honestly.
+            return {}, "the screening answered without the guardrail version that gave it"
+        return {"verdict": value, "guardrail_version": version,
+                **({"category": category} if category else {})}, None
     if not isinstance(value, dict):
         # A structured-output call that returns no object did not answer the
         # question it was asked; the table's row for an unknown answer takes it.

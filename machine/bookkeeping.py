@@ -51,11 +51,16 @@ def _reset_repair(m, t, obj, old, payload):
     obj.repair_count = 0
 
 
+def _wait_for_topics(m, t, obj, old, payload):
+    obj.waiting_for_topics = True
+
+
 def _advance_outline(m, t, rev, old, payload):
     # Only the proposal that went through OutlineChecks is committed; on_event
     # has already refused an approval carrying a different one.
     proposal = rev.proposal
     rev.outline_version += 1
+    rev.last_refusal = None       # settled by the approval, as a node's is
     rev.committed_outline = [n["id"] for n in proposal["nodes"]]
     for spec in proposal["nodes"]:
         if spec["id"] not in rev.nodes:
@@ -108,6 +113,7 @@ NOTES = {
     "recovery_from = guardrail": _set_recovery("guardrail"),
     "repair_count +1": _raise_repair,
     "repair_count = 0": _reset_repair,
+    "waiting_for_topics": _wait_for_topics,
 }
 
 
@@ -134,9 +140,10 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         rev.proposal = payload["outline"]
     if event == "NodeGenerationRequested" and machine == "node":
         obj.issued_key = payload.get("idempotency_key") or f"generate:{obj.id}:{len(m.store.steps)}"
-    if event == "OutlineRejected" and machine == "revision" and payload.get("reason"):
+    if payload.get("reason") and ((event == "OutlineRejected" and machine == "revision")
+                                  or (event == "NodeRejected" and machine == "node")):
         # A person's reason is what the next draft is told, as a check's is.
-        rev.last_refusal = payload["reason"]
+        obj.last_refusal = payload["reason"]
     if event == "CheckFailed" or (event == "GuardrailVerdict" and payload.get("verdict") == "deny"):
         # What the repair prompt is told. Kept on the object the repair is for.
         reason = payload.get("reason") or payload.get("category")
@@ -159,8 +166,12 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         obj.hand_edited = True
     elif event == "GuardrailVerdict":
         key = obj.id if machine == "node" else payload.get("artifact", "revision")
+        # The version that gave the verdict, as the event catalog requires the
+        # payload to carry it. The store's version stands in only for an event
+        # fired straight at the machine; the gateway always sends its own.
         rev.screened[key] = {"verdict": payload.get("verdict"),
-                             "guardrail_version": m.store.current["guardrail"]}
+                             "guardrail_version": payload.get("guardrail_version")
+                             or m.store.current["guardrail"]}
     elif event == "ApprovalGranted" and machine == "revision":
         # approvals[] holds every approval with its scope; the publication chain
         # is the entries scoped to publication, never a node's approval.
@@ -236,8 +247,15 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
         if old == "NodeRecovery" and new != old:
             obj.pending_operation = None
         if old == "NodeRepair" and new == "ContentDrafting":
-            obj.repair_count += 1
+            # A repair is a retry. An exam sent back because a topic it tests
+            # changed failed nothing, so its way out is not one.
+            obj.repair_count += not obj.waiting_for_topics
+        if old == "NodeRepair" and new != old:
+            obj.waiting_for_topics = False
         if new == "NodeApproved":
+            # What an earlier attempt was refused for is settled; a later repair
+            # told it would mend something that is no longer wrong.
+            obj.last_refusal = None
             obj.stamps = dict(m.store.current)
             obj.repair_count = 0         # "since the last approval"
             m.rev_of(obj).approvals.append({

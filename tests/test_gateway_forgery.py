@@ -45,7 +45,7 @@ def test_a_request_calling_itself_the_system_is_not_the_gateway(gate):
     _generated(gate)
     impostor = {"id": "gateway", "kind": "system"}
     out = gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "s"},
-                       impostor, perform=lambda key: {"verdict": "allow"})
+                       impostor, perform=lambda key: {"verdict": "allow", "guardrail_version": "guard-1"})
     assert (out.ran, out.check) == (False, "policy_allows")
 
 

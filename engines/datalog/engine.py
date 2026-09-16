@@ -45,11 +45,17 @@ def cited(node: dict) -> set[str]:
     """Every chunk a node cites: its own list and each block's. A claim cites
     where it stands; reading only the node's list let a paragraph quote a source
     its audience cannot see while the node declared a harmless one."""
-    chunks = {c for c in node.get("cites") or [] if isinstance(c, str)}
-    for block in node.get("blocks") or [] if isinstance(node.get("blocks"), list) else []:
-        if isinstance(block, dict) and isinstance(block.get("cites"), list):
-            chunks.update(c for c in block["cites"] if isinstance(c, str))
-    return chunks
+    blocks = node.get("blocks") if isinstance(node.get("blocks"), list) else []
+    lists = [node.get("cites")] + [b.get("cites") for b in blocks if isinstance(b, dict)]
+    return {_chunk_id(c) for cites in lists if cites is not None
+            for c in (cites if isinstance(cites, list) else [cites])}
+
+
+def _chunk_id(cite) -> str:
+    """A citation that is not an id stays in the base as what it is, so grounding
+    refuses it by name. Skipping it passed `{"id": ...}` — a restricted chunk in
+    a wrapper — as a node that cites nothing."""
+    return cite if isinstance(cite, str) else repr(cite)
 
 
 def _load(nodes: list[dict], *, articles: list[dict] | None = None,

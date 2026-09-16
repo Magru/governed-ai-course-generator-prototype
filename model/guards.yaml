@@ -71,7 +71,7 @@ guards:
     owner: "Z3"
     refuses_with: "the failing sum"
   - name: "notice_approved(recipient_set)"
-    owner: "Human"
+    owner: "Human · Managed guardrail"
   - name: "lost_live_pointer(revision)"
     owner: "State store"
   - name: "blocked_at(revision)"

@@ -31,6 +31,7 @@ INVENTORY_TO_TRACE = {
     "outline_version": "read by guards through committed_outline, never by an invariant",
     "blocked_at": "routing for the way out of BlockedRecoverable; no invariant reads it",
     "recovery_from": "routing for the way out of NodeRecovery; no invariant reads it",
+    "waiting_for_topics": "whether leaving NodeRepair spends a retry; read through retry_budget_left",
     "approvals[]": "read by approval_chain_satisfied; the trace records the ApprovalGranted event",
     "idempotency_key": "carried in the envelope of every side-effecting step",
     "trace_id": "carried in the envelope as correlation_id",
@@ -61,6 +62,7 @@ class NodeRecord:
     content: dict | None = None         # blocks and citations, once generated
     recovery_from: str | None = None
     repair_count: int = 0
+    waiting_for_topics: bool = False    # sent back by a dependency, not by a failure
     hand_edited: bool = False
     pending_operation: Operation | None = None
     stamps: dict = field(default_factory=dict)

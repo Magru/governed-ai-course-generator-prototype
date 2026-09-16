@@ -86,3 +86,8 @@ def test_grounding_is_the_engine_it_says_it_is(monkeypatch):
     monkeypatch.setattr(engine, "pydatalog", no_datalog)
     with pytest.raises(EngineUnavailable):
         engine.check_grounding(OPEN, ARTICLES)
+
+
+def test_a_citation_that_is_not_an_id_is_refused_rather_than_skipped():
+    wrapped = [{"id": "n1", "cites": [{"id": "mt-kb-001"}]}]
+    assert not engine.check_grounding(wrapped, ARTICLES).ok

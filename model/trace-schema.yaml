@@ -211,7 +211,7 @@ derived:
     is: "every node is NodeApproved or Removed"
   - name: "admitted(A)"
     from: "node_states"
-    is: "the node has moved past OutputGuardrail — NodeChecks, NodeRepair, Validated, NodeApproved, NeedsRevalidation or BlockedFinal"
+    is: "the node has moved past OutputGuardrail — NodeChecks, Validated, NodeApproved, NeedsRevalidation or BlockedFinal. Not NodeRepair: output the guardrail denied was not admitted, and a node a dependency change sent to NodeRepair never reached the guardrail"
     why: >-
       "generated(A)" in I6 is not the NodeGenerated event. The node machine runs
       ContentDrafting -> Generated -> OutputGuardrail, so a guardrail verdict is

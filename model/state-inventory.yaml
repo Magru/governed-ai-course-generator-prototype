@@ -79,6 +79,13 @@ variables:
     recovery: "count CheckFailed events and retries taken out of NodeRecovery, since the last approval"
     note: "read by retry_budget_left; exhausting it is what sends work to a person"
 
+  - variable: "waiting_for_topics"
+    type: "Operational"
+    owner: "State store"
+    valid_values: "boolean, per node"
+    recovery: "true when the node's last entry into NodeRepair was a dependency change rather than a failed check or a rejection"
+    note: "the way out of NodeRepair raises repair_count unless it is set: an exam sent back to wait for its topics failed nothing"
+
   - variable: "blocked_at"
     type: "Durable"
     owner: "State store"

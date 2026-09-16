@@ -18,7 +18,10 @@ GUARDS = yaml.safe_load((ROOT / "model" / "guards.yaml").read_text(encoding="utf
 #: and this package validates against the list the organisation publishes. It sat
 #: here while `engines/schema` validated blocks anyway, so the registry's
 #: two-direction check passed only because the guard name never came up.
-NOT_OURS = {"State store", "Human", "Catalog flag · Human", "unstated", "—"}
+#: A notice is a person's act that the managed service screens through the
+#: gateway; no engine here answers either half.
+NOT_OURS = {"State store", "Human", "Catalog flag · Human", "Human · Managed guardrail",
+            "unstated", "—"}
 ENGINE_GUARDS = {g["name"]: g["owner"] for g in GUARDS if g["owner"] not in NOT_OURS}
 
 

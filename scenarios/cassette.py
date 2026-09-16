@@ -63,4 +63,5 @@ def course_screener() -> RecordedScreener:
         ("node-out", w.T3): allow(1),
         ("node-out", w.E1): allow(2),
         ("revision", "revision-1"): allow(2),
+        ("notice-out", "notice:revision-1"): allow(1),
     })

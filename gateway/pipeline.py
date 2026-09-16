@@ -23,7 +23,7 @@ from typing import Any
 from engines.schema.schemas import OUTLINE
 
 from .membrane import GATEWAY, Membrane
-from .provider.port import Prompt
+from .provider.port import GuardrailUnavailable, Prompt
 from .retrieval import retrieve
 from .screened_text import blocks_of, screened_text
 
@@ -32,7 +32,9 @@ OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learn
 NODE_RULES = ("node:{node}\nWrite this node from the sources only. Cite every claim by chunk "
               "id; cite nothing you were not given. Blocks must be catalog block types.")
 NODE_SCHEMA = {"type": "object", "required": ["blocks", "cites"],
-               "properties": {"blocks": {"type": "array"}, "cites": {"type": "array"}}}
+               "properties": {"blocks": {"type": "array"},
+                              "cites": {"type": "array", "items": {"type": "string"}},
+                              "minutes": {"type": "integer"}, "points_total": {"type": "integer"}}}
 
 
 def digest(prompt: Prompt) -> str:
@@ -62,9 +64,14 @@ class Pipeline:
         that did not answer is not remembered — it is asked again."""
         memo = (point, subject, _sha(content), self.machine.store.current["guardrail"],
                 getattr(self.screener, "version", None))
-        if memo not in self.screenings:
-            self.screenings[memo] = self.screener.screen(content, modality, point, subject=subject)
-        return self.screenings[memo]
+        if memo in self.screenings:
+            return self.screenings[memo]
+        verdict = self.screener.screen(content, modality, point, subject=subject)
+        if verdict.guardrail_version == self.machine.store.current["guardrail"]:
+            # An answer from the version being replaced is no answer, and asking
+            # again must reach the service, not this memo.
+            self.screenings[memo] = verdict
+        return verdict
 
     # ── the brief ─────────────────────────────────────────────────────────
     def submit_brief(self, brief: dict, actor: dict) -> None:
@@ -101,11 +108,24 @@ class Pipeline:
             out = self.membrane.request(
                 "generate_node_content", {"node": node_id, "prompt": digest(prompt)}, actor,
                 perform=lambda key, p=prompt: {"content": self._generate(p, NODE_SCHEMA, node_id)})
+            if not out.ran and out.check == "legal_in_state" and out.key is not None:
+                self._stage(5, "generation", node_id, f"not landed: {m.current.nodes[node_id].state}")
+                return
             if not out.ran:
                 self._unknown_or_refused(out, {"node": node_id}, "Timeout")
                 continue
             if m.current.nodes[node_id].state == "OutputGuardrail":
                 self._screen_node(node_id)
+
+    # ── the notice to learners ────────────────────────────────────────────
+    def notify_learners(self, notice: str, recipients: int, actor: dict):
+        """The notice is screened as it is sent: a person writes it, the
+        guardrail reads it, and a deny is a refusal, not a notice."""
+        subject = f"notice:revision-{self.machine.current.id}"
+        return self.membrane.request(
+            "notify_learners", {"notice": notice, "recipients": recipients}, actor,
+            perform=lambda key: {"notice_screening": _as_payload(
+                self._verdict("notice-out", subject, notice, "text"))})
 
     # ── internals ─────────────────────────────────────────────────────────
     def _sources(self) -> tuple:
@@ -149,6 +169,15 @@ class Pipeline:
 
     def _verdict(self, point: str, subject: str, content: str, modality: str):
         verdict = self.screen(content, modality, point, subject)
+        in_force = self.machine.store.current["guardrail"]
+        if verdict.guardrail_version != in_force:
+            # During a rollout the service may still be the version being
+            # replaced. Its verdict is not the screening the record will claim,
+            # so it is no answer: the Timeout row takes it, as for re-verification.
+            self._stage(6, f"guardrail {point}", subject,
+                        f"answered as {verdict.guardrail_version}, {in_force} in force")
+            raise GuardrailUnavailable(f"the guardrail answered as {verdict.guardrail_version}, "
+                                       f"and {in_force} is in force")
         self._stage(6 if point != "brief-in" else 3, f"guardrail {point}", subject,
                     "allow" if verdict.allowed else f"deny: {verdict.category}")
         return verdict
@@ -161,7 +190,9 @@ class Pipeline:
         one it replaced."""
         args = {"artifact": artifact, "screened": screened, **({"node": node} if node else {})}
         out = self.membrane.request("admit_to_revision", args, GATEWAY, perform=screen)
-        if out.check == "effect":
+        if out.check in ("effect", "answer"):
+            # A screening has no ModelError row: an answer in the wrong shape
+            # is no verdict, and the Timeout row is the one that waits for one.
             self._stage(6, "guardrail", artifact, f"unreachable: {out.reason}")
             self.machine.fire("ServiceUnreachable", {"node": node} if node else {},
                               producer="gateway")
@@ -200,6 +231,7 @@ def _sha(text: str) -> str:
 
 def _as_payload(verdict) -> dict:
     return {"verdict": "allow" if verdict.allowed else "deny",
+            "guardrail_version": verdict.guardrail_version,
             **({"category": verdict.category} if verdict.category else {})}
 
 

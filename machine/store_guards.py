@@ -114,6 +114,10 @@ class ServiceDown(Undecidable):
 def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
     payload = ctx.payload or {}
     if "verdict" in payload:
+        answered_as = payload.get("guardrail_version")
+        if answered_as is not None and answered_as != ctx.store.current["guardrail"]:
+            raise ServiceDown(f"{lit.raw}: the verdict came from {answered_as}, "
+                              f"and {ctx.store.current['guardrail']} is in force")
         return payload["verdict"] == "allow"
     # Inside StaleReview nothing arrives as an event — the table has no
     # GuardrailVerdict row there, only a Timeout one. So the machine asks the
@@ -130,6 +134,10 @@ def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
             verdict, answered_as = screener(ctx.rev, current)
         except ConnectionError as exc:
             raise ServiceDown(f"{lit.raw}: the guardrail did not answer: {exc}") from exc
+        except (TypeError, ValueError) as exc:
+            # A port that answers with anything but (verdict, version) has not
+            # said what it screened with; that is not a verdict to act on.
+            raise Undecidable(f"{lit.raw}: the screening port gave no (verdict, version): {exc}") from exc
         if answered_as != current:
             # During a rollout the service can still be the version being
             # replaced. Its verdict is not the one re-verification needs, and
@@ -167,6 +175,22 @@ def _has_active_readers(lit: Literal, ctx: Context) -> bool:
     return readers[ctx.rev.id] > 0
 
 
+def _notice_approved(lit: Literal, ctx: Context) -> bool:
+    """A person sends it, and the guardrail read it first. The notice is the one
+    text a learner reads that no model wrote, and nothing else screens it; a
+    flag the sender set beside it approved the sender's own act."""
+    payload = ctx.payload or {}
+    if not payload.get("actor"):
+        return False
+    screening = payload.get("notice_screening")
+    if not isinstance(screening, dict):
+        raise Undecidable(f"{lit.raw}: the notice was not screened")
+    if screening.get("guardrail_version") != ctx.store.current["guardrail"]:
+        raise Undecidable(f"{lit.raw}: the notice was screened by {screening.get('guardrail_version')}, "
+                          f"and {ctx.store.current['guardrail']} is in force")
+    return screening.get("verdict") == "allow"
+
+
 def _depends_on(lit: Literal, ctx: Context) -> bool:
     edited = (ctx.payload or {}).get("node")
     if edited is None:
@@ -197,7 +221,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
     "versions_current(artifact)": lambda lit, ctx: _versions_current(ctx),
     "differs_from_live(revision)": _differs_from_live,
     "all_visuals_reviewed(node)": _all_visuals_reviewed,
-    "notice_approved(recipient_set)": lambda lit, ctx: bool((ctx.payload or {}).get("notice_approved")),
+    "notice_approved(recipient_set)": _notice_approved,
     "guardrail_clean(artifact)": _guardrail_clean,
     "affected(revision)": _affected,
     "has_active_readers(revision)": _has_active_readers,

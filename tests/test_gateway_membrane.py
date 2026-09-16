@@ -78,7 +78,7 @@ def test_an_action_the_registry_gives_a_person_is_refused_to_the_system(gate):
     assert gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
                         AUTHOR, perform=_content).ran
     assert gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1"},
-                        SYSTEM, perform=lambda key: {"verdict": "allow"}).ran
+                        SYSTEM, perform=lambda key: {"verdict": "allow", "guardrail_version": "guard-1"}).ran
     out = gate.request("approve_node", {"node": N1, "what_was_shown": "the verdict"}, SYSTEM)
     # The policy answers first now that it judges every action; the registry's
     # Requires column stays behind it as the second line.
@@ -131,7 +131,7 @@ def test_a_verdict_cannot_be_declared_only_screened(gate):
                         AUTHOR, perform=_content).ran
     out = gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1",
                                              "verdict": "allow"}, SYSTEM,
-                       perform=lambda key: {"verdict": "allow"})
+                       perform=lambda key: {"verdict": "allow", "guardrail_version": "guard-1"})
     assert (out.ran, out.check) == (False, "schema_valid")
     with pytest.raises(TypeError):
         gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1"}, SYSTEM)

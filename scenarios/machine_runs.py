@@ -76,7 +76,8 @@ def to_published(m: Machine) -> None:
     m.fire("CourseChecksRequested")
     m.fire("ApprovalGranted", {"signatures": SIGNATURES})
     m.fire("PublishRequested")
-    m.fire("LearnersNotified", {"notice_approved": True})
+    m.fire("LearnersNotified", {"actor": "admin-1", "notice_screening": {
+        "verdict": "allow", "guardrail_version": m.store.current["guardrail"]}})
 
 
 def happy_path() -> Machine:

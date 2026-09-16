@@ -21,7 +21,8 @@ PERSON, SYSTEM, NOBODY = "person", "system", "nobody"
 #: The events whose payload carries what a provider answered. Their result is
 #: never an argument: a caller who could pass it could declare a screening
 #: clean or a lesson written without asking anyone.
-PRODUCED = {"OutlineGenerated": "outline", "NodeGenerated": "content", "GuardrailVerdict": "verdict"}
+PRODUCED = {"OutlineGenerated": "outline", "NodeGenerated": "content", "GuardrailVerdict": "verdict",
+            "LearnersNotified": "notice_screening"}
 
 
 def _args(**properties) -> dict:
@@ -78,8 +79,7 @@ REGISTRY = {a.name: a for a in [
            _args(revision={"type": "integer"}, reason=dict(TEXT))),
     Action("notify_learners", "critical", "irreversible — cannot be unsent", PERSON,
            "correction notice and incident record; there is no undo", "LearnersNotified",
-           _args(notice=dict(TEXT), notice_approved={"type": "boolean"},
-                 recipients={"type": "integer", "minimum": 0})),
+           _args(notice=dict(TEXT), recipients={"type": "integer", "minimum": 0})),
     Action("archive_revision", "high", "removes from circulation", PERSON,
            "none — Archived is terminal", "ArchiveRequested",
            _args(revision={"type": "integer"})),

@@ -212,3 +212,12 @@ def test_an_exam_is_its_quiz_blocks_and_an_exam_without_one_is_refused():
     assert not engine.check_arithmetic({**exam, "points_total": 5}, {}).ok
     quiz = {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 0, "points": 5}
     assert engine.check_arithmetic({**exam, "blocks": [quiz], "points_total": 5}, {}).ok
+
+
+@pytest.mark.parametrize("field, value", [("points_total", "ten"), ("minutes", [20]),
+                                          ("minutes", "20 minutes"), ("minutes", True)])
+def test_a_number_that_is_not_a_whole_number_is_refused_with_its_path(field, value):
+    quiz = {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 0, "points": 5}
+    exam = {"id": "e", "type": "exam", "blocks": [quiz], "points_total": 5, "minutes": 5}
+    v = engine.check_arithmetic({**exam, field: value}, {})
+    assert not v.ok and v.refusal.summary == f"e.{field}: expected an integer"
