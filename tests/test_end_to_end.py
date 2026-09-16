@@ -52,9 +52,10 @@ def test_the_run_used_every_recorded_screening_and_asked_for_no_other(course):
     assert course.screener.unused() == {}
 
 
-def test_the_same_text_is_screened_once_however_often_a_guard_asks(course):
-    asked = [(point, subject, content) for point, subject, _, content in course.screener.asked]
-    assert len(asked) == len(set(asked))
+def test_the_same_text_is_screened_once_per_guardrail_version_however_often_a_guard_asks(course):
+    assert len(course.screener.asked) == len(course.screenings)
+    versions = {key[3] for key in course.screenings if key[1] == "revision-1"}
+    assert versions == {"guard-1", "guard-2"}        # screened again when the guardrail changed
 
 
 def test_an_approval_after_revalidation_is_a_new_act_not_a_repeat(course):

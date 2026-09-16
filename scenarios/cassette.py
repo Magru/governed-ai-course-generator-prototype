@@ -44,8 +44,9 @@ def course_screener() -> RecordedScreener:
     is too, but not for its repair — the leaking draft differed from its repair
     only in citations, which are not screened text, so the same text was not
     screened twice; its second screening is the edit after publication. The
-    published revision is screened once when it is verified again: the policy
-    change that follows the rollback leaves text and guardrail as they were."""
+    published revision is screened when it is verified again after the
+    rollback, not again for the policy change that leaves text and guardrail as
+    they were, and once more when the guardrail itself changes."""
     allow = lambda times: ["allow"] * times
     return RecordedScreener({
         ("brief-in", "brief"): allow(1),
@@ -55,5 +56,5 @@ def course_screener() -> RecordedScreener:
         ("node-out", w.T2): allow(2),
         ("node-out", w.T3): allow(1),
         ("node-out", w.E1): allow(2),
-        ("revision", "revision-1"): allow(1),
+        ("revision", "revision-1"): allow(2),
     })

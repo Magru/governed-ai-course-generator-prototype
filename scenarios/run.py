@@ -29,18 +29,22 @@ def pipeline(generator=None, screener=None) -> Pipeline:
     m = machine()
     p = Pipeline(m, generator or cassette.course_generator(),
                  screener or cassette.course_screener(), w.BRIEF["id"], cassette.KB_CHUNKS)
-    m.screener = lambda rev, version: _revision_verdict(p, rev)
+    m.screener = lambda rev, version: _revision_verdict(p, rev, version)
     return p
 
 
-def _revision_verdict(p: Pipeline, rev) -> str:
+def _revision_verdict(p: Pipeline, rev, version: str) -> str:
     """StaleReview asks the screening port from inside the machine; a service
     that does not answer is a ConnectionError there, which the Timeout row takes."""
+    asked = len(p.screenings)
     try:
         v = p.screen(_revision_text(rev), "text", "revision", f"revision-{rev.id}")
     except GuardrailUnavailable as exc:
         raise ConnectionError(str(exc)) from exc
-    return "allow" if v.allowed else v.category
+    verdict = "allow" if v.allowed else v.category
+    if len(p.screenings) > asked:             # a guard asking twice is one screening
+        p._stage(6, f"guardrail revision · {version}", f"revision-{rev.id}", verdict)
+    return verdict
 
 
 def _revision_text(rev) -> str:
@@ -95,6 +99,9 @@ def after_publication(p: Pipeline) -> None:
     publish(p)
     m.fire("RollbackRequested", {"revision": 1, "reason": "the new wording confused learners"})
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True, 2: False}})
+    # A new guardrail version reaches the live course: the same text is screened
+    # again, because a verdict under guard-1 says nothing about guard-2.
+    m.fire("GuardrailChanged", {"to": "guard-2", "reaches": {1: True, 2: False}})
 
 
 def report(p: Pipeline) -> int:
