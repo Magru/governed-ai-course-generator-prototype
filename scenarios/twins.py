@@ -14,7 +14,7 @@ import yaml
 from gateway.provider.recorded import RecordedGenerator, RecordedScreener
 from machine.machine import MachineRefused
 from scenarios import cassette, walkthrough as w
-from scenarios.run import AUTHOR, pipeline
+from scenarios.run import ADMIN, AUTHOR, pipeline
 
 TWINS = cassette.ROOT / "fixtures" / "evil-twins"
 
@@ -64,14 +64,32 @@ def exam_before_material():
 
 
 def stale_node_at_publication():
-    from scenarios.run import the_course
+    """A fork that differs from the live course, every node approved but the one
+    an edit sent back to be verified. The state store must hold the revision
+    where the fixture says, name the node, refuse publication — and move the
+    revision on the moment that node is approved again, which is what shows it
+    was that node holding it and not the state a fresh fork starts in.
+
+    The table passes NeedsRevalidation by two complementary (auto) rows, so a
+    node never rests there: the exam is re-checked in the same breath and waits
+    in Validated for its approval. What holds the revision is therefore
+    all_nodes_approved, with no_stale_nodes beside it in the same guard."""
+    from scenarios.run import approve, the_course
+    ends = _twin("05-stale-node-at-publication.yaml")["expect"]["ends"]
     p = the_course()
     m = p.machine
     m.fire("ReviseRequested", {"revision": 1})
-    m.fire("NodeEdited", {"node": w.T2, "content": copy.deepcopy(w.CONTENT[w.T2])})
-    out = p.membrane.request("publish_revision", {"revision": m.current.id},
-                             {"id": "admin-1", "kind": "person"})
-    return out.check, out.reason.split(";")[0]
+    edited = copy.deepcopy(w.CONTENT[w.T2])
+    edited["blocks"][0]["text"] = "check every tool for splits and loose handles before use"
+    m.fire("NodeEdited", {"node": w.T2, "content": edited})
+    p._screen_node(w.T2)
+    approve(p, w.T2)
+    stale = sorted(n.id for n in m.current.nodes.values() if n.state != "NodeApproved")
+    held = m.current.state
+    out = p.membrane.request("publish_revision", {"revision": m.current.id}, ADMIN)
+    for node in stale:
+        approve(p, node)
+    return held == ends, stale, out.check, m.current.state
 
 
 def unregistered_action():
@@ -82,21 +100,28 @@ def unregistered_action():
 
 
 def injection_in_a_source():
-    twin = _twin("07-injection-in-a-source.yaml")["chunk"]
+    """Not refused, by design: the passage sits where nothing executes. What must
+    hold is that it reached the model only as a source, that generation went on,
+    and that what the model produced from it was screened before admission."""
+    twin = _twin("07-injection-in-a-source.yaml")
+    chunk = twin["chunk"]
     generator = RecordedGenerator({"outline": [copy.deepcopy(w.OUTLINE)]})
     p = pipeline(generator=generator)
-    p.kb_chunks = cassette.KB_CHUNKS + [twin]
-    p.machine.world.articles[0]["chunks"].append(twin["id"])
+    p.kb_chunks = cassette.KB_CHUNKS + [chunk]
+    p.machine.world.articles[0]["chunks"].append(chunk["id"])
     try:
         p.submit_brief(copy.deepcopy(w.BRIEF), AUTHOR)
         p.draft_outline(AUTHOR)
     finally:
-        p.machine.world.articles[0]["chunks"].remove(twin["id"])
+        p.machine.world.articles[0]["chunks"].remove(chunk["id"])
     _, prompt = generator.asked[0]
-    in_sources = any(twin["text"] in s for s in prompt.sources)
-    in_instructions = twin["text"] in prompt.instructions or twin["text"] in prompt.author
-    return ("sources" if in_sources and not in_instructions else "LEAKED INTO INSTRUCTIONS",
-            p.machine.current.state)
+    in_sources = any(chunk["text"] in s for s in prompt.sources)
+    in_trusted = chunk["text"] in prompt.instructions or chunk["text"] in prompt.author
+    position = "sources" if in_sources and not in_trusted else \
+        "LEAKED INTO INSTRUCTIONS" if in_trusted else "NOT RETRIEVED"
+    screened = [a[0] for a in p.screener.asked if a[0] == "outline-out"]
+    admitted = any(s[0] == 10 and s[2] == "outline" for s in p.stages)
+    return position, p.machine.current.state, bool(screened and admitted)
 
 
 TWIN_RUNS = [
@@ -108,10 +133,10 @@ TWIN_RUNS = [
     ("04 an exam before its material", exam_before_material,
      lambda r: r[0] == "Planned" and "nobody has approved" in r[1]),
     ("05 a stale node at publication", stale_node_at_publication,
-     lambda r: r[0] == "legal_in_state"),
+     lambda r: r == (True, [w.E1], "legal_in_state", "ReadyForReview")),
     ("06 an action nobody registered", unregistered_action, lambda r: r[0] == "registered"),
     ("07 an instruction hidden in a source", injection_in_a_source,
-     lambda r: r == ("sources", "OutlineReview")),
+     lambda r: r == ("sources", "OutlineReview", True)),
 ]
 
 
