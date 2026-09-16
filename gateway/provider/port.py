@@ -73,6 +73,8 @@ class Generator(Protocol):
 
 
 class Screener(Protocol):
-    def screen(self, content: str, modality: Modality, point: Point) -> Verdict:
+    def screen(self, content: str, modality: Modality, point: Point, subject: str = "") -> Verdict:
         """Screen one artifact at one evaluation point. Raises rather than
-        guessing: absence of a verdict is not a permissive verdict."""
+        guessing: absence of a verdict is not a permissive verdict. `subject`
+        names what is screened — a node id, "outline", "brief" — for the audit
+        and for a recording to key on; a live service may ignore it."""

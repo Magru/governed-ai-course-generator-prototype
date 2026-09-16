@@ -45,3 +45,8 @@ jobs:
       # refusing, this fails here rather than at a defence.
       - name: the five refusals
         run: python scenarios/refusals.py
+
+      # One course through the gateway from brief to rollback, then the seven
+      # twins, each stopping where the specification says.
+      - name: the course end to end
+        run: python scenarios/run.py

@@ -1,0 +1,177 @@
+"""The generation gateway — functional-model.yaml's eleven stages, in order.
+
+   1 schema · 2 policy · 3 guardrail in · 4 routing       the membrane, before any spend
+   5 generation                                           the Generator port
+   6 guardrail out                                        the Screener port → GuardrailVerdict
+   7 block schemas · 8 grounding and rights ·
+   9 constraints and coverage · 10 admission              NodeChecks, in the machine
+  11 audit                                                the trace
+
+Nothing here decides legality or runs a check the machine runs: the gateway
+makes the calls that cost money or leave the tenant, turns their answers into
+events, and turns their silence into the Timeout rows the tables already have.
+Each stage it passes is written to `stages`, so a run can be shown stage by
+stage rather than asserted.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass, field
+from typing import Any
+
+from engines.schema.schemas import OUTLINE
+
+from .membrane import Membrane
+from .provider.port import GuardrailUnavailable, Prompt
+from .retrieval import retrieve
+
+OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learning objectives "
+                 "only. Every skill must be one the catalog lists. Return the outline schema.")
+NODE_RULES = ("node:{node}\nWrite this node from the sources only. Cite every claim by chunk "
+              "id; cite nothing you were not given. Blocks must be catalog block types.")
+NODE_SCHEMA = {"type": "object", "required": ["blocks", "cites"],
+               "properties": {"blocks": {"type": "array"}, "cites": {"type": "array"}}}
+
+
+def digest(prompt: Prompt) -> str:
+    parts = {"instructions": prompt.instructions, "author": prompt.author,
+             "sources": list(prompt.sources)}
+    return hashlib.sha256(json.dumps(parts, sort_keys=True).encode()).hexdigest()
+
+
+@dataclass
+class Pipeline:
+    machine: Any
+    generator: Any
+    screener: Any
+    course: str
+    kb_chunks: list
+    stages: list = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        self.membrane = Membrane(self.machine, self.course)
+
+    # ── the brief ─────────────────────────────────────────────────────────
+    def submit_brief(self, brief: dict, actor: dict) -> None:
+        m = self.machine
+        m.fire("BriefSubmitted", {"brief": brief, "actor": actor["id"]})
+        self._stage(1, "schema · policy", "brief", m.current.state)
+        if m.current.state == "BriefValidation":
+            self._screen("brief-in", "brief", json.dumps(brief, sort_keys=True), "text")
+
+    # ── the skeleton ──────────────────────────────────────────────────────
+    def draft_outline(self, actor: dict) -> None:
+        m = self.machine
+        prompt = Prompt(self._with_feedback(OUTLINE_RULES, m.current),
+                        author=json.dumps({k: m.current.brief[k] for k in ("title", "objectives")}),
+                        sources=self._sources())
+        self._stage(4, "routing", "outline", type(self.generator).__name__)
+        out = self.membrane.request(
+            "propose_outline", {"prompt": digest(prompt)}, actor,
+            perform=lambda key: {"outline": self._generate(prompt, OUTLINE, "outline")})
+        if not out.ran:
+            return self._unknown_or_refused(out, {}, "Timeout")
+        self._screen("outline-out", "outline", json.dumps(m.current.proposal), "text")
+
+    # ── one node ──────────────────────────────────────────────────────────
+    def generate_node(self, node_id: str, actor: dict) -> None:
+        m = self.machine
+        if m.current.nodes[node_id].state == "Planned":
+            m.fire("NodeGenerationRequested", {"node": node_id, "actor": actor["id"]})
+        while m.current.nodes[node_id].state == "ContentDrafting":
+            node = m.current.nodes[node_id]
+            prompt = Prompt(self._with_feedback(NODE_RULES.format(node=node_id), node),
+                            author=json.dumps(node.spec, sort_keys=True), sources=self._sources())
+            self._stage(4, "routing", node_id, type(self.generator).__name__)
+            out = self.membrane.request(
+                "generate_node_content", {"node": node_id, "prompt": digest(prompt)}, actor,
+                perform=lambda key, p=prompt: {"content": self._generate(p, NODE_SCHEMA, node_id)})
+            if not out.ran:
+                self._unknown_or_refused(out, {"node": node_id}, "Timeout")
+                continue
+            if m.current.nodes[node_id].state == "OutputGuardrail":
+                self._screen_node(node_id)
+
+    # ── internals ─────────────────────────────────────────────────────────
+    def _sources(self) -> tuple:
+        audiences = (self.machine.current.brief or {}).get("audience") or []
+        self._stage(3, "retrieval · rights filter", "sources", audiences)
+        return tuple(f"{c['id']}: {c['text']}" for c in
+                     retrieve(self.machine.world, audiences, self.kb_chunks))
+
+    def _with_feedback(self, rules: str, obj) -> str:
+        # A repair is a retry that changed the request: the machine-produced
+        # reason goes into the instructions, not "try again".
+        reason = getattr(obj, "last_refusal", None)
+        return rules if not reason else f"{rules}\nThe previous attempt was refused: {reason}"
+
+    def _generate(self, prompt: Prompt, schema: dict, subject: str) -> dict:
+        generated = self.generator.generate(prompt, schema)
+        self._stage(5, "generation", subject, generated.model_id)
+        return generated.content
+
+    def _screen_node(self, node_id: str) -> None:
+        content = self.machine.current.nodes[node_id].content or {}
+        text = " ".join(b.get("text") or b.get("question") or b.get("caption") or ""
+                        for b in content.get("blocks") or [])
+        screened = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
+        verdict = self._screen("node-out", node_id, text, "text", admit=False)
+        if verdict is None:
+            return
+        for i, block in enumerate(content.get("blocks") or []):
+            if verdict.allowed and block.get("type") == "image":
+                verdict = self._screen("image-out", f"{node_id}.blocks[{i}]", block.get("src", ""),
+                                       "image", admit=False)
+                if verdict is None:
+                    return
+        self._admit(node_id, node_id, verdict, screened)
+
+    def _screen(self, point: str, subject: str, content: str, modality: str, admit: bool = True):
+        try:
+            verdict = self.screener.screen(content, modality, point, subject=subject)
+        except GuardrailUnavailable as exc:
+            self._stage(6, "guardrail", subject, f"unreachable: {exc}")
+            scope = {"node": subject.split(".")[0]} if subject.startswith("mt-node") else {}
+            self.machine.fire("ServiceUnreachable", scope, producer="gateway")
+            return None
+        self._stage(6 if point != "brief-in" else 3, f"guardrail {point}", subject,
+                    "allow" if verdict.allowed else f"deny: {verdict.category}")
+        if admit:
+            self._admit(subject, None, verdict, hashlib.sha256(content.encode()).hexdigest())
+        return verdict
+
+    def _admit(self, artifact: str, node: str | None, verdict, screened: str) -> None:
+        # What was screened is part of the key: admitting a repaired outline is
+        # a different action from admitting the one it replaced.
+        args = {"artifact": artifact, "verdict": "allow" if verdict.allowed else "deny",
+                "screened": screened}
+        if node:
+            args["node"] = node
+        if verdict.category:
+            args["category"] = verdict.category
+        out = self.membrane.request("admit_to_revision", args,
+                                    {"id": "gateway", "kind": "system", "role": "system"})
+        if not out.ran:
+            self._stage(10, "admission", artifact, f"{out.check}: {out.reason}")
+            return
+        # Stages 7–9 are NodeChecks, run by the machine on the admitted content.
+        target = self.machine.current.nodes.get(node) if node else self.machine.current
+        result = target.state
+        if target.state in ("ContentDrafting", "OutlineDrafting") and target.last_refusal:
+            result = f"{target.state} — repaired: {target.last_refusal}"
+        self._stage(10, "checks 7–9 · admission", artifact, result)
+
+    def _unknown_or_refused(self, out, scope: dict, event: str) -> None:
+        if out.check == "effect":
+            self._stage(5, "generation", scope.get("node", "outline"), f"no answer: {out.reason}")
+            self.machine.fire(event, scope, producer="gateway")
+            return
+        raise GatewayRefused(f"{out.check}: {out.reason} — {out.next_action}")
+
+    def _stage(self, number: int, name: str, subject: str, result) -> None:
+        self.stages.append((number, name, subject, result))
+
+
+class GatewayRefused(RuntimeError):
+    """The membrane refused the action. Carries the check and the next action."""

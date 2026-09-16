@@ -101,7 +101,7 @@ class BedrockScreener(Screener):
         self._guardrail = os.environ.get("BEDROCK_GUARDRAIL_ID", "").strip()
         self._version = os.environ.get("BEDROCK_GUARDRAIL_VERSION", "").strip()
 
-    def screen(self, content: str, modality: Modality, point: Point) -> Verdict:
+    def screen(self, content: str, modality: Modality, point: Point, subject: str = "") -> Verdict:
         if not self._guardrail:
             raise GuardrailNotConfigured(
                 "no guardrail is configured. A deployment error rather than a "

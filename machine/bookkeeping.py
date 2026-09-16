@@ -134,16 +134,21 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         rev.proposal = payload["outline"]
     if event == "NodeGenerationRequested" and machine == "node":
         obj.issued_key = payload.get("idempotency_key") or f"generate:{obj.id}:{len(m.store.steps)}"
+    if event == "CheckFailed" or (event == "GuardrailVerdict" and payload.get("verdict") == "deny"):
+        # What the repair prompt is told. Kept on the object the repair is for.
+        reason = payload.get("reason") or payload.get("category")
+        if reason:
+            obj.last_refusal = reason
     if event == "BriefSubmitted" and machine == "revision":
         rev.brief = payload["brief"]
         # The checks that follow run as (auto) rows with no payload of their
         # own; OPA must judge the person who submitted, not a default.
         rev.author = payload.get("actor") or m.store.config["author"]
     elif event == "OutlineGenerated":
-        rev.proposal = payload["outline"]
+        rev.proposal = payload.get("outline")
         m.store.used_keys.add(payload["idempotency_key"])
     elif event == "NodeGenerated" and machine == "node":
-        obj.content = payload["content"]
+        obj.content = payload.get("content")
         obj.hand_edited = False
         m.store.used_keys.add(payload["idempotency_key"])
     elif event == "NodeEdited" and machine == "node":
@@ -151,7 +156,7 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         obj.hand_edited = True
     elif event == "GuardrailVerdict":
         key = obj.id if machine == "node" else payload.get("artifact", "revision")
-        rev.screened[key] = {"verdict": payload["verdict"],
+        rev.screened[key] = {"verdict": payload.get("verdict"),
                              "guardrail_version": m.store.current["guardrail"]}
     elif event == "ApprovalGranted" and machine == "revision":
         # approvals[] holds every approval with its scope; the publication chain

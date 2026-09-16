@@ -13,6 +13,10 @@ AUTHOR = {"id": "author-1", "kind": "person", "role": "course-author"}
 SYSTEM = {"id": "orchestrator", "kind": "system", "role": "system"}
 
 
+def _content(key):
+    return {"content": copy.deepcopy(CONTENT[N1])}
+
+
 @pytest.fixture
 def gate():
     m = machine()
@@ -36,7 +40,7 @@ def test_an_unregistered_action_runs_nothing(gate):
 
 def test_an_extra_field_is_refused_not_ignored(gate):
     out = gate.request("generate_node_content",
-                       {"node": N1, "content": CONTENT[N1], "publish_after": True}, SYSTEM)
+                       {"node": N1, "prompt": "prompt-sha-1", "publish_after": True}, SYSTEM)
     assert (out.ran, out.check) == (False, "schema_valid")
     assert "publish_after" in out.reason
 
@@ -49,11 +53,11 @@ def test_legality_is_the_machines_answer(gate):
 
 
 def test_a_legal_generation_runs_once_and_its_repeat_is_a_no_op(gate):
-    args = {"node": N1, "content": copy.deepcopy(CONTENT[N1])}
-    first = gate.request("generate_node_content", args, AUTHOR)
+    args = {"node": N1, "prompt": "prompt-sha-1"}
+    first = gate.request("generate_node_content", args, AUTHOR, perform=_content)
     assert first.ran and gate.machine.current.nodes[N1].state == "OutputGuardrail"
     steps = len(gate.machine.trace())
-    again = gate.request("generate_node_content", copy.deepcopy(args), AUTHOR)
+    again = gate.request("generate_node_content", copy.deepcopy(args), AUTHOR, perform=_content)
     assert not again.ran and len(gate.machine.trace()) == steps
     # Recognised as already done, not refused as illegal — the order spec-v2.8
     # gives the membrane, so the person is told there is nothing to do.
@@ -61,8 +65,8 @@ def test_a_legal_generation_runs_once_and_its_repeat_is_a_no_op(gate):
 
 
 def test_issued_and_landed_are_two_facts(gate):
-    key = gate.request("generate_node_content",
-                       {"node": N1, "content": copy.deepcopy(CONTENT[N1])}, AUTHOR).key
+    key = gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
+                       AUTHOR, perform=_content).key
     assert key in gate.issued                      # before the effect
     assert key in gate.machine.store.used_keys     # after it, recorded by the store
     refused = gate.request("publish_revision", {"actor": "admin-1", "revision": 1},
@@ -71,9 +75,9 @@ def test_issued_and_landed_are_two_facts(gate):
 
 
 def test_an_action_the_registry_gives_a_person_is_refused_to_the_system(gate):
-    assert gate.request("generate_node_content",
-                        {"node": N1, "content": copy.deepcopy(CONTENT[N1])}, AUTHOR).ran
-    assert gate.request("admit_to_revision", {"node": N1, "verdict": "allow", "artifact": N1},
+    assert gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
+                        AUTHOR, perform=_content).ran
+    assert gate.request("admit_to_revision", {"node": N1, "verdict": "allow", "artifact": N1, "screened": "sha-1"},
                         SYSTEM).ran
     out = gate.request("approve_node", {"node": N1, "actor": "author-1",
                                         "what_was_shown": "the verdict"}, SYSTEM)
@@ -85,7 +89,8 @@ def test_an_action_the_registry_gives_a_person_is_refused_to_the_system(gate):
 
 def test_the_policy_is_asked_before_the_state_is(gate):
     stranger = {"id": "compliance-1", "kind": "person", "role": "compliance-officer"}
-    out = gate.request("generate_node_content", {"node": N1, "content": CONTENT[N1]}, stranger)
+    out = gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"}, stranger,
+                       perform=_content)
     assert (out.ran, out.check) == (False, "policy_allows")
 
 
@@ -94,3 +99,17 @@ def test_the_rate_limit_is_a_ceiling(gate):
     assert gate.request("retrieve_sources", {"query": "a", "audience": ["apprentices"]}, SYSTEM).ran
     out = gate.request("retrieve_sources", {"query": "b", "audience": ["apprentices"]}, SYSTEM)
     assert (out.ran, out.check) == (False, "within_rate_limit")
+
+
+def test_a_call_that_never_answered_is_retried_under_the_same_key(gate):
+    from gateway.provider.port import ProviderUnavailable
+
+    def silent(key):
+        raise ProviderUnavailable("no answer")
+
+    lost = gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
+                        AUTHOR, perform=silent)
+    assert (lost.ran, lost.check) == (False, "effect")
+    retry = gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
+                         AUTHOR, perform=_content)
+    assert retry.ran and retry.key == lost.key

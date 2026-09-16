@@ -31,6 +31,11 @@ import jsonschema
 from engines.opa import engine as opa
 
 from .actions import PERSON, REGISTRY
+from .provider.port import GuardrailUnavailable, ProviderUnavailable
+
+#: Events whose side effect the store marks landed when it records them. Any
+#: other registered action is done the moment it is issued and recorded.
+LANDS = {"OutlineGenerated", "NodeGenerated"}
 
 NEXT = {
     "registered": "ask for a registered action; nothing ran",
@@ -41,6 +46,7 @@ NEXT = {
     "approval_present": "have a person take this action; the system may not",
     "idempotency_key_unused": "nothing to do — it already happened",
     "within_rate_limit": "wait, then retry",
+    "effect": "the call is unknown, not failed: recover",
 }
 
 #: The OPA action each registered action is judged as. The policy knows three.
@@ -57,9 +63,14 @@ class Outcome:
     key: str | None = None
 
 
-def key_of(name: str, args: dict, course: str) -> str:
-    """sha256 of the canonical action — the inventory's definition of the key."""
-    canonical = json.dumps({"action": name, "args": args, "course": course},
+def key_of(name: str, args: dict, course: str, subject: dict | None = None) -> str:
+    """sha256 of the canonical action — the inventory's definition of the key.
+
+    The canonical action includes what it acts on, not only what was asked: an
+    approval of a node in revision 2 is not the approval of it in revision 1,
+    and an approval after an edit is not the approval before it."""
+    canonical = json.dumps({"action": name, "args": args, "course": course,
+                            "subject": subject or {}},
                            sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
 
@@ -72,7 +83,14 @@ class Membrane:
     spent: dict = field(default_factory=dict)
     issued: set = field(default_factory=set)
 
-    def request(self, name: str, args: dict, actor: dict) -> Outcome:
+    def request(self, name: str, args: dict, actor: dict, perform=None) -> Outcome:
+        """Run the eight checks, then the effect.
+
+        `perform(key)` is the call itself — a model, a screening — made only
+        after every check passed and the key was issued. What it returns joins
+        the event's payload. If the provider does not answer, nothing is fired
+        and the outcome says so; the caller records the timeout, because the
+        table has a row for it and the membrane is not the machine."""
         action = REGISTRY.get(name)
         if action is None:
             return self._no("registered", f"{name!r} is not in the action registry")
@@ -90,10 +108,27 @@ class Membrane:
             return self._no("resource_allowed", f"{actor.get('id')} does not act on {self.course}")
         if actor.get("kind") == PERSON and actor.get("id") not in m.world.people:
             return self._no("resource_allowed", f"{actor.get('id')} is not in this organisation")
-        payload = {**args, "actor": actor.get("id")} if "actor" not in args else dict(args)
-        key = key_of(name, args, self.course)
-        if key in self.issued:
-            return Outcome(False, "idempotency_key_unused", "already issued",
+        # A person's act carries who did it. A system's does not stand in for a
+        # person: the guards that judge an author must go on judging the author.
+        payload = dict(args)
+        if "actor" not in payload and actor.get("kind") == PERSON:
+            payload["actor"] = actor.get("id")
+        rev = m.current
+        node = rev.nodes.get(args.get("node")) if args.get("node") else None
+        # Content is part of what an approval or an admission acts on. It is not
+        # part of what a generation acts on — it is what the generation makes,
+        # and the prompt digest in its arguments already names the request.
+        acts_on_content = node is not None and action.event not in LANDS
+        subject = {"revision": rev.id,
+                   "node": json.dumps(node.content, sort_keys=True) if acts_on_content else None}
+        key = key_of(name, args, self.course, subject)
+        # A repeat is a no-op once the effect has landed. A key issued for a call
+        # that never answered has not landed, and retrying it under the same key
+        # is exactly what the key is for — the provider deduplicates, we do not
+        # pay twice.
+        landed = key in m.store.used_keys or (key in self.issued and action.event not in LANDS)
+        if landed:
+            return Outcome(False, "idempotency_key_unused", "already done",
                            NEXT["idempotency_key_unused"], key)
         if action.event is not None:
             ok, why = m.permits(action.event, {**payload, "idempotency_key": key})
@@ -110,6 +145,11 @@ class Membrane:
         # the node would move on with no content.
         self.issued.add(key)
         self.spent[actor.get("id")] = self.spent.get(actor.get("id"), 0) + 1
+        if perform is not None:
+            try:
+                payload.update(perform(key))
+            except (ProviderUnavailable, GuardrailUnavailable) as exc:
+                return Outcome(False, "effect", str(exc), "the call is unknown, not failed: recover", key)
         if action.event is not None:
             m.fire(action.event, {**payload, "idempotency_key": key})
         return Outcome(True, key=key)
