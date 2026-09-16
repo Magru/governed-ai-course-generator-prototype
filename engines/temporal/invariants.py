@@ -16,7 +16,7 @@ engine turns it into a refusal. None of them may answer "ok" from silence.
 from __future__ import annotations
 from typing import Callable
 
-from .ltl import Violation, eventually, next_step, once, once_now
+from .ltl import Violation, eventually, once, once_now
 from .trace import (INITIAL, Step, Trace, admitted, held, missing_envelope,
                     needs_revalidation, removed, unapproved)
 
@@ -95,7 +95,12 @@ def i4(trace: Trace) -> list[Violation]:
         if s.event != "NodeEdited":
             continue
         node = s.state("node", "I4")
-        if not next_step(trace, i, lambda t: node in needs_revalidation(t, "I4")):
+        # X is "the state the edit produced". Under trace-schema.yaml a step
+        # carries the state its event produced, so that state is this step's —
+        # the step after it is already the next move, and a hand-edited node
+        # leaves NeedsRevalidation for the guardrail at once. Reading i + 1
+        # refused the first edit the machine ever made.
+        if node not in needs_revalidation(s, "I4"):
             bad.append(_v(i4, s, f"{node} was edited and did not move to "
                                  f"revalidation on the next step"))
     return bad

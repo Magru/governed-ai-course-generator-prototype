@@ -19,6 +19,10 @@ from .endpoints import PHASE_OF
 from .store import NodeRecord, Operation
 
 #: Which event would have answered an operation issued from each state.
+#: A configuration change names the stamp it supersedes.
+CHANGED = {"PolicyChanged": "policy", "GuardrailChanged": "guardrail",
+           "CatalogChanged": "catalog", "KBUpdated": "kb"}
+
 AWAITED = {
     ("revision", "BriefValidation"): "GuardrailVerdict",
     ("revision", "OutlineDrafting"): "OutlineGenerated",
@@ -65,8 +69,17 @@ def _block_at_node(m, t, rev, old, payload):
 
 
 def _restamp(m, t, rev, old, payload):
+    # Re-judged against today's versions: the revision and every node on it
+    # now carry them, and nothing on it is stale any more.
     rev.stamps = dict(m.store.current)
+    for node in rev.nodes.values():
+        if node.state != "Removed":
+            node.stamps = dict(m.store.current)
+    rev.stale_nodes.clear()
     rev.re_verified = True
+    # A revision re-verified on its way back from a rollback earns the pointer;
+    # one re-verified because a rule changed under it already holds it.
+    rev.awaiting_pointer = rev.stale_via == "RollbackRequested"
 
 
 def _nothing(m, t, obj, old, payload):
@@ -100,6 +113,8 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
     signature that arrives one short of the chain is still a signature.
     """
     rev = obj if machine == "revision" else m.rev_of(obj)
+    if event in CHANGED and machine == "revision":
+        m.store.current[CHANGED[event]] = payload["to"]
     if event == "BriefSubmitted" and machine == "revision":
         rev.brief = payload["brief"]
     elif event == "OutlineGenerated":
@@ -133,7 +148,10 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
             # glossary, blocked_at: "which phase a recoverable block was entered
             # from … so the fix returns there instead of to the beginning".
             issued = obj.pending_operation.issued_from if old == "ErrorRecovery" else old
-            obj.blocked_at, obj.blocked_from = PHASE_OF.get(issued, "node"), issued
+            # A live revision blocked during re-verification is in none of the
+            # three phases; it records no phase, and its way back is still the
+            # state that blocked.
+            obj.blocked_at, obj.blocked_from = PHASE_OF.get(issued), issued
         if old == "BlockedRecoverable" and new != old:
             obj.blocked_at = obj.blocked_from = None
         if new == "ErrorRecovery" and old != new:
@@ -149,10 +167,19 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
         if new == "BriefValidation":
             # walkthrough step 2: "writes: policy_version · guardrail_version"
             obj.stamps.update({k: m.store.current[k] for k in ("policy", "guardrail")})
-        if new == "StaleReview":
+        if new == "StaleReview" and old != new:
             obj.re_verified = False
+            obj.stale_via = payload.get("event") or t.event
+            # stale_nodes is written by the sweep that found this revision
+            # affected, not derived from every stamp that is behind: an
+            # unaffected revision stays Published under an old stamp, which
+            # is exactly what I7 and I15 permit and a derived list would forbid.
+            obj.stale_nodes = {n.id for n in obj.nodes.values()
+                               if n.state != "Removed" and any(
+                                   m.store.current[k] != v for k, v in n.stamps.items())}
         if new == "Published" and old == "Approved":
             obj.ever_published = True
+            obj.awaiting_pointer = True
     else:
         if new == "NodeRecovery" and old != new:
             obj.pending_operation = Operation(

@@ -76,7 +76,6 @@ def to_published(m: Machine) -> None:
     m.fire("CourseChecksRequested")
     m.fire("ApprovalGranted", {"signatures": SIGNATURES})
     m.fire("PublishRequested")
-    m.fire("LivePointerMoved", {"to": m.current.id})
     m.fire("LearnersNotified", {"notice_approved": True})
 
 

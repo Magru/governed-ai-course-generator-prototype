@@ -129,5 +129,12 @@ def test_the_cascade_reaches_through_an_intermediate_node():
     assert S.cascade(COURSE, "n1") == ["n2", "n3"]
 
 
+def test_the_cascade_reaches_the_exam_that_tests_an_edited_topic():
+    course = [{"id": "t1"}, {"id": "t2"}, {"id": "e1", "topics": ["t1", "t2"]},
+              {"id": "r1", "refers_to": ["t2"]}]
+    assert S.cascade(course, "t2") == ["e1", "r1"]
+    assert S.cascade(course, "e1") == []
+
+
 def test_the_cascade_of_an_untouched_leaf_is_empty():
     assert S.cascade(COURSE, "n3") == []

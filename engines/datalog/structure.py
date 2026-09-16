@@ -14,7 +14,7 @@ from .base import ENGINE, answers, rules, session
 
 TERMS = ("node_teaches, catalog_skill, refers_to, in_outline, prerequisite, "
          "position, exam_topic, approved, reaches, cycle, out_of_order, "
-         "invented_skill, dead_reference, outstanding, depends, "
+         "invented_skill, dead_reference, outstanding, depends, edge, "
          "N, T, S, A, B, X, E, PA, PB")
 
 RULES = """
@@ -25,11 +25,15 @@ reaches(A, B) <= reaches(A, X) & prerequisite(X, B)
 cycle(A) <= reaches(A, A)
 out_of_order(A, B) <= prerequisite(A, B) & position(A, PA) & position(B, PB) & (PA < PB)
 outstanding(E, T) <= exam_topic(E, T) & in_outline(T) & ~approved(T)
-depends(A, B) <= prerequisite(A, B)
-depends(A, B) <= depends(A, X) & prerequisite(X, B)
+edge(A, B) <= prerequisite(A, B)
+edge(A, B) <= exam_topic(A, B)
+edge(A, B) <= refers_to(A, B)
+depends(A, B) <= edge(A, B)
+depends(A, B) <= depends(A, X) & edge(X, B)
 """
 
-SEED = {"catalog_skill": 1, "in_outline": 1, "approved": 1, "prerequisite": 2}
+SEED = {"catalog_skill": 1, "in_outline": 1, "approved": 1, "prerequisite": 2,
+        "exam_topic": 2, "refers_to": 2}
 
 
 def _base(*, nodes=(), catalog_skills=(), outline=(), approved_nodes=()):
@@ -140,6 +144,11 @@ def check_content_approved(nodes: list[dict], outline: list[str],
 
 def cascade(nodes: list[dict], edited: str) -> list[str]:
     """Which nodes depend on the one that was edited, directly or through others.
+
+    A dependency is any edge a node was written against: a prerequisite, a topic
+    an exam tests, a node it refers to. An earlier version followed
+    prerequisites only, so editing a topic left the exam that tests it approved —
+    the walkthrough's own example of the cascade, and the machine found it.
 
     Not a guard and not a refusal — a derivation. It is what the staleness
     cascade reads to decide which stamps to break, so it returns the set rather

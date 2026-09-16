@@ -18,7 +18,7 @@ from engines.contract import Verdict
 
 from .engine_guards import ADAPTERS, Context
 from .guard_expressions import NODE_IN_STATE
-from .store_guards import STORE_GUARDS, Undecidable
+from .store_guards import STORE_GUARDS, ServiceDown, Undecidable
 from .transition_table import AUTO, complement_source
 
 #: The states whose pass row is a batch of formal checks, and whose failure is
@@ -62,6 +62,8 @@ class Evaluator:
         for lit in g.literals:
             try:
                 value, why = self._literal(lit, ctx)
+            except ServiceDown:
+                raise                    # the table has a row for this; not an unknown to swallow
             except Undecidable as exc:
                 return None, str(exc)
             if value == lit.negated:

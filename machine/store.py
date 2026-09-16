@@ -91,6 +91,8 @@ class RevisionRecord:
     affected: bool = False
     re_verified: bool = False
     screened: dict = field(default_factory=dict)   # artifact → last verdict
+    stale_via: str | None = None        # the event that sent it to StaleReview
+    awaiting_pointer: bool = False      # published, and the pointer has not moved yet
 
 
 @dataclass

@@ -25,11 +25,14 @@ which reaches every revision and legitimately moves none of them.
 """
 from __future__ import annotations
 
+import copy
+
 from engines.temporal.trace import SIDE_EFFECTING
 
 from . import bookkeeping, endpoints
 from .evaluation import Evaluator
 from .store import Store
+from .store_guards import ServiceDown
 from .transition_table import AUTO, REACTIONS, load
 
 #: Events that are about every revision rather than one.
@@ -52,29 +55,55 @@ class Machine:
         self.store.readers = dict(config.get("readers") or {})
         self.current = self.store.new_revision()
         self.evaluator = Evaluator(self)
+        self._depth = 0
         self._record("(initial)", {}, producer="store")
 
     # ── the public surface ────────────────────────────────────────────────
     def fire(self, event: str, payload: dict | None = None, *, producer="orchestrator") -> None:
-        payload = dict(payload or {})
+        """One event, all or nothing. A refused event leaves no trace and no
+        fact behind — a brief recorded by an event the machine then refused
+        would be a fact nobody may act on, sitting where a guard will read it."""
+        if self._depth:
+            return self._fire(event, payload, producer)
+        saved = copy.deepcopy((self.store, self.current.id))
+        self._depth += 1
+        try:
+            self._fire(event, payload, producer)
+        except MachineRefused:
+            self.store, current = saved
+            self.current = self.store.revisions[current]
+            self.evaluator.forget()
+            raise
+        finally:
+            self._depth -= 1
+
+    def _fire(self, event: str, payload: dict | None, producer: str) -> None:
+        payload = {**(payload or {}), "event": event}
         if event in SIDE_EFFECTING:
             payload.setdefault("idempotency_key", f"{event}:{len(self.store.steps)}")
         revs = self._revisions_for(event, payload)
-        moved, why = False, []
+        if event == "LivePointerMoved":
+            # The pointer moves first: lost_live_pointer asks about the pointer
+            # this event reports, not the one it replaced.
+            self.store.live_pointer = payload["to"]
+        moved, why, undecided = False, [], []
         for rev in revs:
             bookkeeping.on_event(self, "revision", rev, event, payload)
-            moved |= self._take("revision", rev, event, payload, why)
+            moved |= self._take("revision", rev, event, payload, why, undecided=undecided)
             for node in self._nodes_for(rev, event, payload):
                 bookkeeping.on_event(self, "node", node, event, payload)
-                moved |= self._take("node", node, event, payload, why)
+                moved |= self._take("node", node, event, payload, why, undecided=undecided)
+        if undecided and event in BROADCAST:
+            # A broadcast may legitimately move nothing — but only when every
+            # revision it reached was judged. One nobody could judge is not
+            # "unaffected"; recording the event as if it were is fail-open.
+            raise MachineRefused(f"{event} could not be decided: " + "; ".join(undecided))
         if event == "NodeEdited" and payload.get("node"):
             self._dependency_changed(revs[0], payload["node"])
         if not moved and event not in BROADCAST:
-            raise MachineRefused(
-                f"{event} is not permitted: revision {self.current.id} is "
-                f"{self.current.state}" + ("; " + "; ".join(why) if why else ""))
-        if event == "LivePointerMoved":
-            self.store.live_pointer = payload["to"]
+            where = ", ".join(f"revision {r.id} is {r.state}" for r in revs)
+            raise MachineRefused(f"{event} is not permitted: {where}"
+                                 + ("; " + "; ".join(why) if why else ""))
         for rev in revs:
             self._react(rev)
         self._record(event, payload, producer=producer)
@@ -138,14 +167,16 @@ class Machine:
             elif obj.state in t.sources:
                 yield t
 
-    def _take(self, machine, obj, event, payload, why, node=None) -> bool:
+    def _take(self, machine, obj, event, payload, why, node=None, undecided=None) -> bool:
         for t in self._candidates(machine, obj, event, payload):
             rev = obj if machine == "revision" else self.rev_of(obj)
-            ok, reason = self.evaluator.holds(t, rev, obj if machine == "node" else node, payload)
-            if ok:
+            value, reason = self.evaluator.decide(t, rev, obj if machine == "node" else node, payload)
+            if value is True:
                 self._apply(t, obj, payload)
                 return True
             why.append(f"{t.label()}: {reason}")
+            if value is None and undecided is not None:
+                undecided.append(f"{t.label()}: {reason}")
         return False
 
     def _apply(self, t, obj, payload) -> None:
@@ -167,6 +198,16 @@ class Machine:
 
     def _settle_once(self) -> bool:
         for rev in list(self.store.revisions.values()):
+            if rev.awaiting_pointer:
+                # PublishRequested is answered by the revision reaching
+                # Published *and* by LivePointerMoved (event catalog). The
+                # second is the system's to emit, not the editor's to request.
+                rev.awaiting_pointer = False
+                moved = {"to": rev.id}
+                if rev.stale_via == "RollbackRequested":
+                    moved["rolled_back_to"] = rev.id
+                self.fire("LivePointerMoved", moved, producer="system")
+                return True
             for node in list(rev.nodes.values()):
                 if self._auto("node", node, AUTO):
                     return True
@@ -196,7 +237,13 @@ class Machine:
                 return True
         rev = obj if machine == "revision" else self.rev_of(obj)
         before = (obj.state, rev.state, len(self.store.revisions))
-        if not self._take(machine, obj, event, {}, []):
+        try:
+            taken = self._take(machine, obj, event, {}, [])
+        except ServiceDown:
+            unreachable = {"node": obj.id} if machine == "node" else {"revision": rev.id}
+            self.fire("ServiceUnreachable", unreachable, producer="gateway")
+            return True
+        if not taken:
             return False
         if (obj.state, rev.state, len(self.store.revisions)) == before:
             return False            # a row whose effect is already in place

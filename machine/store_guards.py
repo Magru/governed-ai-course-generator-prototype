@@ -96,33 +96,50 @@ def _all_visuals_reviewed(lit: Literal, ctx: Context) -> bool:
     return queue <= reviewed
 
 
+class ServiceDown(Undecidable):
+    """The managed guardrail did not answer. An unknown, which the table routes
+    to recovery — never a verdict in either direction."""
+
+
 def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
     payload = ctx.payload or {}
     if "verdict" in payload:
         return payload["verdict"] == "allow"
-    # Inside StaleReview nothing arrives as an event: the verdict is the last
-    # screening recorded for this revision, and only one under the version now
-    # in force counts.
+    # Inside StaleReview nothing arrives as an event — the table has no
+    # GuardrailVerdict row there, only a Timeout one. So the machine asks the
+    # screening port itself, once per guardrail version, and an unreachable
+    # service is the Timeout row's business.
+    current = ctx.store.current["guardrail"]
     last = ctx.rev.screened.get("revision")
-    if not last or last["guardrail_version"] != ctx.store.current["guardrail"]:
-        raise Undecidable(f"{lit.raw}: nothing was screened under the guardrail now in force")
+    if not last or last["guardrail_version"] != current:
+        screener = ctx.machine.screener
+        if screener is None:
+            raise Undecidable(f"{lit.raw}: no screening port is attached to ask")
+        try:
+            verdict = screener(ctx.rev, current)
+        except ConnectionError as exc:
+            raise ServiceDown(f"{lit.raw}: the guardrail did not answer: {exc}") from exc
+        last = ctx.rev.screened["revision"] = {"verdict": verdict, "guardrail_version": current}
     return last["verdict"] == "allow"
 
 
 def _affected(lit: Literal, ctx: Context) -> bool:
-    # Structural share only: the change supersedes a version this revision is
-    # stamped with. Whether it reaches what the revision says is the managed
-    # guardrail's share; the event carries its answer as `reaches`, or the
-    # sweep cannot be decided.
+    # Two questions wearing one name (glossary). The structural one is the
+    # store's: is this revision stamped under the version the change replaces?
+    # The meaning one — does the change reach what the revision says — is the
+    # managed guardrail's, and arrives on the event as `reaches`, per revision.
     change = ctx.payload or {}
-    kind, to = change.get("kind"), change.get("to")
+    kind = {"PolicyChanged": "policy", "GuardrailChanged": "guardrail",
+            "CatalogChanged": "catalog", "KBUpdated": "kb"}.get(change.get("event", ""))
+    to = change.get("to")
     if kind is None or to is None:
         raise Undecidable(f"{lit.raw}: the change does not say what moved")
     if ctx.rev.stamps.get(kind) == to:
         return False
-    if "reaches" not in change:
-        raise Undecidable(f"{lit.raw}: nothing judged whether the change reaches this revision")
-    return bool(change["reaches"])
+    reaches = change.get("reaches") or {}
+    if ctx.rev.id not in reaches:
+        raise Undecidable(f"{lit.raw}: nothing judged whether the change reaches revision {ctx.rev.id}")
+    return bool(reaches[ctx.rev.id])
 
 
 def _has_active_readers(lit: Literal, ctx: Context) -> bool:
