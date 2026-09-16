@@ -19,7 +19,8 @@ allow if {
 
 approval_chain_satisfied if {
 	is_array(input.signatures)
-	is_number(data.org.approval.minimum_signatures)
+	not roles_unstated
+	not minimum_unstated
 	every role in data.org.approval.required_roles {
 		some s in valid_signatures
 		s.role == role
@@ -86,10 +87,31 @@ deny contains reason if {
 # the trap the brief-shaped clauses below already record.
 minimum_unstated if not data.org.approval.minimum_signatures
 
+# A count of signatures is a whole number and at least one. A minimum of zero
+# over an empty role list once published with nobody's signature at all.
 minimum_unstated if {
 	data.org.approval.minimum_signatures
 	not is_number(data.org.approval.minimum_signatures)
 }
+
+minimum_unstated if {
+	is_number(data.org.approval.minimum_signatures)
+	floor(data.org.approval.minimum_signatures) != data.org.approval.minimum_signatures
+}
+
+minimum_unstated if {
+	is_number(data.org.approval.minimum_signatures)
+	data.org.approval.minimum_signatures < 1
+}
+
+roles_unstated if not data.org.approval.required_roles
+
+roles_unstated if {
+	data.org.approval.required_roles
+	not is_array(data.org.approval.required_roles)
+}
+
+roles_unstated if count(data.org.approval.required_roles) == 0
 
 signatures_malformed if not input.signatures
 
@@ -103,7 +125,7 @@ deny contains reason if {
 	minimum_unstated
 	reason := {
 		"rule": "approval_chain_satisfied",
-		"message": "the organisation has not said how many signatures publication needs",
+		"message": "the organisation has not said how many signatures publication needs, as a whole number of at least one",
 	}
 }
 
@@ -120,7 +142,7 @@ deny contains reason if {
 # Silence about the approval rule is not consent to publish.
 deny contains reason if {
 	input.action == "grant_approval"
-	not data.org.approval.required_roles
+	roles_unstated
 	reason := {
 		"rule": "approval_chain_satisfied",
 		"message": "the organisation has not said whose signatures publication needs",

@@ -8,7 +8,7 @@ from scenarios import cascade as sim
 
 
 def test_the_prices_are_the_budget_files_not_the_simulations():
-    """latency-budget.yaml, finding 3: about 111 ms unedited, 311 ms hand-edited."""
+    """The budget file states about 111 ms unedited and 311 ms hand-edited."""
     assert (sim.RECHECK_MS, sim.EDITED_MS) == (111, 311)
 
 

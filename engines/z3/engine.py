@@ -165,6 +165,11 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
 
     questions = node.get("questions")
     blocks = node.get("blocks")
+    if node.get("type") == "exam":
+        # An exam's questions are the quiz blocks a learner answers, not a list
+        # beside them that could say anything — or be left out, which once
+        # skipped the sum entirely and passed an exam made of one heading.
+        questions = [b for b in blocks or [] if isinstance(b, dict) and b.get("type") == "quiz"]
     stated_total = node.get("points_total")
     stated_minutes = node.get("minutes")
 

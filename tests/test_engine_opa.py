@@ -225,3 +225,16 @@ def test_an_organisation_that_has_not_said_how_many_is_refused_with_a_reason():
 def test_a_course_for_no_audience_is_refused_by_name():
     v = engine.check("approve_node", PERSON_AUTHOR, brief(audience=[]), "ContentInProgress", DATA)
     assert not v.ok and "no audience" in v.refusal.summary
+
+
+@pytest.mark.parametrize("approval", [
+    {"required_roles": None, "minimum_signatures": 2},
+    {"required_roles": "compliance-officer", "minimum_signatures": 2},
+    {"required_roles": ["training-administrator"], "minimum_signatures": 1.5},
+    {"required_roles": [], "minimum_signatures": 0},
+    {"required_roles": ["training-administrator"], "minimum_signatures": 0},
+])
+def test_a_misconfigured_approval_rule_refuses_publication_with_a_reason(approval):
+    for chain in (FULL_CHAIN, []):
+        v = engine.check_approval(1, chain, DATA | {"approval": approval})
+        assert not v.ok and v.refusal.detail

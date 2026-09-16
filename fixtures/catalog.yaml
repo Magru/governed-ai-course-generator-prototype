@@ -26,7 +26,7 @@ catalog:
       kb: true
       modality: text
       requires_visual_review: false
-      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1}}}
+      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "\\w"}}}
     - id: paragraph
       category: text
       interactive: false
@@ -37,7 +37,7 @@ catalog:
         type: object
         required: [text, cites]
         properties:
-          text: {type: string, minLength: 1}
+          text: {type: string, minLength: 1, pattern: "\\w"}
           cites: {type: array, items: {type: string}, minItems: 1}
     - id: image
       category: image
@@ -49,9 +49,9 @@ catalog:
         type: object
         required: [src, alt, caption, cites]
         properties:
-          src: {type: string, minLength: 1}
-          alt: {type: string, minLength: 1}
-          caption: {type: string, minLength: 1}
+          src: {type: string, minLength: 1, pattern: "\\w"}
+          alt: {type: string, minLength: 1, pattern: "\\w"}
+          caption: {type: string, minLength: 1, pattern: "\\w"}
           cites: {type: array, items: {type: string}, minItems: 1}
     - id: checklist
       category: text
@@ -62,7 +62,7 @@ catalog:
       schema:
         type: object
         required: [items]
-        properties: {items: {type: array, items: {type: string, minLength: 1}, minItems: 1}}
+        properties: {items: {type: array, items: {type: string, minLength: 1, pattern: "\\w"}, minItems: 1}}
     - id: quiz
       category: assessment
       interactive: true
@@ -73,8 +73,8 @@ catalog:
         type: object
         required: [question, options, answer, points]
         properties:
-          question: {type: string, minLength: 1}
-          options: {type: array, items: {type: string, minLength: 1}, minItems: 2}
+          question: {type: string, minLength: 1, pattern: "\\w"}
+          options: {type: array, items: {type: string, minLength: 1, pattern: "\\w"}, minItems: 2, uniqueItems: true}
           answer: {type: integer}
           points: {type: integer}
     - id: callout
@@ -83,4 +83,4 @@ catalog:
       kb: true
       modality: text
       requires_visual_review: false
-      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1}}}
+      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "\\w"}}}

@@ -204,3 +204,11 @@ def test_an_absent_solver_is_unavailable_rather_than_a_pass(monkeypatch):
         engine.check(BRIEF, TH)
     with pytest.raises(EngineUnavailable):
         engine.check_arithmetic({"id": "n", "blocks": [1], "minutes": 5}, TH)
+
+
+def test_an_exam_is_its_quiz_blocks_and_an_exam_without_one_is_refused():
+    exam = {"id": "e", "type": "exam", "blocks": [{"type": "heading", "text": "x"}], "minutes": 5}
+    assert not engine.check_arithmetic(exam, {}).ok
+    assert not engine.check_arithmetic({**exam, "points_total": 5}, {}).ok
+    quiz = {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 0, "points": 5}
+    assert engine.check_arithmetic({**exam, "blocks": [quiz], "points_total": 5}, {}).ok

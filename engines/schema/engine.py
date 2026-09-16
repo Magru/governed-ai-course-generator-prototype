@@ -35,10 +35,12 @@ def _path(error) -> str:
 
 
 def _expected(error) -> str:
+    """The rule that failed, as the schema states it. Reading the first keyword
+    present instead reported `type: string` for a string that was too short, and
+    that wrong reason went into the repair prompt."""
     schema = error.schema if isinstance(error.schema, dict) else {}
-    for keyword in ("type", "enum", "minimum", "minItems", "minLength"):
-        if keyword in schema:
-            return f"{keyword}: {schema[keyword]}"
+    if error.validator in schema:
+        return f"{error.validator}: {schema[error.validator]}"
     return error.validator or "a different shape"
 
 
@@ -70,6 +72,13 @@ def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None 
             # that block must carry. Checking the type alone passed a paragraph
             # with no text — a lesson made of empty blocks.
             verdict = _against(one, block_schemas[one["type"]], "block")
+            if verdict.ok and one["type"] == "quiz" and not (
+                    isinstance(one.get("answer"), int) and 0 <= one["answer"] < len(one["options"])):
+                # A schema cannot say "an index into the list beside it".
+                verdict = refused(kind="failing-path", summary="block.answer: out of range",
+                                  detail=[{"path": "block.answer", "found": one.get("answer"),
+                                           "expected": f"an index below {len(one['options'])}"}],
+                                  engine=ENGINE)
         if not verdict.ok:
             for failure in verdict.refusal.detail if isinstance(
                     verdict.refusal.detail, list) else []:

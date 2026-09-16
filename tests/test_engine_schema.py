@@ -68,3 +68,25 @@ def test_a_block_with_no_type_list_is_refused_rather_than_guessed():
 def test_an_unknown_shape_is_unavailable_rather_than_allowed():
     with pytest.raises(EngineUnavailable):
         engine.check({}, "invoice")
+
+
+@pytest.mark.parametrize("block", [
+    {"type": "paragraph", "text": " ", "cites": ["mt-kb-001"]},
+    {"type": "paragraph", "text": "​", "cites": ["mt-kb-001"]},
+    {"type": "checklist", "items": ["."]},
+    {"type": "quiz", "question": "q", "options": ["same", "same"], "answer": 0, "points": 1},
+    {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 2, "points": 1},
+])
+def test_a_block_that_shows_a_learner_nothing_or_cannot_be_answered_is_refused(block):
+    from machine.world import load
+    world = load()
+    assert not engine.check_blocks({"id": "n", "blocks": [block]}, world.block_types,
+                                   world.block_schemas).ok
+
+
+def test_a_refusal_names_the_rule_that_failed_not_the_first_one_present():
+    from machine.world import load
+    world = load()
+    v = engine.check_blocks({"id": "n", "blocks": [{"type": "heading", "text": ""}]},
+                            world.block_types, world.block_schemas)
+    assert v.refusal.detail[0]["expected"] == "minLength: 1"
