@@ -48,6 +48,23 @@ def test_a_timeout_is_retried_under_the_same_key_and_lands_once(course):
     assert len(generated) == 1
 
 
+def test_the_run_used_every_recorded_screening_and_asked_for_no_other(course):
+    assert course.screener.unused() == {}
+
+
+def test_the_same_text_is_screened_once_however_often_a_guard_asks(course):
+    asked = [(point, subject, content) for point, subject, _, content in course.screener.asked]
+    assert len(asked) == len(set(asked))
+
+
+def test_an_approval_after_revalidation_is_a_new_act_not_a_repeat(course):
+    """The exam is re-approved in revision 2 with the content it had: a new round
+    of verification, so a new key, not 'already done'."""
+    approvals = [s for s in course.machine.trace()
+                 if s["event"] == "NodeApproved" and s.get("node") == "mt-node-204"]
+    assert [s["revision"] for s in approvals] == [1, 2]
+
+
 def test_the_whole_run_satisfies_every_invariant(course):
     verdict = temporal.check(course.machine.trace())
     assert verdict.ok, verdict.refusal

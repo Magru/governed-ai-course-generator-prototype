@@ -21,8 +21,6 @@ effect is recorded.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -30,6 +28,7 @@ import jsonschema
 
 from engines.opa import engine as opa
 
+from .action_subject import key_of, subject_of
 from .actions import PERSON, PRODUCED, REGISTRY, SYSTEM
 from .provider.port import GuardrailUnavailable, ProviderUnavailable
 
@@ -65,18 +64,6 @@ class Outcome:
     reason: str = ""
     next_action: str = ""
     key: str | None = None
-
-
-def key_of(name: str, args: dict, course: str, subject: dict | None = None) -> str:
-    """sha256 of the canonical action — the inventory's definition of the key.
-
-    The canonical action includes what it acts on, not only what was asked: an
-    approval of a node in revision 2 is not the approval of it in revision 1,
-    and an approval after an edit is not the approval before it."""
-    canonical = json.dumps({"action": name, "args": args, "course": course,
-                            "subject": subject or {}},
-                           sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode()).hexdigest()
 
 
 @dataclass
@@ -122,20 +109,14 @@ class Membrane:
         payload = dict(args)
         if actor["kind"] == PERSON:
             payload["actor"] = actor["id"]
-        rev = m.current
-        node = rev.nodes.get(args.get("node")) if args.get("node") else None
-        # Content is part of what an approval or an admission acts on. It is not
-        # part of what a generation acts on — it is what the generation makes,
-        # and the prompt digest in its arguments already names the request.
-        acts_on_content = node is not None and action.event not in LANDS
-        subject = {"revision": rev.id,
-                   "node": json.dumps(node.content, sort_keys=True) if acts_on_content else None}
-        key = key_of(name, args, self.course, subject)
-        # A repeat is a no-op once the effect has landed. A key issued for a call
-        # that never answered has not landed, and retrying it under the same key
-        # is exactly what the key is for — the provider deduplicates, we do not
-        # pay twice.
-        landed = key in m.store.used_keys or (key in self.issued and action.event not in LANDS)
+        key = key_of(name, args, self.course, subject_of(m, args, action.event in LANDS))
+        # A repeat is a no-op once the effect has landed, and what has landed is
+        # the store's to remember, not this object's: a gateway restarted after
+        # notifying learners must still know it did. A key issued for a call that
+        # never answered has not landed, and retrying it under the same key is
+        # exactly what the key is for — the provider deduplicates, we do not pay
+        # twice. A read lands nothing and is remembered only here.
+        landed = key in m.store.used_keys or (key in self.issued and action.event is None)
         if landed:
             return Outcome(False, "idempotency_key_unused", "already done",
                            NEXT["idempotency_key_unused"], key)
@@ -166,6 +147,9 @@ class Membrane:
                            NEXT["effect"], key)
         if action.event is not None:
             m.fire(action.event, {**payload, "idempotency_key": key})
+            # Recorded only once the step is: a refusal inside the machine rolls
+            # the store back and leaves the key unused, so the act can be retried.
+            m.store.used_keys.add(key)
         return Outcome(True, key=key)
 
     def _authenticated(self, actor: dict) -> dict:

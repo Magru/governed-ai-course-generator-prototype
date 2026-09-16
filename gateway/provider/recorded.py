@@ -46,12 +46,20 @@ class RecordedScreener(Screener):
     version: str = "guard-1"
     asked: list = field(default_factory=list)
 
+    def unused(self) -> dict:
+        """Recorded answers nobody asked for — a run that leaves some did not
+        take the path the recording was made for."""
+        return {k: v for k, v in self.verdicts.items() if v}
+
     def screen(self, content: str, modality: Modality, point: Point, subject: str = "") -> Verdict:
-        self.asked.append((point, subject, modality))
+        self.asked.append((point, subject, modality, content))
         queue = self.verdicts.get((point, subject))
         if not queue:
             raise GuardrailUnavailable(f"no screening recorded for {subject!r} at {point}")
-        answer = queue.pop(0) if len(queue) > 1 else queue[0]
+        # Each recorded answer is used once. Repeating the last one would make
+        # the recording a default after all — every screening past the ones
+        # recorded would pass without anyone having decided it should.
+        answer = queue.pop(0)
         if answer == "unreachable":
             raise GuardrailUnavailable(f"{subject} at {point}: the recorded call did not answer")
         if answer == "allow":

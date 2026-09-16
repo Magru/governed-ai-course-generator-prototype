@@ -48,9 +48,21 @@ class Pipeline:
     course: str
     kb_chunks: list
     stages: list = field(default_factory=list)
+    screenings: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self.membrane = Membrane(self.machine, self.course)
+
+    def screen(self, content: str, modality: str, point: str, subject: str):
+        """One screening per content, point and guardrail version. The machine
+        asks for a verdict inside a guard, and a legality check runs the same
+        guard again before the real step; the second asking must get the first
+        answer, not a second billed call that may answer differently. A service
+        that did not answer is not remembered — it is asked again."""
+        memo = (point, subject, _sha(content), self.machine.store.current["guardrail"])
+        if memo not in self.screenings:
+            self.screenings[memo] = self.screener.screen(content, modality, point, subject=subject)
+        return self.screenings[memo]
 
     # ── the brief ─────────────────────────────────────────────────────────
     def submit_brief(self, brief: dict, actor: dict) -> None:
@@ -135,7 +147,7 @@ class Pipeline:
                     lambda key: _as_payload(self._verdict(point, subject, content, modality)))
 
     def _verdict(self, point: str, subject: str, content: str, modality: str):
-        verdict = self.screener.screen(content, modality, point, subject=subject)
+        verdict = self.screen(content, modality, point, subject)
         self._stage(6 if point != "brief-in" else 3, f"guardrail {point}", subject,
                     "allow" if verdict.allowed else f"deny: {verdict.category}")
         return verdict

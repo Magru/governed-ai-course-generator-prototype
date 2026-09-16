@@ -39,11 +39,21 @@ def course_generator() -> RecordedGenerator:
 
 
 def course_screener() -> RecordedScreener:
-    allow = ["allow"]
-    verdicts = {("brief-in", "brief"): allow, ("outline-out", "outline"): allow,
-                ("image-out", f"{w.T1}.blocks[1]"): allow}
-    for node in (w.T1, w.T2, w.T3, w.E1):
-        verdicts[("node-out", node)] = allow
-    for rev in (1, 2):
-        verdicts[("revision", f"revision-{rev}")] = allow
-    return RecordedScreener(verdicts)
+    """One answer per screening the run makes, and no more. The outline and the
+    exam are screened twice because their first answer was repaired. Topic two
+    is too, but not for its repair — the leaking draft differed from its repair
+    only in citations, which are not screened text, so the same text was not
+    screened twice; its second screening is the edit after publication. The
+    published revision is screened once when it is verified again: the policy
+    change that follows the rollback leaves text and guardrail as they were."""
+    allow = lambda times: ["allow"] * times
+    return RecordedScreener({
+        ("brief-in", "brief"): allow(1),
+        ("outline-out", "outline"): allow(2),
+        ("image-out", f"{w.T1}.blocks[1]"): allow(1),
+        ("node-out", w.T1): allow(1),
+        ("node-out", w.T2): allow(2),
+        ("node-out", w.T3): allow(1),
+        ("node-out", w.E1): allow(2),
+        ("revision", "revision-1"): allow(1),
+    })

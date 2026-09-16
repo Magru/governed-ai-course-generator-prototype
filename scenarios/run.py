@@ -37,10 +37,16 @@ def _revision_verdict(p: Pipeline, rev) -> str:
     """StaleReview asks the screening port from inside the machine; a service
     that does not answer is a ConnectionError there, which the Timeout row takes."""
     try:
-        v = p.screener.screen("", "text", "revision", subject=f"revision-{rev.id}")
+        v = p.screen(_revision_text(rev), "text", "revision", f"revision-{rev.id}")
     except GuardrailUnavailable as exc:
         raise ConnectionError(str(exc)) from exc
     return "allow" if v.allowed else v.category
+
+
+def _revision_text(rev) -> str:
+    """What a live revision is re-screened on: the text of every node in it."""
+    return " ".join(b.get("text") or b.get("question") or b.get("caption") or ""
+                    for n in rev.nodes.values() for b in (n.content or {}).get("blocks") or [])
 
 
 def approve(p: Pipeline, node: str, **extra) -> None:
@@ -81,7 +87,6 @@ def after_publication(p: Pipeline) -> None:
     m.fire("ReviseRequested", {"revision": 1})
     edited = copy.deepcopy(w.CONTENT[w.T2])
     edited["blocks"][0]["text"] = "check every tool for splits and loose handles before use"
-    p.screener.verdicts[("node-out", w.T2)] = ["allow"]
     m.fire("NodeEdited", {"node": w.T2, "content": edited})
     p._screen_node(w.T2)
     for node in (w.T2, w.E1):
