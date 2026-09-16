@@ -65,6 +65,7 @@ class NodeRecord:
     pending_operation: Operation | None = None
     stamps: dict = field(default_factory=dict)
     visuals_reviewed: bool = True
+    issued_key: str | None = None       # the generation this node is waiting on
     ever_published: bool = False        # nodes are never published on their own
 
 
@@ -73,6 +74,7 @@ class RevisionRecord:
     id: int
     state: str = "AwaitingBrief"
     brief: dict | None = None
+    author: str | None = None           # who submitted the brief
     proposal: dict | None = None        # the outline the model offered
     committed_outline: list | None = None
     outline_version: int = 0
@@ -104,6 +106,7 @@ class Store:
     used_keys: set = field(default_factory=set)
     steps: list = field(default_factory=list)
     readers: dict = field(default_factory=dict)   # revision → learners mid-course
+    discarded: list = field(default_factory=list) # events no row accepted, and why
 
     def budget(self) -> int:
         return self.config["thresholds"]["repair_budget"]

@@ -53,10 +53,20 @@ def _pending(lit: Literal, ctx: Context):
     return op
 
 
+def _key_unused(lit: Literal, ctx: Context) -> bool:
+    op = _pending(lit, ctx)
+    if op.awaited == "GuardrailVerdict":
+        # "a screening writes no course state, so there is nothing to
+        # reconcile" (node row 7). A screening never landed; counting one that
+        # did as landed would read an unanswered screening as an allow.
+        return True
+    return op.key not in ctx.store.used_keys
+
+
 def fingerprint(rev) -> str:
     """What a learner would read. Two revisions with the same one are the same
     course, whatever their ids."""
-    body = {"outline": rev.committed_outline,
+    body = {"outline": [rev.nodes[i].spec for i in rev.committed_outline or [] if i in rev.nodes],
             "nodes": {n.id: n.content for n in rev.nodes.values() if n.state != "Removed"}}
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
@@ -169,8 +179,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
         ctx.rev.ever_published and ctx.rev.state in LIVE_LINEAGE),
     "lost_live_pointer(revision)": lambda lit, ctx: ctx.store.live_pointer not in (None, ctx.rev.id),
     "retry_budget_left(scope)": lambda lit, ctx: _obj(lit, ctx).repair_count < ctx.store.budget(),
-    "idempotency_key_unused(operation)": lambda lit, ctx: (
-        _pending(lit, ctx).key not in ctx.store.used_keys),
+    "idempotency_key_unused(operation)": lambda lit, ctx: _key_unused(lit, ctx),
     "hand_edited(node)": lambda lit, ctx: ctx.node.hand_edited,
     "in_outline(node, committed_outline)": _in_outline,
     "all_nodes_approved(revision)": lambda lit, ctx: all(

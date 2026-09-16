@@ -15,7 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from engines.contract import Verdict
+from engines.contract import Verdict, refused
 from engines.registry import IMPLEMENTED
 
 from .guard_expressions import Literal
@@ -66,8 +66,11 @@ _ACTION_BY_STATE = {"BriefValidation": "submit_brief", "OutlineChecks": "generat
 def _policy(lit: Literal, ctx: Context) -> Verdict:
     action = _ACTION_BY_ARG.get(lit.arg or "") or (
         "generate_node" if ctx.node is not None else _ACTION_BY_STATE[ctx.rev.state])
-    actor_id = (ctx.payload or {}).get("actor") or ctx.store.config["author"]
-    person = ctx.world.people[actor_id]
+    actor_id = (ctx.payload or {}).get("actor") or ctx.rev.author or ctx.store.config["author"]
+    person = ctx.world.people.get(actor_id)
+    if person is None:
+        return refused("named-rule", f"{actor_id} is not a person in this organisation",
+                       {"actor": actor_id}, "opa")
     return IMPLEMENTED["policy_allows(action, role, state)"](
         action, {"id": actor_id, "role": person["role"]}, _brief_input(ctx.rev),
         ctx.rev.state, ctx.world.policy_data)
@@ -84,15 +87,23 @@ def _nodes_in_scope(ctx: Context) -> list[dict]:
 
 
 def _coverage(lit: Literal, ctx: Context) -> Verdict:
-    if ctx.node is not None:
-        skill = ctx.node.spec.get("skill")
-        objectives = [skill] if skill else []
-        scope = "node"
-    else:
-        objectives, scope = (ctx.rev.brief or {}).get("objectives") or [], "course"
+    brief_objectives = (ctx.rev.brief or {}).get("objectives") or []
+    develops = ctx.world.develops
+    if ctx.node is None:
+        return IMPLEMENTED["objectives_covered(scope)"](
+            f"rev-{ctx.rev.id}", brief_objectives, _nodes_in_scope(ctx), develops, scope="course")
+    skill = ctx.node.spec.get("skill")
+    if skill is None:
+        # An exam closes no objective of its own; its question is whether its
+        # topics are approved, which content_approved asks.
+        return IMPLEMENTED["objectives_covered(scope)"](
+            f"rev-{ctx.rev.id}", [], _nodes_in_scope(ctx), develops, scope="node")
+    # The node's own objective is the one its skill closes — and it must be an
+    # objective the brief asked for. Only the brief's objectives are developed
+    # here, so a topic teaching something off-brief is refused, not passed.
+    in_brief = {s: [o for o in objs if o in brief_objectives] for s, objs in develops.items()}
     return IMPLEMENTED["objectives_covered(scope)"](
-        f"rev-{ctx.rev.id}", objectives, _nodes_in_scope(ctx), ctx.world.develops,
-        scope=scope)
+        f"rev-{ctx.rev.id}", [skill], _nodes_in_scope(ctx), in_brief, scope="node")
 
 
 ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {

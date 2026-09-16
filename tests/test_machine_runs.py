@@ -53,6 +53,8 @@ def test_an_event_the_tables_do_not_permit_is_refused():
     with pytest.raises(MachineRefused, match="PublishRequested is not permitted"):
         m.fire("PublishRequested")
     assert _events(m) == ["(initial)"]
+    # recorded and discarded (transitions.html §8): in the discard log, not the trace
+    assert [d["event"] for d in m.store.discarded] == ["PublishRequested"]
 
 
 def test_an_audience_the_author_was_not_granted_ends_the_revision():
@@ -155,3 +157,11 @@ def test_the_model_has_no_way_back_from_repair_once_its_budget_is_spent():
     assert (m.current.state, m.current.nodes[N1].state) == ("BlockedRecoverable", "NodeRepair")
     with pytest.raises(MachineRefused):
         m.fire("NodeEdited", {"node": N1, "content": CONTENT[N1]})
+    # The way out that does exist: drop the node through a revised, re-checked
+    # outline. The held node must not re-block the revision while its outline
+    # is being checked, or this way out would not exist either.
+    without = {"nodes": [n for n in OUTLINE["nodes"] if n["id"] != N1]}
+    m.fire("OutlineRevised", {"outline": without})
+    assert m.current.state == "OutlineReview"
+    m.fire("OutlineApproved", {"reason": "the topic cannot be written from sources this audience may see"})
+    assert (m.current.state, m.current.nodes[N1].state) == ("ContentInProgress", "Removed")

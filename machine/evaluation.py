@@ -107,10 +107,20 @@ class Evaluator:
             return None
         rev = obj if machine == "revision" else self.m.rev_of(obj)
         node = obj if machine == "node" else None
-        passing = next(t for t in self.m.table[machine]
-                       if t.event == AUTO and obj.state in t.sources)
+        rows = [t for t in self.m.table[machine] if obj.state in t.sources
+                and (t.event == AUTO or t.event == "CheckFailed")]
+        # The failure rows' own engine literals are asked first — OPA's refusal
+        # is terminal and is only on the CheckFailed(opa) row at NodeChecks,
+        # so reading the pass row alone would never reach it.
+        ordered = [t for t in rows if t.event == "CheckFailed"] + [t for t in rows if t.event == AUTO]
+        literals, seen = [], set()
+        for t in ordered:
+            for lit in t.guard.literals:
+                if lit.name in ADAPTERS and (lit.name, lit.arg) not in seen:
+                    seen.add((lit.name, lit.arg))
+                    literals.append(lit)
         ctx = Context(self.m, rev, node, {})
-        for lit in passing.guard.literals:
+        for lit in literals:
             if lit.name in ADAPTERS:
                 verdict = self.verdict(lit, ctx)
                 if not verdict.ok:

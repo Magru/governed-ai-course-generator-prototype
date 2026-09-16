@@ -16,6 +16,10 @@ reviewer disagree with one.
 from __future__ import annotations
 
 from .endpoints import PHASE_OF
+
+
+class ApprovalOfUncheckedOutline(RuntimeError):
+    """Raised inside an event; the machine turns it into a refusal."""
 from .store import NodeRecord, Operation
 
 #: Which event would have answered an operation issued from each state.
@@ -48,8 +52,9 @@ def _reset_repair(m, t, obj, old, payload):
 
 
 def _advance_outline(m, t, rev, old, payload):
-    proposal = payload.get("outline") or rev.proposal
-    rev.proposal = proposal
+    # Only the proposal that went through OutlineChecks is committed; on_event
+    # has already refused an approval carrying a different one.
+    proposal = rev.proposal
     rev.outline_version += 1
     rev.committed_outline = [n["id"] for n in proposal["nodes"]]
     for spec in proposal["nodes"]:
@@ -76,6 +81,7 @@ def _restamp(m, t, rev, old, payload):
         if node.state != "Removed":
             node.stamps = dict(m.store.current)
     rev.stale_nodes.clear()
+    rev.affected = False
     rev.re_verified = True
     # A revision re-verified on its way back from a rollback earns the pointer;
     # one re-verified because a rule changed under it already holds it.
@@ -115,8 +121,24 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
     rev = obj if machine == "revision" else m.rev_of(obj)
     if event in CHANGED and machine == "revision":
         m.store.current[CHANGED[event]] = payload["to"]
+    if event in ("OutlineApproved", "OutlineRejected") and machine == "revision":
+        offered = payload.get("outline")
+        if offered is not None and offered != rev.proposal:
+            # An approval signs what was checked. An outline edited at review
+            # has not been through schema, Datalog, OPA or Z3; committing it
+            # here would be the one unchecked path into course structure.
+            raise ApprovalOfUncheckedOutline(
+                f"{event} carries an outline that differs from the one checked; "
+                "the edit must go through OutlineRevised and OutlineChecks")
+    if event == "OutlineRevised" and machine == "revision" and payload.get("outline"):
+        rev.proposal = payload["outline"]
+    if event == "NodeGenerationRequested" and machine == "node":
+        obj.issued_key = payload.get("idempotency_key") or f"generate:{obj.id}:{len(m.store.steps)}"
     if event == "BriefSubmitted" and machine == "revision":
         rev.brief = payload["brief"]
+        # The checks that follow run as (auto) rows with no payload of their
+        # own; OPA must judge the person who submitted, not a default.
+        rev.author = payload.get("actor") or m.store.config["author"]
     elif event == "OutlineGenerated":
         rev.proposal = payload["outline"]
         m.store.used_keys.add(payload["idempotency_key"])
@@ -154,6 +176,17 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
             obj.blocked_at, obj.blocked_from = PHASE_OF.get(issued), issued
         if old == "BlockedRecoverable" and new != old:
             obj.blocked_at = obj.blocked_from = None
+            # A person cleared the cause: the counter restarts, as the node
+            # rows out of NodeRecovery say explicitly for the node machine.
+            obj.repair_count = 0
+        if new == "ContentInProgress" and old != new:
+            # Consent is to this version. Signatures given before the revision
+            # went back to work are for a course that no longer exists.
+            obj.approvals = [a for a in obj.approvals if a.get("scope") != "publication"]
+        if new == "Approved" and old == "PendingApproval":
+            # walkthrough step 23: "the course is stamped as a whole, the same
+            # way each node was".
+            obj.stamps = dict(m.store.current)
         if new == "ErrorRecovery" and old != new:
             obj.pending_operation = Operation(
                 payload.get("idempotency_key") or f"{old}:{obj.id}:{len(m.store.steps)}",
@@ -170,6 +203,7 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
         if new == "StaleReview" and old != new:
             obj.re_verified = False
             obj.stale_via = payload.get("event") or t.event
+            obj.affected = obj.stale_via in CHANGED
             # stale_nodes is written by the sweep that found this revision
             # affected, not derived from every stamp that is behind: an
             # unaffected revision stays Published under an old stamp, which
@@ -183,7 +217,8 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
     else:
         if new == "NodeRecovery" and old != new:
             obj.pending_operation = Operation(
-                payload.get("idempotency_key") or f"{obj.id}:{len(m.store.steps)}",
+                payload.get("idempotency_key") or getattr(obj, "issued_key", None)
+                or f"{obj.id}:{len(m.store.steps)}",
                 old, AWAITED[("node", old)], dict(payload))
         if old == "NodeRecovery" and new != old:
             obj.pending_operation = None
