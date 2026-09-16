@@ -41,7 +41,10 @@ class Context:
 def engine_node(node) -> dict:
     """A node as every engine takes it: the outline's entry, its generated
     content, and where it stands."""
-    return {**node.spec, **(node.content or {}), "id": node.id, "state": node.state}
+    # The outline's entry wins: a model that writes `skill` or `topics` into its
+    # answer does not get to change what the node was approved to teach.
+    content = node.content if isinstance(node.content, dict) else {}
+    return {**content, **node.spec, "id": node.id, "state": node.state}
 
 
 def course_nodes(rev) -> list[dict]:
@@ -129,7 +132,7 @@ ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
     "trace_satisfies_ltl(course)": lambda lit, ctx: IMPLEMENTED["trace_satisfies_ltl(course)"](
         ctx.machine.trace()),
     "block_schemas_valid(node)": lambda lit, ctx: IMPLEMENTED["block_schemas_valid(node)"](
-        engine_node(ctx.node), ctx.world.block_types),
+        engine_node(ctx.node), ctx.world.block_types, ctx.world.block_schemas),
     "arithmetic_consistent(node)": lambda lit, ctx: IMPLEMENTED["arithmetic_consistent(node)"](
         engine_node(ctx.node), ctx.world.thresholds),
     "approval_chain_satisfied(revision)": lambda lit, ctx: IMPLEMENTED["approval_chain_satisfied(revision)"](

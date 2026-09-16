@@ -6,11 +6,11 @@ import copy
 import pytest
 
 from gateway.actions import REGISTRY
-from gateway.membrane import Membrane
+from gateway.membrane import GATEWAY, Membrane
 from scenarios.machine_runs import CONTENT, N1, machine, to_content
 
 AUTHOR = {"id": "author-1", "kind": "person", "role": "course-author"}
-SYSTEM = {"id": "orchestrator", "kind": "system", "role": "system"}
+SYSTEM = GATEWAY
 
 
 def _content(key):

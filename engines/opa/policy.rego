@@ -83,6 +83,7 @@ allow if {
 
 # An author may only write for audiences they were granted.
 audience_permitted if {
+	count(input.brief.audience) > 0
 	every team in input.brief.audience {
 		team in data.org.grants[input.actor.id].may_author_for
 	}
@@ -110,77 +111,6 @@ state_permits if {
 	input.course_state == "ContentInProgress"
 }
 
-# Publication needs signatures. Which ones, and how many, is configuration —
-# this only checks that what the organisation asked for is present. An earlier
-# draft had no rule at all here, so the transition PendingApproval →
-# ApprovalGranted named OPA as its layer and OPA had nothing to say about it.
-allow if {
-	input.action == "grant_approval"
-	approval_chain_satisfied
-}
-
-approval_chain_satisfied if {
-	every role in data.org.approval.required_roles {
-		some signature in input.signatures
-		signature.role == role
-	}
-	count(signers) >= data.org.approval.minimum_signatures
-	count(false_signatures) == 0
-}
-
-# A signature counts once per person. Two entries by one person are one consent,
-# and a chain of two that one administrator signed twice is a chain of one.
-signers := {s.actor | some s in input.signatures}
-
-# A signature is a person of this organisation signing in the role they hold.
-# Checking only the role written on the signature would accept any name at all
-# under the right title.
-false_signatures contains s if {
-	some s in input.signatures
-	not data.org.people[s.actor].role == s.role
-}
-
-deny contains reason if {
-	input.action == "grant_approval"
-	missing := [role |
-		some role in data.org.approval.required_roles
-		not role in {s.role | some s in input.signatures}
-	]
-	count(missing) > 0
-	reason := {
-		"rule": "approval_chain_satisfied",
-		"message": sprintf("publication needs a signature from %v", [missing]),
-	}
-}
-
-deny contains reason if {
-	input.action == "grant_approval"
-	count(signers) < data.org.approval.minimum_signatures
-	reason := {
-		"rule": "approval_chain_satisfied",
-		"message": sprintf("%v distinct signers present, %v required", [count(signers), data.org.approval.minimum_signatures]),
-	}
-}
-
-deny contains reason if {
-	input.action == "grant_approval"
-	some s in false_signatures
-	reason := {
-		"rule": "approval_chain_satisfied",
-		"message": sprintf("%v is not a %v of this organisation", [s.actor, s.role]),
-	}
-}
-
-# Silence about the approval rule is not consent to publish.
-deny contains reason if {
-	input.action == "grant_approval"
-	not data.org.approval.required_roles
-	reason := {
-		"rule": "approval_chain_satisfied",
-		"message": "the organisation has not said whose signatures publication needs",
-	}
-}
-
 # Refusing with the rule that denied and a sentence a person can act on. A bare
 # `allow = false` would tell an author nothing about what to change.
 # Asked of whoever authors, and of a person acting on a course. A system asked
@@ -195,13 +125,30 @@ audience_question if {
 deny contains reason if {
 	audience_question
 	not audience_permitted
-	ungranted := [team |
-		some team in input.brief.audience
-		not team in data.org.grants[input.actor.id].may_author_for
-	]
+	# object.get, not a path: for someone the organisation never granted, the
+	# path is undefined, `team in undefined` is undefined, and the list came
+	# out empty — a refusal that named no team.
+	granted := object.get(data.org.grants, [input.actor.id, "may_author_for"], [])
+	ungranted := [team | some team in input.brief.audience; not team in granted]
+	count(ungranted) > 0
 	reason := {
 		"rule": "audience_permitted",
 		"message": sprintf("%v may not author for %v", [input.actor.id, ungranted]),
+	}
+}
+
+# A refusal that names nothing sends a person looking for nothing. A course for
+# no one, or an author the organisation has granted nothing, is said as such.
+audience_empty if not input.brief.audience
+
+audience_empty if count(input.brief.audience) == 0
+
+deny contains reason if {
+	audience_question
+	audience_empty
+	reason := {
+		"rule": "audience_permitted",
+		"message": "the course names no audience, and a course for no one cannot be authored",
 	}
 }
 

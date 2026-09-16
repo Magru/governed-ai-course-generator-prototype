@@ -19,7 +19,7 @@ def brief(**over):
 
 
 def test_the_policy_file_is_valid_rego():
-    assert subprocess.run(["opa", "check", str(engine.POLICY)]).returncode == 0
+    assert subprocess.run(["opa", "check", *map(str, engine.POLICY_FILES)]).returncode == 0
 
 
 def test_an_author_may_write_for_a_granted_audience():
@@ -199,3 +199,29 @@ def test_every_registered_action_is_a_question_for_the_policy(action, actor, ok)
     assert v.ok is ok
     if not ok:
         assert {d["rule"] for d in v.refusal.detail} & {"known_role", "person_only", "system_only"}
+
+
+@pytest.mark.parametrize("label,signatures", [
+    ("a signature with no signer fills a role",
+     [{"actor": "admin-1", "role": "training-administrator"}, {"role": "compliance-officer"},
+      {"actor": "author-1", "role": "course-author"}]),
+    ("a signature with no role", [{"actor": "admin-1", "role": "training-administrator"},
+                                  {"actor": "compliance-1"}]),
+    ("signatures that are not a list", {"a": {"actor": "admin-1", "role": "training-administrator"},
+                                        "b": {"actor": "compliance-1", "role": "compliance-officer"}}),
+])
+def test_a_malformed_chain_is_refused_with_a_named_rule(label, signatures):
+    v = engine.check_approval(1, signatures, APPROVAL_ORG)
+    assert not v.ok, label
+    assert all(d["rule"] == "approval_chain_satisfied" for d in v.refusal.detail)
+
+
+def test_an_organisation_that_has_not_said_how_many_is_refused_with_a_reason():
+    v = engine.check_approval(1, FULL_CHAIN, DATA | {"approval": {
+        "required_roles": ORG["approval"]["required_roles"]}})
+    assert not v.ok and "how many" in v.refusal.summary
+
+
+def test_a_course_for_no_audience_is_refused_by_name():
+    v = engine.check("approve_node", PERSON_AUTHOR, brief(audience=[]), "ContentInProgress", DATA)
+    assert not v.ok and "no audience" in v.refusal.summary

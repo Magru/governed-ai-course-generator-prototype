@@ -14,6 +14,8 @@ from ..contract import (EngineUnavailable, RefusalWithoutArtifact, Verdict,
 
 HERE = pathlib.Path(__file__).parent
 POLICY = HERE / "policy.rego"
+#: Every file of the policy package. Loaded together; one file alone is half a policy.
+POLICY_FILES = sorted(HERE.glob("*.rego"))
 ENGINE = "opa"
 
 
@@ -88,7 +90,7 @@ def _eval(query: str, input_doc: dict, data_path: str):
     try:
         proc = subprocess.run(
             ["opa", "eval", "--format", "json",
-             "--data", str(POLICY), "--data", data_path,
+             *[arg for f in POLICY_FILES for arg in ("--data", str(f))], "--data", data_path,
              "--stdin-input", query],
             input=json.dumps(input_doc), capture_output=True, text=True, timeout=20)
     except (OSError, subprocess.TimeoutExpired) as exc:

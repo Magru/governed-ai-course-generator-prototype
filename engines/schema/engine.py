@@ -42,7 +42,7 @@ def _expected(error) -> str:
     return error.validator or "a different shape"
 
 
-def check_blocks(node: dict, block_types: list[str]) -> Verdict:
+def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None = None) -> Verdict:
     """Does every content block in this node have a shape the catalog defines?
 
     A separate guard from `schema_valid`, with a separate owner: the catalog
@@ -65,6 +65,11 @@ def check_blocks(node: dict, block_types: list[str]) -> Verdict:
     failures = []
     for index, one in enumerate(blocks):
         verdict = check(one, "block", block_types=block_types)
+        if verdict.ok and block_schemas is not None:
+            # The type says which block it is; the catalog's own row says what
+            # that block must carry. Checking the type alone passed a paragraph
+            # with no text — a lesson made of empty blocks.
+            verdict = _against(one, block_schemas[one["type"]], "block")
         if not verdict.ok:
             for failure in verdict.refusal.detail if isinstance(
                     verdict.refusal.detail, list) else []:
@@ -88,7 +93,6 @@ def check(artifact: dict, shape: str, *, block_types: list[str] | None = None) -
     organisation's own list of block types, which is why that list is passed in
     rather than written here.
     """
-    jsonschema = _validator()
     if shape == "block":
         if block_types is None:
             # The organisation decides which blocks exist. Falling back to a
@@ -104,7 +108,12 @@ def check(artifact: dict, shape: str, *, block_types: list[str] | None = None) -
     else:
         raise EngineUnavailable(f"no schema is defined for {shape!r}")
 
-    errors = sorted(jsonschema.Draft202012Validator(schema).iter_errors(artifact),
+    return _against(artifact, schema, shape)
+
+
+def _against(artifact, schema: dict, shape: str) -> Verdict:
+    """One validation, and its refusal as the failing path."""
+    errors = sorted(_validator().Draft202012Validator(schema).iter_errors(artifact),
                     key=lambda e: list(e.absolute_path))
     if not errors:
         return allowed(engine=ENGINE, shape=shape)

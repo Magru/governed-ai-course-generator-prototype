@@ -33,14 +33,24 @@ def key_of(name: str, args: dict, course: str, subject: dict | None = None) -> s
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
-def subject_of(machine, args: dict, lands: bool) -> dict:
-    """A generation is named by its prompt digest and retried under the same key
-    when its answer never came, so it takes no content and no round: what it
-    makes is not what it acts on, and a retry is not a new act."""
+#: Actions that land what a model made, and the move that asks for one again
+#: because the last was refused: from the repair state back to drafting.
+REPAIRS = {"NodeGenerated": ("NodeRepair", "ContentDrafting"),
+           "OutlineGenerated": ("OutlineRepair", "OutlineDrafting")}
+
+
+def subject_of(machine, args: dict, event: str | None) -> dict:
+    """A generation is named by its prompt digest and by how many repairs its
+    object has been through. A call that never answered is retried from
+    recovery, not repair, so it keeps the key and the provider deduplicates it;
+    a second press of the same request keeps it too and is 'already done'. A
+    repair that happens to ask the same prompt again — two identical refusals in
+    a row — is a new act and gets a new key."""
     rev = machine.current
     node = rev.nodes.get(args.get("node")) if args.get("node") else None
-    if lands:
-        return {"revision": rev.id}
+    if event in REPAIRS:
+        return {"revision": rev.id,
+                "repairs": transitions(machine.store.steps, rev.id, args.get("node"), *REPAIRS[event])}
     return {"revision": rev.id,
             "node": json.dumps(node.content, sort_keys=True) if node is not None else None,
             "round": rounds(machine.store.steps, rev.id, node.id if node is not None else None)}
@@ -55,5 +65,17 @@ def rounds(steps: list, revision: int, node: str | None) -> int:
         state = step["node_states"].get(node) if node else step["course_state"]
         if state != last and state in (NODE_ROUNDS if node else REVISION_ROUNDS):
             count += 1
+        last = state
+    return count
+
+
+def transitions(steps: list, revision: int, node: str | None, source: str, target: str) -> int:
+    """How many times the object moved from one state to another."""
+    count, last = 0, None
+    for step in steps:
+        if step.get("revision") != revision:
+            continue
+        state = step["node_states"].get(node) if node else step["course_state"]
+        count += last == source and state == target
         last = state
     return count

@@ -32,9 +32,6 @@ from .action_subject import key_of, subject_of
 from .actions import PERSON, PRODUCED, REGISTRY, SYSTEM
 from .provider.port import GuardrailUnavailable, ProviderUnavailable
 
-#: Events whose side effect the store marks landed when it records them. Any
-#: other registered action is done the moment it is issued and recorded.
-LANDS = {"OutlineGenerated", "NodeGenerated"}
 
 NEXT = {
     "registered": "ask for a registered action; nothing ran",
@@ -89,10 +86,13 @@ class Membrane:
                         key=lambda e: list(e.absolute_path))
         if errors:
             return self._no("schema_valid", "; ".join(e.message for e in errors))
-        if action.event in PRODUCED and perform is None:
+        if (action.event in PRODUCED) != (perform is not None):
             # Not a refusal a person could meet: a call site that supplies the
             # result itself is a hole in the gateway, and it must not run.
-            raise TypeError(f"{name} lands a provider's answer; it needs the call that makes it")
+            # Only an action that lands a provider's answer makes a call, and it
+            # always does. A call attached to any other action could hand back
+            # fields — an actor, a node — that the checks above never saw.
+            raise TypeError(f"{name}: a provider call belongs to exactly the actions that land its answer")
         m = self.machine
         actor = self._authenticated(actor)
         verdict = opa.check(POLICY_ACTION.get(name, name), actor, _brief(m), m.current.state,
@@ -109,7 +109,7 @@ class Membrane:
         payload = dict(args)
         if actor["kind"] == PERSON:
             payload["actor"] = actor["id"]
-        key = key_of(name, args, self.course, subject_of(m, args, action.event in LANDS))
+        key = key_of(name, args, self.course, subject_of(m, args, action.event))
         # A repeat is a no-op once the effect has landed, and what has landed is
         # the store's to remember, not this object's: a gateway restarted after
         # notifying learners must still know it did. A key issued for a call that
@@ -138,13 +138,12 @@ class Membrane:
         self.spent[actor.get("id")] = self.spent.get(actor.get("id"), 0) + 1
         if perform is not None:
             try:
-                payload.update(perform(key))
+                answer, wrong = _answer(action.event, perform(key))
             except (ProviderUnavailable, GuardrailUnavailable) as exc:
                 return Outcome(False, "effect", str(exc), NEXT["effect"], key)
-        produced = PRODUCED.get(action.event)
-        if produced and payload.get(produced) is None:
-            return Outcome(False, "effect", f"the provider answered without {produced}",
-                           NEXT["effect"], key)
+            if wrong:
+                return Outcome(False, "effect", wrong, NEXT["effect"], key)
+            payload.update(answer)
         if action.event is not None:
             m.fire(action.event, {**payload, "idempotency_key": key})
             # Recorded only once the step is: a refusal inside the machine rolls
@@ -155,13 +154,19 @@ class Membrane:
     def _authenticated(self, actor: dict) -> dict:
         """Who is asking, as the organisation knows them. A role written on the
         request is ignored: a person holds the role the organisation gave them,
-        and someone it does not know holds none."""
+        and someone it does not know holds none. The system is the gateway
+        object itself, not any request that calls itself a system.
+
+        The membrane is an in-process boundary: the service in front of it
+        authenticates a person's session and passes the id it proved. Proving
+        that id is outside this prototype; using nothing else is not."""
+        course = {"course": actor["course"]} if "course" in actor else {}
+        if actor is GATEWAY:
+            return {"id": GATEWAY["id"], "kind": SYSTEM, "role": SYSTEM, **course}
         if actor.get("kind") == PERSON:
             person = self.machine.world.people.get(actor.get("id")) or {}
-            return {"id": actor.get("id"), "kind": PERSON, "role": person.get("role"),
-                    **({"course": actor["course"]} if "course" in actor else {})}
-        return {"id": actor.get("id"), "kind": actor.get("kind"), "role": actor.get("kind"),
-                **({"course": actor["course"]} if "course" in actor else {})}
+            return {"id": actor.get("id"), "kind": PERSON, "role": person.get("role"), **course}
+        return {"id": actor.get("id"), "kind": "unauthenticated", "role": None, **course}
 
     def _legal(self, event: str, payload: dict) -> tuple[bool, str]:
         """Is the event legal now, asked before its result exists. A screening's
@@ -174,6 +179,24 @@ class Membrane:
 
     def _no(self, check: str, reason: str) -> Outcome:
         return Outcome(False, check, reason, NEXT[check])
+
+
+def _answer(event: str, result) -> tuple[dict, str | None]:
+    """The one field a provider's answer may set, checked for its shape. Anything
+    else the call returned is dropped, so it cannot stand in for an argument the
+    checks judged."""
+    produced = PRODUCED[event]
+    value = (result or {}).get(produced) if isinstance(result, dict) else None
+    if produced == "verdict":
+        category = result.get("category") if isinstance(result, dict) else None
+        if value not in ("allow", "deny") or not (category is None or isinstance(category, str)):
+            return {}, "the screening answered with no verdict"
+        return {"verdict": value, **({"category": category} if category else {})}, None
+    if not isinstance(value, dict):
+        # A structured-output call that returns no object did not answer the
+        # question it was asked; the table's row for an unknown answer takes it.
+        return {}, f"the provider answered without {produced} as an object"
+    return {produced: value}, None
 
 
 def _brief(m) -> dict:

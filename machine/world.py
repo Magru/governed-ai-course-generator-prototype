@@ -28,6 +28,7 @@ class World:
     articles: list
     visibility: dict
     block_types: list
+    block_schemas: dict                 # block type → what the catalog says it must carry
     versions: dict
 
     @property
@@ -69,6 +70,7 @@ def load() -> World:
         articles=kb["articles"],
         visibility={k: v for k, v in kb["resolved_visibility"].items() if k != "source"},
         block_types=[b["id"] for b in catalog["blocks"]],
+        block_schemas={b["id"]: b["schema"] for b in catalog["blocks"]},
         versions={"policy": "pol-1", "guardrail": "guard-1",
                   "catalog": catalog["version"],
                   "kb": kb["knowledge_base"]["version"]},

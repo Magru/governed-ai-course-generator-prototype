@@ -59,7 +59,8 @@ class Pipeline:
         guard again before the real step; the second asking must get the first
         answer, not a second billed call that may answer differently. A service
         that did not answer is not remembered — it is asked again."""
-        memo = (point, subject, _sha(content), self.machine.store.current["guardrail"])
+        memo = (point, subject, _sha(content), self.machine.store.current["guardrail"],
+                getattr(self.screener, "version", None))
         if memo not in self.screenings:
             self.screenings[memo] = self.screener.screen(content, modality, point, subject=subject)
         return self.screenings[memo]
@@ -129,12 +130,14 @@ class Pipeline:
 
     def _screen_node(self, node_id: str) -> None:
         content = self.machine.current.nodes[node_id].content or {}
-        text = " ".join(b.get("text") or b.get("question") or b.get("caption") or ""
-                        for b in content.get("blocks") or [])
+        blocks = [b for b in content.get("blocks") or [] if isinstance(b, dict)] \
+            if isinstance(content.get("blocks"), list) else []
+        text = " ".join(str(b.get("text") or b.get("question") or b.get("caption") or "")
+                        for b in blocks)
 
         def screen(key):
             verdict = self._verdict("node-out", node_id, text, "text")
-            for i, block in enumerate(content.get("blocks") or []):
+            for i, block in enumerate(blocks):
                 if verdict.allowed and block.get("type") == "image":
                     verdict = self._verdict("image-out", f"{node_id}.blocks[{i}]",
                                             block.get("src", ""), "image")
@@ -164,6 +167,9 @@ class Pipeline:
             self._stage(6, "guardrail", artifact, f"unreachable: {out.reason}")
             self.machine.fire("ServiceUnreachable", {"node": node} if node else {},
                               producer="gateway")
+            return
+        if out.check == "idempotency_key_unused":
+            self._stage(10, "admission", artifact, "already admitted")
             return
         if not out.ran:
             # A screened artifact that cannot be admitted is not a quiet no-op:
