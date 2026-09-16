@@ -32,7 +32,19 @@ def _atom(value: str) -> str:
 
 
 def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
-                   develops: dict[str, list[str]]) -> Verdict:
+                   develops: dict[str, list[str]], *, scope: str = "course") -> Verdict:
+    """Is every objective closed by some node in the scope?
+
+    The glossary asks this at two scopes and they count different nodes. Over a
+    course only an approved node counts: unapproved work is not coverage. Over
+    a single node at NodeChecks the node is not approved yet — and cannot be,
+    because this check is one of the things standing between it and approval —
+    so counting only approved nodes would refuse every node forever. There the
+    question is whether this node closes its own objectives, and the node under
+    check is what counts.
+    """
+    if scope not in ("course", "node"):
+        raise ValueError(f"coverage has no scope {scope!r}")
     if shutil.which("swipl") is None:
         raise EngineUnavailable(
             "swipl is not on PATH. No Python path computes this instead: a "
@@ -45,7 +57,7 @@ def check_coverage(course_id: str, objectives: list[str], nodes: list[dict],
     requires = [f"requires({_atom(course_id)}, {_atom(o)})." for o in objectives]
     contains = [f"contains({_atom(course_id)}, {_atom(n['id'])})." for n in nodes]
     approved = [f"approved({_atom(n['id'])})." for n in nodes
-                if n.get("state") == "NodeApproved"]
+                if scope == "node" or n.get("state") == "NodeApproved"]
     teaches = [f"teaches({_atom(n['id'])}, {_atom(n['skill'])})." for n in nodes
                if n.get("skill")]
     develops_facts = [f"develops({_atom(skill)}, {_atom(objective)})."

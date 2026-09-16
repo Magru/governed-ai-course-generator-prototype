@@ -21,6 +21,15 @@ def test_teaching_is_not_the_same_as_covering():
     assert v.refusal.detail[0]["reason"] == "taught_but_not_approved"
 
 
+def test_at_node_scope_the_node_under_check_counts_before_it_is_approved():
+    """NodeChecks stands between a node and its approval. Counting only approved
+    nodes there would refuse every node forever; what it asks is whether this
+    node closes its own objective."""
+    assert engine.check_coverage("c", ["tool-inspection"], [DRAFTED], DEVELOPS, scope="node").ok
+    v = engine.check_coverage("c", ["dust-extraction"], [DRAFTED], DEVELOPS, scope="node")
+    assert v.refusal.detail[0]["reason"] == "no_node_teaches_it"
+
+
 def test_nothing_teaching_it_reads_differently_from_nobody_approving_it():
     v = engine.check_coverage("c", ["dust-extraction"], [APPROVED], DEVELOPS)
     assert v.refusal.detail[0]["reason"] == "no_node_teaches_it"
