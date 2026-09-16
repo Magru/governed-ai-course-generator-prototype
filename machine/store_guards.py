@@ -118,7 +118,8 @@ def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
     # Inside StaleReview nothing arrives as an event — the table has no
     # GuardrailVerdict row there, only a Timeout one. So the machine asks the
     # screening port itself, once per guardrail version, and an unreachable
-    # service is the Timeout row's business.
+    # service is the Timeout row's business. The port answers with its verdict
+    # and the version that gave it.
     current = ctx.store.current["guardrail"]
     last = ctx.rev.screened.get("revision")
     if not last or last["guardrail_version"] != current:
@@ -126,10 +127,17 @@ def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
         if screener is None:
             raise Undecidable(f"{lit.raw}: no screening port is attached to ask")
         try:
-            verdict = screener(ctx.rev, current)
+            verdict, answered_as = screener(ctx.rev, current)
         except ConnectionError as exc:
             raise ServiceDown(f"{lit.raw}: the guardrail did not answer: {exc}") from exc
-        last = ctx.rev.screened["revision"] = {"verdict": verdict, "guardrail_version": current}
+        if answered_as != current:
+            # During a rollout the service can still be the version being
+            # replaced. Its verdict is not the one re-verification needs, and
+            # stamping it with the version in force would record a screening
+            # that never happened; it is no answer, and the Timeout row waits.
+            raise ServiceDown(f"{lit.raw}: the guardrail answered as {answered_as}, "
+                              f"and {current} is in force")
+        last = ctx.rev.screened["revision"] = {"verdict": verdict, "guardrail_version": answered_as}
     return last["verdict"] == "allow"
 
 

@@ -38,12 +38,20 @@ class Context:
         return self.machine.world
 
 
+#: Fields only the committed outline may set.
+OUTLINE_OWNED = {"type", "skill", "topics", "requires"}
+
+
 def engine_node(node) -> dict:
     """A node as every engine takes it: the outline's entry, its generated
     content, and where it stands."""
     # The outline's entry wins: a model that writes `skill` or `topics` into its
     # answer does not get to change what the node was approved to teach.
-    content = node.content if isinstance(node.content, dict) else {}
+    # Structure is the outline's even where the outline is silent: a topic's
+    # answer that adds `requires` or `topics` would redraw the dependency graph
+    # the cascade and the ordering checks read, without an outline commit.
+    content = {k: v for k, v in (node.content if isinstance(node.content, dict) else {}).items()
+               if k not in OUTLINE_OWNED}
     return {**content, **node.spec, "id": node.id, "state": node.state}
 
 

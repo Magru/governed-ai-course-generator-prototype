@@ -703,8 +703,8 @@ node:
     from_raw: "NodeRepair"
     from_kind: state
     from: ["NodeRepair"]
-    guard: "course_state = ContentInProgress ∧ retry_budget_left(node)"
-    layer: "State store"
+    guard: "course_state = ContentInProgress ∧ retry_budget_left(node) ∧ content_approved(topics(node))"
+    layer: "State store · Datalog"
     to_raw: "ContentDrafting"
     to_kind: state
     to: ["ContentDrafting"]
@@ -721,8 +721,8 @@ node:
     from_raw: "NodeRepair"
     from_kind: state
     from: ["NodeRepair"]
-    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node)"
-    layer: "Human · State store"
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ content_approved(topics(node))"
+    layer: "Human · State store · Datalog"
     to_raw: "ContentDrafting (repair_count = 0)"
     to_kind: state
     to: ["ContentDrafting"]

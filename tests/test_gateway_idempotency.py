@@ -94,3 +94,24 @@ def test_a_dependent_approved_during_a_repair_is_verified_against_what_the_repai
                              "idempotency_key": "regenerated"})
     assert m.current.nodes[w.E1].state != "NodeApproved"
     assert m.current.state == "ContentInProgress"
+
+
+def test_an_exam_rejected_while_its_topic_is_in_repair_waits_for_the_topic(course):
+    from engines.temporal import engine as temporal
+    from machine.refusal import MachineRefused
+    m = course.machine
+    edit = copy.deepcopy(w.CONTENT[w.T2])
+    edit["blocks"][0]["text"] = "wording to be repaired"
+    m.fire("NodeEdited", {"node": w.T2, "content": edit})
+    m.fire("GuardrailVerdict", {"node": w.T2, "verdict": "deny", "category": "unsafe"})
+    m.fire("NodeRejected", {"node": w.E1, "reason": "question two is ambiguous", "actor": "author-1"})
+    assert m.current.nodes[w.E1].state == "NodeRepair"
+    with pytest.raises(MachineRefused):
+        m.fire("NodeGenerated", {"node": w.E1, "content": copy.deepcopy(w.CONTENT[w.E1]),
+                                 "idempotency_key": "too-early"})
+    m.fire("NodeGenerated", {"node": w.T2, "content": copy.deepcopy(w.CONTENT[w.T2]),
+                             "idempotency_key": "t2-repaired"})
+    m.fire("GuardrailVerdict", {"node": w.T2, "verdict": "allow"})
+    assert _approve(course, w.T2).ran
+    assert m.current.nodes[w.E1].state == "ContentDrafting"
+    assert temporal.check(m.trace()).ok

@@ -24,7 +24,7 @@ def _at(m, event: str) -> dict:
 @pytest.fixture(scope="module")
 def rolled_back():
     m = happy_path()
-    m.screener = lambda rev, version: "allow"
+    m.screener = lambda rev, version: ("allow", version)
     m.fire("ReviseRequested", {"revision": 1})
     edited = copy.deepcopy(CONTENT[N2])
     edited["blocks"][0]["text"] = "check every tool before use, every time"
@@ -77,7 +77,7 @@ def test_the_machines_rollback_satisfies_every_invariant(rolled_back):
 
 def test_a_rule_change_re_verifies_what_it_reaches_and_leaves_the_rest_alone():
     m = happy_path()
-    m.screener = lambda rev, version: "allow"
+    m.screener = lambda rev, version: ("allow", version)
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True}})
     rev = m.store.revisions[1]
     assert (rev.state, rev.stamps["policy"], rev.stale_nodes) == ("Published", "pol-2", set())
@@ -98,14 +98,14 @@ def test_a_change_nobody_judged_is_not_read_as_unaffected():
 
 def test_a_rule_the_live_course_fails_withdraws_it():
     m = happy_path()
-    m.screener = lambda rev, version: "deny"
+    m.screener = lambda rev, version: ("deny", version)
     m.fire("GuardrailChanged", {"to": "guard-2", "reaches": {1: True}})
     assert m.store.revisions[1].state == "Withdrawn"
 
 
 def test_a_live_revision_stays_on_air_while_it_is_re_verified():
     m = happy_path()
-    m.screener = lambda rev, version: "allow"
+    m.screener = lambda rev, version: ("allow", version)
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True}})
     during = next(st for st in m.trace() if st["event"] == "PolicyChanged")
     assert (during["revision_states"][1], during["live_pointer"]) == ("StaleReview", 1)
@@ -115,7 +115,7 @@ def test_a_live_revision_stays_on_air_while_it_is_re_verified():
 
 def test_a_superseded_revision_that_passes_re_verification_stays_superseded():
     m = happy_path()
-    m.screener = lambda rev, version: "allow"
+    m.screener = lambda rev, version: ("allow", version)
     m.store.readers = {1: 12}
     m.fire("ReviseRequested", {"revision": 1})
     edited = copy.deepcopy(CONTENT[N2])
@@ -159,3 +159,13 @@ def test_an_unreachable_guardrail_spends_the_budget_and_the_emergency_lever_stil
         m.fire("WithdrawRequested", {"revision": 1})
     m.fire("WithdrawRequested", {"revision": 1, "reason": "cannot re-screen; pull it"})
     assert m.store.revisions[1].state == "Withdrawn"
+
+
+def test_a_verdict_from_the_version_being_replaced_is_no_answer():
+    """Mid-rollout the service may still answer as the old guardrail. That verdict
+    is not recorded under the new version; re-verification waits as for a timeout."""
+    m = happy_path()
+    m.screener = lambda rev, version: ("allow", "guard-1")
+    m.fire("GuardrailChanged", {"to": "guard-2", "reaches": {1: True}})
+    assert "ServiceUnreachable" in [s["event"] for s in m.trace()]
+    assert (m.store.revisions[1].screened.get("revision") or {}).get("guardrail_version") != "guard-2"

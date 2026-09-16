@@ -34,7 +34,7 @@ def pipeline(generator=None, screener=None) -> Pipeline:
     return p
 
 
-def _revision_verdict(p: Pipeline, rev, version: str) -> str:
+def _revision_verdict(p: Pipeline, rev, version: str) -> tuple[str, str]:
     """StaleReview asks the screening port from inside the machine; a service
     that does not answer is a ConnectionError there, which the Timeout row takes."""
     asked = len(p.screenings)
@@ -43,9 +43,10 @@ def _revision_verdict(p: Pipeline, rev, version: str) -> str:
     except GuardrailUnavailable as exc:
         raise ConnectionError(str(exc)) from exc
     verdict = "allow" if v.allowed else v.category
+    version = v.guardrail_version
     if len(p.screenings) > asked:             # a guard asking twice is one screening
         p._stage(6, f"guardrail revision · {version}", f"revision-{rev.id}", verdict)
-    return verdict
+    return verdict, version
 
 
 def _revision_text(rev) -> str:
@@ -101,6 +102,7 @@ def after_publication(p: Pipeline) -> None:
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True, 2: False}})
     # A new guardrail version reaches the live course: the same text is screened
     # again, because a verdict under guard-1 says nothing about guard-2.
+    p.screener.version = "guard-2"                # the service rolled out first
     m.fire("GuardrailChanged", {"to": "guard-2", "reaches": {1: True, 2: False}})
 
 

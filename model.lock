@@ -15,8 +15,8 @@
     "state-machine-revision.mmd": "f0d4be03a8dc401d0daf41f426628471ccd9b04dfd1c12736c330fb66672fb63",
     "system-definition.yaml": "f7252c487d91ee9caa58791078767d0f749763e2ef1e72f9e2b476b512e58584",
     "trace-schema.yaml": "d2fe3982ef5056c50b551ea1acdb6073b43ab891f07621c7dc32bc8893e17faf",
-    "transitions.yaml": "ba696f63830e9174efa4a63b5c6065a52ba562441c6028f112232c8d9645421b"
+    "transitions.yaml": "3b8759efd40d62749722da36758f158fd67fe1bd4fd0f64c34638c8d63bec035"
   },
   "repo": "Magru/governed-ai-course-generator",
-  "tag": "spec-v2.9"
+  "tag": "spec-v2.10"
 }
