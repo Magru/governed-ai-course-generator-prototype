@@ -77,6 +77,23 @@ class Machine:
         finally:
             self._depth -= 1
 
+    def permits(self, event: str, payload: dict | None = None) -> tuple[bool, str]:
+        """Would the tables accept this event now? Asked by running it and
+        putting everything back — the membrane's legality check defers to the
+        machine rather than keeping a second copy of the table."""
+        saved = copy.deepcopy((self.store, self.current.id))
+        self._depth += 1
+        try:
+            self._fire(event, payload, "membrane")
+            return True, ""
+        except MachineRefused as exc:
+            return False, str(exc)
+        finally:
+            self._depth -= 1
+            self.store, current = saved
+            self.current = self.store.revisions[current]
+            self.evaluator.forget()
+
     def _fire(self, event: str, payload: dict | None, producer: str) -> None:
         payload = {**(payload or {}), "event": event}
         if event in SIDE_EFFECTING:
