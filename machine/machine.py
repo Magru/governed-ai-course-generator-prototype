@@ -38,6 +38,8 @@ from .settling import Settling
 from .transition_table import load
 
 #: Events that are about every revision rather than one.
+#: What replaces a node's content. Its dependents are verified again.
+NEW_CONTENT = {"NodeEdited", "NodeGenerated"}
 BROADCAST = {"PolicyChanged", "GuardrailChanged", "CatalogChanged", "KBUpdated",
              "LivePointerMoved"}
 #: Events that are about every node of the revision unless one is named.
@@ -145,7 +147,11 @@ class Machine(Settling, Recording):
             # revision it reached was judged. One nobody could judge is not
             # "unaffected"; recording the event as if it were is fail-open.
             raise MachineRefused(f"{event} could not be decided: " + "; ".join(undecided))
-        if event == "NodeEdited" and payload.get("node"):
+        if event in NEW_CONTENT and payload.get("node"):
+            # Edited means the node's content was replaced, by a person or by a
+            # regeneration. Cascading on the person's edit alone let a dependent
+            # be approved against content that a repair then replaced, and the
+            # course went to review with the exam never checked against it.
             self._dependency_changed(revs[0], payload["node"])
         if not moved and event not in BROADCAST:
             where = ", ".join(f"revision {r.id} is {r.state}" for r in revs)

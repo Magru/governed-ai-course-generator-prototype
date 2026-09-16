@@ -28,7 +28,7 @@ REACTIONS = {
     "(node → BlockedFinal)": "a node entered BlockedFinal",
     "(node → NodeRecovery)": "a node entered NodeRecovery",
     "(node state changed)": "any node moved",
-    "(dependency changed)": "a node this one depends on was edited or removed",
+    "(dependency changed)": "a node this one depends on was edited — by a person or by a regeneration — or removed",
 }
 AUTO = "(auto)"
 
