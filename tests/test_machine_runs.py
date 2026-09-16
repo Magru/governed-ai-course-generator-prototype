@@ -139,29 +139,50 @@ def test_a_node_that_spends_its_retries_stops_the_revision_until_a_person_clears
     assert temporal.check(m.trace()).ok
 
 
-def test_the_model_has_no_way_back_from_repair_once_its_budget_is_spent():
-    """A finding, pinned. NodeRecovery has a BlockedInputFixed row that resets
-    the counter; NodeRepair has none. A node that fails its checks past the
-    budget blocks the revision, clearing the block re-blocks it at once, and
-    NodeEdited is not permitted from BlockedRecoverable. Only dropping the node
-    from the outline or discarding the draft leaves. This test fails on the day
-    the model gives NodeRepair its way out — which is the day to delete it."""
-    m = machine()
+def _spend_repairs(m):
     to_content(m)
     m.fire("NodeGenerationRequested", {"node": N1})
     for _ in range(m.store.budget() + 1):
         m.fire("NodeGenerated", {"node": N1, "content": _leaking()})
         m.fire("GuardrailVerdict", {"verdict": "allow", "artifact": N1, "node": N1})
     assert (m.current.state, m.current.nodes[N1].state) == ("BlockedRecoverable", "NodeRepair")
-    m.fire("BlockedInputFixed", {"node": N1})
-    assert (m.current.state, m.current.nodes[N1].state) == ("BlockedRecoverable", "NodeRepair")
-    with pytest.raises(MachineRefused):
-        m.fire("NodeEdited", {"node": N1, "content": CONTENT[N1]})
-    # The way out that does exist: drop the node through a revised, re-checked
-    # outline. The held node must not re-block the revision while its outline
-    # is being checked, or this way out would not exist either.
+
+
+def test_a_person_releases_a_node_that_spent_its_repairs():
+    """Until spec-v2.8 NodeRepair had no way out: clearing the block re-blocked
+    the revision at once. It now has the row NodeRecovery always had."""
+    m = machine()
+    _spend_repairs(m)
+    m.fire("BlockedInputFixed", {"node": N1, "reason": "the restricted source was replaced"})
+    node = m.current.nodes[N1]
+    assert (m.current.state, node.state, node.repair_count) == \
+        ("ContentInProgress", "ContentDrafting", 0)
+    assert temporal.check(m.trace()).ok
+
+
+def test_a_held_node_can_also_be_dropped_through_a_re_checked_outline():
+    m = machine()
+    _spend_repairs(m)
     without = {"nodes": [n for n in OUTLINE["nodes"] if n["id"] != N1]}
     m.fire("OutlineRevised", {"outline": without})
     assert m.current.state == "OutlineReview"
     m.fire("OutlineApproved", {"reason": "the topic cannot be written from sources this audience may see"})
     assert (m.current.state, m.current.nodes[N1].state) == ("ContentInProgress", "Removed")
+
+
+def test_an_outline_edited_at_review_is_checked_again_before_it_can_be_approved():
+    m = machine()
+    to_outline_review(m)
+    edited = copy.deepcopy(OUTLINE)
+    edited["nodes"][0]["skill"] = "post-mortem-facilitation"
+    m.fire("OutlineRevised", {"outline": edited})
+    # the invented skill is caught by the checks the edit went back through
+    assert (m.current.state, m.current.repair_count) == ("OutlineDrafting", 1)
+    renamed = copy.deepcopy(OUTLINE)
+    renamed["nodes"][1]["title"] = "Tools, checked before use"
+    m2 = machine()
+    to_outline_review(m2)
+    m2.fire("OutlineRevised", {"outline": renamed})
+    assert m2.current.state == "OutlineReview"
+    m2.fire("OutlineApproved")
+    assert m2.current.nodes[OUTLINE["nodes"][1]["id"]].spec["title"] == "Tools, checked before use"

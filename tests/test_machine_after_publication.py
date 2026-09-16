@@ -1,12 +1,10 @@
 """After publication: the fork, the rollback, and a rule that changes.
 
 Chains 3 and 4 of transitions.html §5, run through the machine. Both are
-declared legal by the specification, and both reach their declared end. Two of
-the tests below also pin what the temporal engine says about the machine's
-own trace of them — because it refuses each, with an invariant from the same
-approved model. These are not bugs in the checker or the machine; they are the
-model disagreeing with itself, and each test fails on the day the model is
-fixed.
+declared legal by the specification, both reach their declared end, and the
+temporal engine accepts the machine's own trace of each. Until spec-v2.8 it
+refused both — I12 the rollback, I11 the re-verification — and the model was
+amended rather than the checker.
 """
 from __future__ import annotations
 
@@ -72,12 +70,9 @@ def test_a_rollback_is_a_reverification_and_then_a_pointer_move(rolled_back):
     assert 1 in last["re_verified"]
 
 
-def test_the_machine_reproduces_the_i12_contradiction_on_its_own_run(rolled_back):
-    """§5 chain 3 ends with revision 2 Superseded and no successor published;
-    I12 forbids exactly that. Recorded in invariants.yaml open_questions."""
+def test_the_machines_rollback_satisfies_every_invariant(rolled_back):
     verdict = temporal.check(rolled_back[0].trace())
-    assert not verdict.ok
-    assert verdict.refusal.summary.startswith("I12 violated")
+    assert verdict.ok, verdict.refusal
 
 
 def test_a_rule_change_re_verifies_what_it_reaches_and_leaves_the_rest_alone():
@@ -108,17 +103,41 @@ def test_a_rule_the_live_course_fails_withdraws_it():
     assert m.store.revisions[1].state == "Withdrawn"
 
 
-def test_the_machine_finds_i11_forbids_the_re_verification_chain_4_requires():
-    """§5 chain 4 sends a live revision to StaleReview, and nothing moves the
-    pointer while it is re-judged. I11 says whatever learners are served is
-    Published. Both are in the approved model; the trace cannot satisfy both."""
+def test_a_live_revision_stays_on_air_while_it_is_re_verified():
     m = happy_path()
     m.screener = lambda rev, version: "allow"
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True}})
+    during = next(st for st in m.trace() if st["event"] == "PolicyChanged")
+    assert (during["revision_states"][1], during["live_pointer"]) == ("StaleReview", 1)
     verdict = temporal.check(m.trace())
-    assert not verdict.ok
-    assert verdict.refusal.summary.startswith("I11 violated")
-    assert "'StaleReview'" in verdict.refusal.summary
+    assert verdict.ok, verdict.refusal
+
+
+def test_a_superseded_revision_that_passes_re_verification_stays_superseded():
+    m = happy_path()
+    m.screener = lambda rev, version: "allow"
+    m.store.readers = {1: 12}
+    m.fire("ReviseRequested", {"revision": 1})
+    edited = copy.deepcopy(CONTENT[N2])
+    edited["blocks"][0]["text"] = "check every tool before use, every time"
+    m.fire("NodeEdited", {"node": N2, "content": edited})
+    m.fire("GuardrailVerdict", {"verdict": "allow", "artifact": N2, "node": N2})
+    m.fire("NodeApproved", {"node": N2, "actor": "author-1"})
+    m.fire("NodeApproved", {"node": EXAM, "actor": "author-1"})
+    m.fire("CourseChecksRequested")
+    m.fire("ApprovalGranted", {"signatures": SIGNATURES})
+    m.fire("PublishRequested")
+    m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True, 2: False}})
+    rev1 = m.store.revisions[1]
+    assert (rev1.state, rev1.stamps["policy"], m.store.live_pointer) == ("Superseded", "pol-2", 2)
+    assert temporal.check(m.trace()).ok
+
+
+def test_withdrawing_the_live_revision_cuts_access():
+    m = happy_path()
+    m.fire("WithdrawRequested", {"revision": 1, "reason": "a rule it breaks was found"})
+    assert (m.store.revisions[1].state, m.store.live_pointer) == ("Withdrawn", None)
+    assert temporal.check(m.trace()).ok
 
 
 def test_an_unreachable_guardrail_spends_the_budget_and_the_emergency_lever_still_works():

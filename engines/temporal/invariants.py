@@ -53,25 +53,26 @@ def i1(trace: Trace) -> list[Violation]:
     return bad
 
 
-@invariant("I2", "G(exam_generated(E) → O content_approved(topics(E)))")
+@invariant("I2", "G(exam_generated(E) → Y content_approved(topics(E)))")
 def i2(trace: Trace) -> list[Violation]:
-    """The conjunction sits inside the O: there must be one past moment at which
-    every topic was approved together, not a topic here and a topic there.
+    """Every topic stands approved in the state the generation arrived in.
 
-    Implemented as the model states it. What the model states has a hole, and
-    the hole is recorded as an open question in `invariants.yaml` rather than
-    quietly patched here: a moment in the past satisfies the formula even if an
-    approval has since been withdrawn.
+    The formula used to be O(...): one past moment at which the topics were
+    approved together. That stays true after an approval is withdrawn, so an
+    exam over since-unapproved material passed. Y reads the state the event
+    arrived in — which is also what the content_approved guard reads at the
+    transition, so the invariant now audits the guard rather than something
+    weaker than it.
     """
     bad = []
     for i, s in enumerate(trace):
-        if s.event != "NodeGenerated" or s.maybe("node_type") != "exam":
+        if i == 0 or s.event != "NodeGenerated" or s.maybe("node_type") != "exam":
             continue
         needed = set(s.state("topics", "I2"))
-        if not any(needed <= set(trace[j].state("approved_nodes", "I2"))
-                   for j in range(i)):
-            bad.append(_v(i2, s, f"exam generated with no past moment at which "
-                                 f"{sorted(needed)} were approved together"))
+        approved = set(trace.before(i).state("approved_nodes", "I2"))
+        if not needed <= approved:
+            bad.append(_v(i2, s, f"exam generated while {sorted(needed - approved)} "
+                                 f"did not stand approved"))
     return bad
 
 
@@ -201,8 +202,11 @@ def i8(trace: Trace) -> list[Violation]:
             continue
         prior = set(trace[i - 1].maybe("used_restricted") or [])
         for node in sorted(set(s.maybe("used_restricted") or []) - prior):
-            if not once(trace, i, lambda t, n=node:
-                        n in (t.maybe("permission_checked") or [])):
+            # Inclusive: a restricted use is known only because the rights check
+            # found it, and the step that records the use records the check.
+            # Strict past refused the first leak the machine ever caught.
+            if not once_now(trace, i, lambda t, n=node:
+                            n in (t.maybe("permission_checked") or [])):
                 bad.append(_v(i8, s, f"{node} used a restricted source with no "
                                      f"rights check"))
     return bad
@@ -248,8 +252,17 @@ def i10(trace: Trace) -> list[Violation]:
     return bad
 
 
-@invariant("I11", "G(live(C) = R → published(R))")
+#: in_live_lineage without Superseded: Published, or one of the states a
+#: re-verification of a live revision passes through (glossary, in_live_lineage).
+SERVABLE = {"Published", "StaleReview", "ErrorRecovery", "BlockedRecoverable"}
+
+
+@invariant("I11", "G(live(C) = R → in_live_lineage(R) ∧ ¬superseded(R))")
 def i11(trace: Trace) -> list[Violation]:
+    """Learners are served a published revision, or one being re-verified while
+    it stays on air. The formula used to say Published only, which forbade the
+    re-verification a rule change requires: a course would go off air every
+    time compliance changed its mind."""
     bad = []
     for s in trace:
         live = s.maybe("live_pointer")
@@ -259,35 +272,32 @@ def i11(trace: Trace) -> list[Violation]:
         if live not in states:
             bad.append(_v(i11, s, f"learners are served revision {live} and the "
                                   f"run does not say what state it is in", "unrecorded"))
-        elif states[live] != "Published":
+        elif states[live] not in SERVABLE:
             bad.append(_v(i11, s, f"learners are served revision {live}, which "
                                   f"is {states[live]!r}"))
     return bad
 
 
-@invariant("I12", "G(superseded(R) → O ∃R' (successor(R', R) ∧ published(R')))")
+@invariant("I12", "G(superseded(R) → O(live(C) = R) ∧ live(C) ≠ R)")
 def i12(trace: Trace) -> list[Violation]:
+    """Superseded means learners were once served it and no longer are —
+    whichever way the pointer moved. The formula used to require a published
+    successor, and a rollback supersedes the successor itself."""
     bad = []
     for i, s in enumerate(trace):
-        states = s.maybe("revision_states") or {}
         if i == 0:
             continue
+        states = s.maybe("revision_states") or {}
         prior = trace[i - 1].maybe("revision_states") or {}
         for rev in sorted(r for r, st in states.items()
                           if st == "Superseded" and prior.get(r) != "Superseded"):
-            # Inclusive: the successor takes the pointer on the same transition
-            # that costs the parent its own, so strict past sees nothing.
-            if not once_now(trace, i, lambda t, r=rev: _successor_published(t, r)):
-                bad.append(_v(i12, s, f"revision {rev} was superseded with no "
-                                      f"successor published"))
+            if s.maybe("live_pointer") == rev:
+                bad.append(_v(i12, s, f"revision {rev} was superseded while it still "
+                                      f"holds the pointer"))
+            elif not once(trace, i, lambda t, r=rev: t.maybe("live_pointer") == r):
+                bad.append(_v(i12, s, f"revision {rev} was superseded without ever "
+                                      f"having been served"))
     return bad
-
-
-def _successor_published(step: Step, rev) -> bool:
-    forks = step.maybe("forked_from") or {}
-    states = step.maybe("revision_states") or {}
-    return any(states.get(child) == "Published"
-               for child, parent in forks.items() if parent == rev)
 
 
 @invariant("I13", "G(rolled_back_to(R) → O re_verified(R))")

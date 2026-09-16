@@ -1,6 +1,6 @@
 # State machines
 
-Generated from the tables in `../transitions.html` by `export-model.py` on 2026-09-03.
+Generated from the tables in `../transitions.html` by `export-model.py` on 2026-09-16.
 Do not edit: change `../transitions.html` and re-run the exporter.
 
 ## Revision machine
@@ -47,6 +47,7 @@ stateDiagram-v2
     OutlineRepair --> BlockedRecoverable : auto
     OutlineReview --> OutlineDrafting : OutlineRejected
     OutlineReview --> ContentInProgress : OutlineRejected
+    OutlineReview --> OutlineChecks : OutlineRevised
     OutlineReview --> ContentInProgress : OutlineApproved
     ContentInProgress --> BlockedRecoverable : (node → BlockedFinal)
     ContentInProgress --> BlockedRecoverable : (node → NodeRecovery)
@@ -68,6 +69,8 @@ stateDiagram-v2
     Published --> Superseded : LivePointerMoved
     Published --> Published : LearnersNotified
     StaleReview --> Published : auto
+    StaleReview --> Published : auto
+    StaleReview --> Superseded : auto
     StaleReview --> Withdrawn : auto
     StaleReview --> ErrorRecovery : Timeout · ServiceUnreachable
     StaleReview --> Withdrawn : WithdrawRequested
@@ -109,9 +112,10 @@ stateDiagram-v2
     OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
     NodeChecks --> Validated : auto
     NodeChecks --> BlockedFinal : CheckFailed(opa, …)
-    NodeChecks --> NodeRepair : CheckFailed(datalog · z3 · schema)
+    NodeChecks --> NodeRepair : CheckFailed(datalog · z3 · schema · prolog)
     NodeRepair --> ContentDrafting : auto
     NodeRepair --> XcourseBlockedRecoverable : auto
+    NodeRepair --> ContentDrafting : BlockedInputFixed
     Validated --> NodeApproved : NodeApproved
     Validated --> NodeRepair : NodeRejected
     NodeApproved --> NeedsRevalidation : NodeEdited

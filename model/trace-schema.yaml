@@ -159,8 +159,13 @@ state_fields:
 
   - name: "forked_from"
     type: "map revision -> revision"
-    means: "the provenance edge; successor(R2, R1) is forked_from[R2] = R1"
-    read_by: ["I12"]
+    means: "the provenance edge: forked_from[R2] = R1 when R2 was copied out of R1"
+    read_by: []
+    note: >-
+      Carried for provenance, read by no invariant. I12 read it until 16.09.2026,
+      when it was amended to read the live pointer instead: a rollback supersedes a
+      successor, so "superseded because a successor was published" was false of a
+      legal run. Kept because it is the only link from a fork back to its parent.
 
   - name: "re_verified"
     type: "list of revision"

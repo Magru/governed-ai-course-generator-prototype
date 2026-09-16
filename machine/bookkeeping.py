@@ -211,6 +211,11 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
             obj.stale_nodes = {n.id for n in obj.nodes.values()
                                if n.state != "Removed" and any(
                                    m.store.current[k] != v for k, v in n.stamps.items())}
+        if new == "Withdrawn" and m.store.live_pointer == obj.id:
+            # Access is cut (decision 28.07; I11 as amended 16.09): a withdrawn
+            # revision is served to nobody, so the pointer is cleared rather
+            # than left naming it.
+            m.store.live_pointer = None
         if new == "Published" and old == "Approved":
             obj.ever_published = True
             obj.awaiting_pointer = True

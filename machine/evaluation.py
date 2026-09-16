@@ -19,7 +19,8 @@ from engines.contract import Verdict
 from .engine_guards import ADAPTERS, Context
 from .guard_expressions import NODE_IN_STATE
 from .store_guards import STORE_GUARDS, ServiceDown, Undecidable
-from .transition_table import AUTO, complement_source
+from .guard_expressions import Guard
+from .transition_table import AUTO, complement_literals
 
 #: The states whose pass row is a batch of formal checks, and whose failure is
 #: therefore reported as a CheckFailed event carrying the engine's artifact.
@@ -44,7 +45,8 @@ class Evaluator:
     def decide(self, t, rev, node, payload) -> tuple[bool | None, str]:
         g = t.guard
         if g.complement_of_previous:
-            value, reason = self.decide(complement_source(self.m.table, t), rev, node, payload)
+            checks = Guard(complement_literals(self.m.table, t))
+            value, reason = self._conjunction(checks, rev, node, payload)
             return (None if value is None else not value), f"complement of: {reason}"
         if g.exists_node:
             undecided = []

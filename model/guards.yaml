@@ -3,14 +3,14 @@ question: "Which layer owns each guard, and what does it hand back when it refus
 owner: "system architect"
 updated_when: "a guard is added, renamed, or changes owner"
 source: "transitions.html §4 — the guard glossary, one entry per name"
-generated: "2026-09-03"
+generated: "2026-09-16"
 generator: "model/export-model.py"
 
 # The transition tables' Layer column lists everything that runs at a
 # transition. This file answers the different question of who owns a
 # particular guard — the two were briefly mistaken for each other.
 
-count: 38
+count: 39
 guards:
   - name: "schema_valid(artifact)"
     owner: "JSON Schema"
@@ -103,5 +103,7 @@ guards:
     owner: "Datalog · Guardrail · State store"
   - name: "has_active_readers(revision)"
     owner: "Datalog · Guardrail · State store"
+  - name: "rollback_requested(revision)"
+    owner: "State store"
   - name: "approval_chain_satisfied(revision)"
     owner: "OPA"

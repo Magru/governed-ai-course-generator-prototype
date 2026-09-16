@@ -22,9 +22,10 @@ stateDiagram-v2
     OutputGuardrail --> NodeRepair : GuardrailVerdict(deny)
     NodeChecks --> Validated : auto
     NodeChecks --> BlockedFinal : CheckFailed(opa, …)
-    NodeChecks --> NodeRepair : CheckFailed(datalog · z3 · schema)
+    NodeChecks --> NodeRepair : CheckFailed(datalog · z3 · schema · prolog)
     NodeRepair --> ContentDrafting : auto
     NodeRepair --> XcourseBlockedRecoverable : auto
+    NodeRepair --> ContentDrafting : BlockedInputFixed
     Validated --> NodeApproved : NodeApproved
     Validated --> NodeRepair : NodeRejected
     NodeApproved --> NeedsRevalidation : NodeEdited

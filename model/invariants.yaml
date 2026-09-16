@@ -30,9 +30,10 @@ invariants:
     forbids: "generating a node against an approved, published or blocked revision"
 
   - id: I2
-    formula: "G(exam_generated(E) → O content_approved(topics(E)))"
-    means: "an exam may only be generated after every topic it tests was approved"
-    forbids: "an exam that tests material nobody has signed off, or that does not yet exist"
+    formula: "G(exam_generated(E) → Y content_approved(topics(E)))"
+    means: "an exam may only be generated while every topic it tests stands approved"
+    forbids: "an exam that tests material nobody has signed off, or whose approval was withdrawn since"
+    amended: "2026-09-16 — was O content_approved(...), which a past moment satisfies after an approval is withdrawn"
 
   - id: I3
     formula: "G(published(C) → all_nodes_approved(C) ∧ ¬∃ stale(C))"
@@ -81,14 +82,16 @@ invariants:
     note: "nested G: immutability holds for the whole remaining trace, not just the next step"
 
   - id: I11
-    formula: "G(live(C) = R → published(R))"
-    means: "whatever revision learners see is a published one"
-    forbids: "pointing the live course at a draft, a withdrawn or an archived revision"
+    formula: "G(live(C) = R → in_live_lineage(R) ∧ ¬superseded(R))"
+    means: "whatever revision learners see is published, or is being re-verified under a rule that changed while it was on air"
+    forbids: "pointing the live course at a draft, a superseded, a withdrawn or an archived revision"
+    amended: "2026-09-16 — was published(R), which forbade the re-verification the tables require: a rule change must not take a live course off air"
 
   - id: I12
-    formula: "G(superseded(R) → O ∃R' (successor(R', R) ∧ published(R')))"
-    means: "a revision only becomes superseded because a successor was published"
-    forbids: "a revision losing the pointer for any other reason"
+    formula: "G(superseded(R) → O(live(C) = R) ∧ live(C) ≠ R)"
+    means: "a revision is superseded only if learners were once served it and no longer are — whichever way the pointer moved"
+    forbids: "superseding a revision that never held the pointer, or one that still holds it"
+    amended: "2026-09-16 — was O ∃R' (successor(R', R) ∧ published(R')), which a rollback contradicts: the pointer goes back to the parent"
 
   - id: I13
     formula: "G(rolled_back_to(R) → O re_verified(R))"
@@ -134,18 +137,8 @@ open_questions:
     specification does not yet claim it, and this file reproduces claims rather than
     inventing them. Worth adding to states.html §8 before the defence.
   - >-
-    I12 and the rollback contradict each other, and the contradiction was found by
-    implementing them. §7 of transitions.html sets out the legal rollback and ends it
-    "rev 1 → Published, rev 2 → Superseded". I12 says a revision only becomes
-    superseded because a successor was published — and revision 2 has no successor;
-    the pointer went back to its parent. Both statements are in this model. Either
-    "superseded" covers losing the pointer for any reason, in which case I12 forbids
-    nothing it was written to forbid, or a rollback needs a state of its own. Not a
-    thing to decide quietly.
-  - >-
-    I2 says O(∧ₜ approved(t)) — one past moment at which every topic was approved
-    together. That is what it forbids, and it is weaker than what it means: a moment
-    in the past satisfies it even if an approval has since been withdrawn, so an exam
-    over since-unapproved material passes. The property that would catch it is about
-    the present, not the past, and stating it is a change to the model rather than to
-    the checker.
+    Resolved 2026-09-16, both found by implementing: I12 contradicted the legal
+    rollback (it now reads the pointer rather than a successor), and I2 was
+    satisfied by a past moment after an approval had been withdrawn (it now reads
+    the state the generation arrived in, Y rather than O). I11 was changed with I12:
+    it forbade re-verifying a live revision after a rule change.

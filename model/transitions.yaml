@@ -3,10 +3,10 @@ question: "What is permitted in each state?"
 owner: "system architect"
 updated_when: "any row of the transition tables changes"
 source: "transitions.html §2 (revision) and §3 (node)"
-generated: "2026-09-03"
+generated: "2026-09-16"
 generator: "model/export-model.py"
 
-# 56 revision transitions + 24 node transitions.
+# 59 revision transitions + 25 node transitions.
 # Every endpoint is kept verbatim as *_raw; *_kind says how far it parsed.
 #   state         a single named state
 #   alternatives  several named states, any of which matches
@@ -241,6 +241,15 @@ revision:
     to_kind: state
     to: ["ContentInProgress"]
     to_note: "proposal discarded; outline_version unchanged"
+  - event: "OutlineRevised"
+    from_raw: "OutlineReview"
+    from_kind: state
+    from: ["OutlineReview"]
+    guard: "is_draft_revision ∧ has_outline(revision)"
+    layer: "Human"
+    to_raw: "OutlineChecks"
+    to_kind: state
+    to: ["OutlineChecks"]
   - event: "OutlineApproved"
     from_raw: "OutlineReview"
     from_kind: state
@@ -412,11 +421,31 @@ revision:
     from_raw: "StaleReview"
     from_kind: state
     from: ["StaleReview"]
-    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions"
+    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ ¬lost_live_pointer(revision)"
     layer: "All layers"
     to_raw: "Published (re-stamped)"
     to_kind: state
     to: ["Published"]
+    to_note: "re-stamped"
+  - event: "(auto)"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ rollback_requested(revision)"
+    layer: "All layers"
+    to_raw: "Published (re-stamped)"
+    to_kind: state
+    to: ["Published"]
+    to_note: "re-stamped"
+  - event: "(auto)"
+    from_raw: "StaleReview"
+    from_kind: state
+    from: ["StaleReview"]
+    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ ¬rollback_requested(revision)"
+    layer: "All layers"
+    to_raw: "Superseded (re-stamped)"
+    to_kind: state
+    to: ["Superseded"]
     to_note: "re-stamped"
   - event: "(auto)"
     from_raw: "StaleReview"
@@ -661,12 +690,12 @@ node:
     to_raw: "BlockedFinal"
     to_kind: state
     to: ["BlockedFinal"]
-  - event: "CheckFailed(datalog · z3 · schema)"
+  - event: "CheckFailed(datalog · z3 · schema · prolog)"
     from_raw: "NodeChecks"
     from_kind: state
     from: ["NodeChecks"]
     guard: "policy_allows ∧ constraint violated"
-    layer: "Datalog · Z3"
+    layer: "Datalog · Z3 · Prolog"
     to_raw: "NodeRepair"
     to_kind: state
     to: ["NodeRepair"]
@@ -688,6 +717,16 @@ node:
     to_raw: "course → BlockedRecoverable"
     to_kind: cross_machine
     to_expression: "course → BlockedRecoverable"
+  - event: "BlockedInputFixed"
+    from_raw: "NodeRepair"
+    from_kind: state
+    from: ["NodeRepair"]
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node)"
+    layer: "Human · State store"
+    to_raw: "ContentDrafting (repair_count = 0)"
+    to_kind: state
+    to: ["ContentDrafting"]
+    to_note: "repair_count = 0"
   - event: "NodeApproved"
     from_raw: "Validated"
     from_kind: state

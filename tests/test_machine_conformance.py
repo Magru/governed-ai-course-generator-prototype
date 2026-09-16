@@ -130,12 +130,11 @@ def test_an_off_brief_topic_is_not_covered_at_its_own_checks():
     m.fire("OutlineApproved")
     m.fire("NodeGenerationRequested", {"node": N1})
     m.fire("NodeGenerated", {"node": N1, "content": copy.deepcopy(CONTENT[N1])})
-    with pytest.raises(MachineRefused, match="prolog"):
-        m.fire("GuardrailVerdict", {"verdict": "allow", "artifact": N1, "node": N1})
-    # A finding, pinned: NodeChecks has CheckFailed rows for opa and for
-    # datalog · z3 · schema, and none for prolog — so the refusal cannot be
-    # recorded as a CheckFailed, and the screening that led to it is refused.
-    assert m.current.nodes[N1].state == "OutputGuardrail"
+    m.fire("GuardrailVerdict", {"verdict": "allow", "artifact": N1, "node": N1})
+    failed = next(s for s in reversed(m.trace()) if s["event"] == "CheckFailed")
+    assert failed["node"] == N1
+    # repairable since spec-v2.8: the node goes back to be rewritten
+    assert (m.current.nodes[N1].state, m.current.nodes[N1].repair_count) == ("ContentDrafting", 1)
 
 
 def test_a_policy_refusal_at_node_checks_is_terminal_for_the_node():

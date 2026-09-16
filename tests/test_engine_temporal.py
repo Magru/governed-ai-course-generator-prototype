@@ -92,7 +92,11 @@ def test_no_declared_field_goes_unread():
     claim, not evidence. It passed while `approved()` sat in trace.py reading
     nothing.
     """
-    unread = (T.STATE_FIELDS | T.PAYLOAD_FIELDS) - _fields_actually_requested()
+    # A field declared with no reader, and a note saying why it is carried, is
+    # an honest declaration rather than a gap; every other field must be read.
+    provenance = {f["name"] for f in T.SCHEMA["state_fields"] + T.SCHEMA["payload_fields"]
+                  if not f["read_by"] and f.get("note")}
+    unread = (T.STATE_FIELDS | T.PAYLOAD_FIELDS) - _fields_actually_requested() - provenance
     assert not unread, (f"trace-schema.yaml declares {sorted(unread)} and no "
                         f"walk asked for it across every run in this suite")
 
@@ -141,35 +145,21 @@ def test_the_legal_run_is_long_enough_to_be_worth_walking():
     assert len(legal_run()) > 20
 
 
-def test_i12_and_the_rollback_chain_contradict_each_other():
-    """Not a fault in the walk, and not one to paper over.
-
-    `transitions.html` §7 sets out the legal rollback and ends it with
-    `rev 1 → Published, rev 2 → Superseded`. I12 says a revision only becomes
-    superseded because a *successor* was published, and revision 2 has no
-    successor — the pointer went back to its parent. Both statements are in the
-    approved model and they cannot both hold.
-
-    The walk implements the formula as written, so it refuses the rollback. This
-    test records that, and fails the day the model is fixed — which is the point:
-    a known contradiction that stops being true should not stay written down.
-    """
+def test_the_legal_rollback_satisfies_every_invariant():
+    """It did not, before 16.09: I12 required a published successor, and a
+    rollback supersedes the successor itself. The model now reads the pointer."""
     verdict = engine.check(legal_rollback())
-    assert not verdict.ok
-    blame = [v for v in verdict.refusal.detail if v["invariant"] == "I12"]
-    assert blame and "revision 2" in blame[0]["why"]
-    assert len(verdict.refusal.detail) == 1, (
-        "only I12 should object to a legal rollback; the rest is a real bug")
+    assert verdict.ok, verdict.refusal
 
 
 # ------------------------------------------- one field changed, one refusal
 
 def _exam_topics_never_approved_together():
-    """I2 asks for a past moment at which every topic was approved *at once*.
+    """I2 reads the state the exam's generation arrived in.
 
-    Approving one and withdrawing it before the other lands satisfies
-    `∧ₜ O approved(t)` and breaks `O (∧ₜ approved(t))`, which is the operator
-    scope the model states and the one this walk implements.
+    N1 is approved and then withdrawn before the exam is generated: a past
+    moment had it approved, which the old O-formula accepted, and the state the
+    generation arrived in does not, which Y refuses.
     """
     run = legal_run()
     at = find(run, "NodeApproved", 1)                 # the second topic's approval
@@ -200,7 +190,8 @@ MUTATIONS = {
     "I10": lambda r: mutate(r, find(r, "LearnersNotified"), event="NodeEdited", node=N1),
     "I11": lambda r: mutate(r, find(r, "LivePointerMoved"),
                             revision_states={1: "Withdrawn"}),
-    "I12": lambda r: legal_rollback(),
+    # Superseded while the pointer still names it.
+    "I12": lambda r: mutate(r, find(r, "LearnersNotified"), revision_states={1: "Superseded"}),
     "I13": lambda r: mutate(legal_rollback(), 3, re_verified=[]),
     "I14": lambda r: mutate(legal_removal(), 1, course_state="ContentInProgress",
                             node_states={N1: "NodeApproved", N2: "NodeRecovery"},
@@ -234,7 +225,7 @@ MISSING = {
     "I3": ("stale_nodes", "PublishRequested"),
     "I7": ("current_policy_version", "PublishRequested"),
     "I14": ("retry_budget_left", "LivePointerMoved"),
-    "I2": ("approved_nodes", "OutlineApproved"),
+    "I2": ("approved_nodes", "(before the exam)"),
     "I15": ("current_guardrail_version", "PublishRequested"),
 }
 
@@ -250,7 +241,11 @@ def test_a_missing_fact_refuses_rather_than_permits(ident):
     """
     field, event = MISSING[ident]
     run = legal_run()
-    at = find(run, event)
+    if event == "(before the exam)":
+        at = next(i for i, st in enumerate(run)
+                  if st["event"] == "NodeGenerated" and st.get("node_type") == "exam") - 1
+    else:
+        at = find(run, event)
     run[at] = {k: v for k, v in run[at].items() if k != field}
     verdict = engine.check(run)
     assert not verdict.ok, f"{ident} answered ok with {field!r} missing"

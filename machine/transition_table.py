@@ -131,9 +131,17 @@ def _previous_auto(rows: list[Transition], row: dict) -> Transition | None:
     return None
 
 
-def complement_source(table: dict[str, list[Transition]], t: Transition) -> Transition:
-    """The row an 'any of the above fails' row negates."""
-    rows = table[t.machine]
-    return next(r for r in reversed(rows[: rows.index(t)])
-                if r.event == AUTO and r.sources == t.sources
-                and not r.guard.complement_of_previous)
+def complement_literals(table: dict[str, list[Transition]], t: Transition) -> tuple:
+    """What an 'any of the above fails' row negates: the checks every (auto)
+    row above it in the same state asks. In WholeCourseChecks there is one such
+    row. In StaleReview there are three, which share the re-verification and
+    differ only in where a passing revision goes — pointer and rollback are
+    routing, not checks, and a revision does not fail re-verification by
+    holding the pointer."""
+    rows = [r for r in table[t.machine][: table[t.machine].index(t)]
+            if r.event == AUTO and r.sources == t.sources and not r.guard.complement_of_previous]
+    if not rows:
+        raise TableRefused([f"{t.label()}: 'any of the above fails' has nothing above it"])
+    key = lambda lit: (lit.name, lit.negated, lit.arg, lit.op, lit.value, lit.qualifier)
+    shared = set.intersection(*({key(lit) for lit in r.guard.literals} for r in rows))
+    return tuple(lit for lit in rows[0].guard.literals if key(lit) in shared)

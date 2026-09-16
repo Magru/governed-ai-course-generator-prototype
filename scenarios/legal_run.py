@@ -186,9 +186,8 @@ def legal_held_node() -> list[dict]:
 
 #: Runs the specification declares legal. Every one of them must pass, and a
 #: walk that refuses one of them is refusing the system it was written to guard.
-#: `legal_rollback` is deliberately absent — see the contradiction it exposes,
-#: which is a fault in the model rather than in the walk.
 LEGAL = {"the happy path": legal_run,
+         "a rollback through re-verification": legal_rollback,
          "a node removed through a re-committed outline": legal_removal,
          "a restricted source used after a rights check": legal_restricted_source,
          "a node that has spent its retries": legal_held_node}

@@ -194,6 +194,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
     "affected(revision)": _affected,
     "has_active_readers(revision)": _has_active_readers,
     "depends_on(node, edited)": _depends_on,
+    "rollback_requested(revision)": lambda lit, ctx: ctx.rev.stale_via == "RollbackRequested",
 }
 
 #: In the glossary and asked by no row. Kept here so the registry test can hold

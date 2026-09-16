@@ -4,10 +4,14 @@
   2 schema_valid(args)          wrong shape, or an extra field → refuse
   3 policy_allows(actor, action) OPA
   4 resource_allowed(actor, course)
-  5 legal_in_state(action)      the transition table decides — the machine is asked
-  6 approval_present(action)    wherever the registry's Requires column names a person
-  7 idempotency_key_unused(op)  a repeat is a no-op, not a second effect
+  5 idempotency_key_unused(op)  a repeat is a no-op, not a second effect
+  6 legal_in_state(action)      the transition table decides — the machine is asked
+  7 approval_present(action)    wherever the registry's Requires column names a person
   8 within_rate_limit(actor)
+
+Idempotency comes before legality (spec-v2.8): a repeat of something that
+already happened has moved the course on, and asked in the other order it is
+refused as illegal and the person is told to take a move they already took.
 
 Each refusal names its check and a safe next action, because a refusal with no
 next action is a dead end for the person who met it. When all eight pass, the
@@ -88,15 +92,15 @@ class Membrane:
             return self._no("resource_allowed", f"{actor.get('id')} is not in this organisation")
         payload = {**args, "actor": actor.get("id")} if "actor" not in args else dict(args)
         key = key_of(name, args, self.course)
+        if key in self.issued:
+            return Outcome(False, "idempotency_key_unused", "already issued",
+                           NEXT["idempotency_key_unused"], key)
         if action.event is not None:
             ok, why = m.permits(action.event, {**payload, "idempotency_key": key})
             if not ok:
                 return self._no("legal_in_state", why)
         if action.requires == PERSON and actor.get("kind") != PERSON:
             return self._no("approval_present", f"{name} needs a person; {actor.get('kind')} asked")
-        if key in self.issued:
-            return Outcome(False, "idempotency_key_unused", "already issued",
-                           NEXT["idempotency_key_unused"], key)
         if self.spent.get(actor.get("id"), 0) >= self.rate_limit:
             return self._no("within_rate_limit", f"{actor.get('id')} spent {self.rate_limit} actions")
         # Issued before the effect, landed after it — two facts, not one. The

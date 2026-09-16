@@ -24,9 +24,7 @@ LIVE_LINEAGE = {"Published", "Superseded", "StaleReview", "ErrorRecovery",
 TERMINAL = {"Archived", "BlockedFinal", "Withdrawn"}
 
 #: `blocked_at` — "which phase a recoverable block was entered from — brief,
-#: outline, or content, each a named set of states". The inventory spells the
-#: third value `node`; the glossary says `content`. The inventory is the file a
-#: store implements, so its spelling is used and the difference is recorded.
+#: outline, or node, each a named set of states".
 PHASE_OF = {
     "AwaitingBrief": "brief", "BriefValidation": "brief", "BriefFeasibility": "brief",
     "OutlineDrafting": "outline", "OutlineGuardrail": "outline",

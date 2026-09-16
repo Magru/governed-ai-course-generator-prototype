@@ -55,13 +55,9 @@ def test_a_legal_generation_runs_once_and_its_repeat_is_a_no_op(gate):
     steps = len(gate.machine.trace())
     again = gate.request("generate_node_content", copy.deepcopy(args), AUTHOR)
     assert not again.ran and len(gate.machine.trace()) == steps
-    # A finding, pinned. safety.html §3 orders legal_in_state (5) before
-    # idempotency_key_unused (7). Once the first call has moved the node on, a
-    # repeat is refused as illegal rather than recognised as already done: no
-    # second effect either way, but the person is told "take the move the state
-    # permits" instead of "nothing to do". The key lookup is also the cheaper
-    # check, which the section's own rule puts first.
-    assert again.check == "legal_in_state"
+    # Recognised as already done, not refused as illegal — the order spec-v2.8
+    # gives the membrane, so the person is told there is nothing to do.
+    assert (again.check, again.key) == ("idempotency_key_unused", first.key)
 
 
 def test_issued_and_landed_are_two_facts(gate):
