@@ -37,9 +37,9 @@ def contradictory_brief():
     return p.machine.current.state, p.machine.current.blocked_at
 
 
-def restricted_source():
+def restricted_source(in_block: bool = False):
     generator = RecordedGenerator({"outline": [copy.deepcopy(w.OUTLINE)],
-                                   f"node:{w.T1}": [cassette.leaking(w.T1),
+                                   f"node:{w.T1}": [cassette.leaking(w.T1, in_block),
                                                     copy.deepcopy(w.CONTENT[w.T1])]})
     p = pipeline(generator=generator)
     p.submit_brief(copy.deepcopy(w.BRIEF), AUTHOR)
@@ -129,6 +129,8 @@ TWIN_RUNS = [
     ("02 a brief that contradicts itself", contradictory_brief,
      lambda r: r == ("BlockedRecoverable", "brief")),
     ("03 a node citing a source its audience cannot see", restricted_source,
+     lambda r: r[0] == "Validated" and "cannot see" in (r[1] or "")),
+    ("03 the same source cited inside a block", lambda: restricted_source(in_block=True),
      lambda r: r[0] == "Validated" and "cannot see" in (r[1] or "")),
     ("04 an exam before its material", exam_before_material,
      lambda r: r[0] == "Planned" and "nobody has approved" in r[1]),

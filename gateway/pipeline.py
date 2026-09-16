@@ -25,6 +25,7 @@ from engines.schema.schemas import OUTLINE
 from .membrane import GATEWAY, Membrane
 from .provider.port import Prompt
 from .retrieval import retrieve
+from .screened_text import blocks_of, screened_text
 
 OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learning objectives "
                  "only. Every skill must be one the catalog lists. Return the outline schema.")
@@ -130,10 +131,7 @@ class Pipeline:
 
     def _screen_node(self, node_id: str) -> None:
         content = self.machine.current.nodes[node_id].content or {}
-        blocks = [b for b in content.get("blocks") or [] if isinstance(b, dict)] \
-            if isinstance(content.get("blocks"), list) else []
-        text = " ".join(str(b.get("text") or b.get("question") or b.get("caption") or "")
-                        for b in blocks)
+        blocks, text = blocks_of(content), screened_text(content)
 
         def screen(key):
             verdict = self._verdict("node-out", node_id, text, "text")
@@ -183,9 +181,12 @@ class Pipeline:
         self._stage(10, "checks 7–9 · admission", artifact, result)
 
     def _unknown_or_refused(self, out, scope: dict, event: str) -> None:
-        if out.check == "effect":
-            self._stage(5, "generation", scope.get("node", "outline"), f"no answer: {out.reason}")
-            self.machine.fire(event, scope, producer="gateway")
+        if out.check in ("effect", "answer"):
+            # No answer is a Timeout; an answer in the wrong shape is a ModelError.
+            # The table routes both to recovery, and the trace says which it was.
+            self._stage(5, "generation", scope.get("node", "outline"), f"{out.check}: {out.reason}")
+            self.machine.fire(event if out.check == "effect" else "ModelError", scope,
+                              producer="gateway")
             return
         raise GatewayRefused(f"{out.check}: {out.reason} — {out.next_action}")
 

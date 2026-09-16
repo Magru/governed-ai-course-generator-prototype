@@ -16,6 +16,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from engines.temporal import engine as temporal                    # noqa: E402
 from gateway.pipeline import Pipeline                              # noqa: E402
+from gateway.screened_text import screened_text                    # noqa: E402
 from gateway.provider.port import GuardrailUnavailable             # noqa: E402
 from scenarios import cassette, walkthrough as w                   # noqa: E402
 from scenarios.machine_runs import SIGNATURES, machine             # noqa: E402
@@ -48,9 +49,8 @@ def _revision_verdict(p: Pipeline, rev, version: str) -> str:
 
 
 def _revision_text(rev) -> str:
-    """What a live revision is re-screened on: the text of every node in it."""
-    return " ".join(b.get("text") or b.get("question") or b.get("caption") or ""
-                    for n in rev.nodes.values() for b in (n.content or {}).get("blocks") or [])
+    """What a live revision is re-screened on: the prose of every node in it."""
+    return " ".join(screened_text(n.content) for n in rev.nodes.values())
 
 
 def approve(p: Pipeline, node: str, **extra) -> None:

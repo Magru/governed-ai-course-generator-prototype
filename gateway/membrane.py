@@ -22,6 +22,7 @@ effect is recorded.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any
 
 import jsonschema
@@ -43,6 +44,7 @@ NEXT = {
     "idempotency_key_unused": "nothing to do — it already happened",
     "within_rate_limit": "wait, then retry",
     "effect": "the call is unknown, not failed: recover",
+    "answer": "the provider answered in a shape that was not asked for: recover",
 }
 
 #: The OPA action a registered action is judged as, where the policy names it
@@ -51,7 +53,7 @@ POLICY_ACTION = {"propose_outline": "generate_outline",
                  "generate_node_content": "generate_node", "generate_image": "generate_node"}
 
 #: The gateway acting on its own behalf — screening, admitting, moving the pointer.
-GATEWAY = {"id": "gateway", "kind": SYSTEM}
+GATEWAY = MappingProxyType({"id": "gateway", "kind": SYSTEM})   # read-only: its id is who acted
 
 
 @dataclass
@@ -142,7 +144,7 @@ class Membrane:
             except (ProviderUnavailable, GuardrailUnavailable) as exc:
                 return Outcome(False, "effect", str(exc), NEXT["effect"], key)
             if wrong:
-                return Outcome(False, "effect", wrong, NEXT["effect"], key)
+                return Outcome(False, "answer", wrong, NEXT["answer"], key)
             payload.update(answer)
         if action.event is not None:
             m.fire(action.event, {**payload, "idempotency_key": key})

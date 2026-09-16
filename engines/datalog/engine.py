@@ -41,13 +41,24 @@ TERMS = ("cites, in_article, in_kb, visible, in_audience, "
 SEED = {"visible": 2, "in_article": 2, "in_kb": 1}
 
 
+def cited(node: dict) -> set[str]:
+    """Every chunk a node cites: its own list and each block's. A claim cites
+    where it stands; reading only the node's list let a paragraph quote a source
+    its audience cannot see while the node declared a harmless one."""
+    chunks = {c for c in node.get("cites") or [] if isinstance(c, str)}
+    for block in node.get("blocks") or [] if isinstance(node.get("blocks"), list) else []:
+        if isinstance(block, dict) and isinstance(block.get("cites"), list):
+            chunks.update(c for c in block["cites"] if isinstance(c, str))
+    return chunks
+
+
 def _load(nodes: list[dict], *, articles: list[dict] | None = None,
           audiences: list[str] | None = None,
           resolved_visibility: dict | None = None) -> object:
     """One place where facts become facts, so no query runs on a half-loaded base."""
     pd = session(TERMS, SEED)
     for node in nodes:
-        for chunk in node.get("cites") or []:
+        for chunk in cited(node):
             pd.assert_fact("cites", node["id"], chunk)
     for article in articles or []:
         for chunk in article.get("chunks") or []:

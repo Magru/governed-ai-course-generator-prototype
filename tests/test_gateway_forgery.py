@@ -59,10 +59,10 @@ def test_a_call_cannot_hand_back_fields_the_checks_judged(gate):
 
 
 @pytest.mark.parametrize("answer", ["a lesson", 7, None, ["blocks"]])
-def test_an_answer_that_is_not_an_object_is_unknown_not_landed(gate, answer):
+def test_an_answer_that_is_not_an_object_is_a_model_error_not_landed(gate, answer):
     out = gate.request("generate_node_content", {"node": N1, "prompt": "p-1"}, AUTHOR,
                        perform=lambda key: {"content": answer})
-    assert (out.ran, out.check) == (False, "effect")
+    assert (out.ran, out.check) == (False, "answer")
     assert gate.machine.current.nodes[N1].content is None
 
 
@@ -90,3 +90,15 @@ def test_the_same_refusal_twice_is_two_repairs_not_already_done():
     p.generate_node(w.T2, AUTHOR)
     assert m.current.nodes[w.T2].state == "Validated"
     assert len([a for a in generator.asked if a[0] == f"node:{w.T2}"]) == 3
+
+
+def test_every_word_a_learner_sees_is_screened():
+    from gateway.screened_text import screened_text
+    content = {"blocks": [
+        {"type": "checklist", "items": ["a refused sentence"]},
+        {"type": "quiz", "question": "q", "options": ["an option", "another"], "answer": 0, "points": 1},
+        {"type": "image", "src": "x.png", "alt": "alt words", "caption": "c", "cites": ["mt-kb-001"]}]}
+    text = screened_text(content)
+    for words in ("a refused sentence", "an option", "another", "alt words"):
+        assert words in text
+    assert "x.png" not in text and "mt-kb-001" not in text

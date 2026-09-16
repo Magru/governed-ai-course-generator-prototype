@@ -134,6 +134,9 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         rev.proposal = payload["outline"]
     if event == "NodeGenerationRequested" and machine == "node":
         obj.issued_key = payload.get("idempotency_key") or f"generate:{obj.id}:{len(m.store.steps)}"
+    if event == "OutlineRejected" and machine == "revision" and payload.get("reason"):
+        # A person's reason is what the next draft is told, as a check's is.
+        rev.last_refusal = payload["reason"]
     if event == "CheckFailed" or (event == "GuardrailVerdict" and payload.get("verdict") == "deny"):
         # What the repair prompt is told. Kept on the object the repair is for.
         reason = payload.get("reason") or payload.get("category")

@@ -19,9 +19,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 KB_CHUNKS = yaml.safe_load((ROOT / "fixtures" / "kb.yaml").read_text())["knowledge_base"]["chunks"]
 
 
-def leaking(node: str) -> dict:
+def leaking(node: str, in_block: bool = False) -> dict:
+    """Content citing incident records, which only supervisors may see — at the
+    node's own list, or only inside a block while the node declares a harmless
+    source."""
     content = copy.deepcopy(w.CONTENT[node])
-    content["cites"] = ["mt-kb-008"]                  # incident records: supervisors only
+    if in_block:
+        content["blocks"][0]["cites"] = ["mt-kb-008"]
+    else:
+        content["cites"] = ["mt-kb-008"]
     return content
 
 

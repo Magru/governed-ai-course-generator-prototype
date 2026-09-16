@@ -33,24 +33,29 @@ def key_of(name: str, args: dict, course: str, subject: dict | None = None) -> s
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
-#: Actions that land what a model made, and the move that asks for one again
-#: because the last was refused: from the repair state back to drafting.
-REPAIRS = {"NodeGenerated": ("NodeRepair", "ContentDrafting"),
-           "OutlineGenerated": ("OutlineRepair", "OutlineDrafting")}
+#: Actions that land what a model made: the state an answer is asked from, and
+#: the recovery state a retry of an unanswered call returns from.
+DRAFTING = {"NodeGenerated": ("ContentDrafting", "NodeRecovery"),
+            "OutlineGenerated": ("OutlineDrafting", "ErrorRecovery")}
 
 
 def subject_of(machine, args: dict, event: str | None) -> dict:
-    """A generation is named by its prompt digest and by how many repairs its
-    object has been through. A call that never answered is retried from
-    recovery, not repair, so it keeps the key and the provider deduplicates it;
-    a second press of the same request keeps it too and is 'already done'. A
-    repair that happens to ask the same prompt again — two identical refusals in
-    a row — is a new act and gets a new key."""
+    """A generation is named by its prompt digest and by how many times its
+    object was sent to be drafted. A call that never answered is retried from
+    recovery, which is not a new request, so it keeps the key and the provider
+    deduplicates it; a second press of the same request keeps it too and is
+    'already done'. A repair, a rejection or a release from a block asks again
+    — and may ask with the same prompt — so it is a new act with a new key."""
     rev = machine.current
     node = rev.nodes.get(args.get("node")) if args.get("node") else None
-    if event in REPAIRS:
-        return {"revision": rev.id,
-                "repairs": transitions(machine.store.steps, rev.id, args.get("node"), *REPAIRS[event])}
+    if event in DRAFTING:
+        drafting, recovery = DRAFTING[event]
+        # An answer in the wrong shape did not land, but it was an answer: asking
+        # again under its key would get it back from a provider that deduplicates.
+        errors = sum(1 for s in machine.store.steps if s.get("revision") == rev.id
+                     and s["event"] == "ModelError" and s.get("node") == args.get("node"))
+        return {"revision": rev.id, "model_errors": errors,
+                "drafts": entries(machine.store.steps, rev.id, args.get("node"), drafting, recovery)}
     return {"revision": rev.id,
             "node": json.dumps(node.content, sort_keys=True) if node is not None else None,
             "round": rounds(machine.store.steps, rev.id, node.id if node is not None else None)}
@@ -69,13 +74,13 @@ def rounds(steps: list, revision: int, node: str | None) -> int:
     return count
 
 
-def transitions(steps: list, revision: int, node: str | None, source: str, target: str) -> int:
-    """How many times the object moved from one state to another."""
+def entries(steps: list, revision: int, node: str | None, state: str, not_from: str) -> int:
+    """How many times the object entered a state, other than back from one."""
     count, last = 0, None
     for step in steps:
         if step.get("revision") != revision:
             continue
-        state = step["node_states"].get(node) if node else step["course_state"]
-        count += last == source and state == target
-        last = state
+        now = step["node_states"].get(node) if node else step["course_state"]
+        count += now == state and last != state and last != not_from
+        last = now
     return count
