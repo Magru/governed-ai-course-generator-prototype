@@ -15,7 +15,7 @@ export BEDROCK_ACCOUNT_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.7
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals test live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals walkthrough test live aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -51,6 +51,9 @@ engines-smoke:             ## every engine answers, and none has a fallback
 
 refusals:                  ## the five refusals, each from the engine that owns it
 	@$(PY) scenarios/refusals.py
+
+walkthrough:               ## walkthrough.html, step by step, through the machine
+	$(PY) scenarios/walkthrough.py
 
 test:                      ## unit tests; no network, no AWS account reachable
 	$(PY) -m pytest tests -q -m "not live"
