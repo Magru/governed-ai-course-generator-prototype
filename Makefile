@@ -15,7 +15,7 @@ export BEDROCK_ACCOUNT_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.9
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough test live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test live aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -54,6 +54,9 @@ refusals:                  ## the five refusals, each from the engine that owns 
 
 run:                       ## one course through the gateway, brief to rollback, then the seven twins
 	$(PY) scenarios/run.py
+
+cascade:                   ## the staleness cascade at course scale, priced in compute and in review
+	$(PY) scenarios/cascade.py
 
 walkthrough:               ## walkthrough.html, step by step, through the machine
 	$(PY) scenarios/walkthrough.py
