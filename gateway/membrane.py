@@ -30,7 +30,7 @@ import jsonschema
 
 from engines.opa import engine as opa
 
-from .actions import PERSON, REGISTRY
+from .actions import PERSON, PRODUCED, REGISTRY, SYSTEM
 from .provider.port import GuardrailUnavailable, ProviderUnavailable
 
 #: Events whose side effect the store marks landed when it records them. Any
@@ -49,9 +49,13 @@ NEXT = {
     "effect": "the call is unknown, not failed: recover",
 }
 
-#: The OPA action each registered action is judged as. The policy knows three.
+#: The OPA action a registered action is judged as, where the policy names it
+#: differently. Every other action is judged under its own name.
 POLICY_ACTION = {"propose_outline": "generate_outline",
                  "generate_node_content": "generate_node", "generate_image": "generate_node"}
+
+#: The gateway acting on its own behalf — screening, admitting, moving the pointer.
+GATEWAY = {"id": "gateway", "kind": SYSTEM}
 
 
 @dataclass
@@ -98,21 +102,26 @@ class Membrane:
                         key=lambda e: list(e.absolute_path))
         if errors:
             return self._no("schema_valid", "; ".join(e.message for e in errors))
+        if action.event in PRODUCED and perform is None:
+            # Not a refusal a person could meet: a call site that supplies the
+            # result itself is a hole in the gateway, and it must not run.
+            raise TypeError(f"{name} lands a provider's answer; it needs the call that makes it")
         m = self.machine
-        if name in POLICY_ACTION:
-            verdict = opa.check(POLICY_ACTION[name], actor, _brief(m), m.current.state,
-                                m.world.policy_data)
-            if not verdict.ok:
-                return self._no("policy_allows", verdict.refusal.summary)
+        actor = self._authenticated(actor)
+        verdict = opa.check(POLICY_ACTION.get(name, name), actor, _brief(m), m.current.state,
+                            m.world.policy_data)
+        if not verdict.ok:
+            return self._no("policy_allows", verdict.refusal.summary)
         if actor.get("course", self.course) != self.course:
             return self._no("resource_allowed", f"{actor.get('id')} does not act on {self.course}")
         if actor.get("kind") == PERSON and actor.get("id") not in m.world.people:
             return self._no("resource_allowed", f"{actor.get('id')} is not in this organisation")
-        # A person's act carries who did it. A system's does not stand in for a
-        # person: the guards that judge an author must go on judging the author.
+        # A person's act carries who did it — the caller, never a name passed in.
+        # A system's does not stand in for a person: the guards that judge an
+        # author must go on judging the author.
         payload = dict(args)
-        if "actor" not in payload and actor.get("kind") == PERSON:
-            payload["actor"] = actor.get("id")
+        if actor["kind"] == PERSON:
+            payload["actor"] = actor["id"]
         rev = m.current
         node = rev.nodes.get(args.get("node")) if args.get("node") else None
         # Content is part of what an approval or an admission acts on. It is not
@@ -131,11 +140,12 @@ class Membrane:
             return Outcome(False, "idempotency_key_unused", "already done",
                            NEXT["idempotency_key_unused"], key)
         if action.event is not None:
-            ok, why = m.permits(action.event, {**payload, "idempotency_key": key})
+            ok, why = self._legal(action.event, {**payload, "idempotency_key": key})
             if not ok:
                 return self._no("legal_in_state", why)
-        if action.requires == PERSON and actor.get("kind") != PERSON:
-            return self._no("approval_present", f"{name} needs a person; {actor.get('kind')} asked")
+        if action.requires in (PERSON, SYSTEM) and actor["kind"] != action.requires:
+            return self._no("approval_present",
+                            f"{name} needs a {action.requires}; a {actor['kind']} asked")
         if self.spent.get(actor.get("id"), 0) >= self.rate_limit:
             return self._no("within_rate_limit", f"{actor.get('id')} spent {self.rate_limit} actions")
         # Issued before the effect, landed after it — two facts, not one. The
@@ -149,10 +159,34 @@ class Membrane:
             try:
                 payload.update(perform(key))
             except (ProviderUnavailable, GuardrailUnavailable) as exc:
-                return Outcome(False, "effect", str(exc), "the call is unknown, not failed: recover", key)
+                return Outcome(False, "effect", str(exc), NEXT["effect"], key)
+        produced = PRODUCED.get(action.event)
+        if produced and payload.get(produced) is None:
+            return Outcome(False, "effect", f"the provider answered without {produced}",
+                           NEXT["effect"], key)
         if action.event is not None:
             m.fire(action.event, {**payload, "idempotency_key": key})
         return Outcome(True, key=key)
+
+    def _authenticated(self, actor: dict) -> dict:
+        """Who is asking, as the organisation knows them. A role written on the
+        request is ignored: a person holds the role the organisation gave them,
+        and someone it does not know holds none."""
+        if actor.get("kind") == PERSON:
+            person = self.machine.world.people.get(actor.get("id")) or {}
+            return {"id": actor.get("id"), "kind": PERSON, "role": person.get("role"),
+                    **({"course": actor["course"]} if "course" in actor else {})}
+        return {"id": actor.get("id"), "kind": actor.get("kind"), "role": actor.get("kind"),
+                **({"course": actor["course"]} if "course" in actor else {})}
+
+    def _legal(self, event: str, payload: dict) -> tuple[bool, str]:
+        """Is the event legal now, asked before its result exists. A screening's
+        verdict is not known until the call is made, so the question is whether
+        some verdict has a row here — asking with none would find no row at all."""
+        if PRODUCED.get(event) != "verdict":
+            return self.machine.permits(event, payload)
+        answers = [self.machine.permits(event, {**payload, "verdict": v}) for v in ("allow", "deny")]
+        return next((a for a in answers if a[0]), answers[0])
 
     def _no(self, check: str, reason: str) -> Outcome:
         return Outcome(False, check, reason, NEXT[check])

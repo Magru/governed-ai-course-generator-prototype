@@ -33,6 +33,13 @@ def test_the_repair_prompt_carries_the_refusal_not_just_a_retry(course):
     assert "cannot see" in asked[1].instructions
 
 
+def test_an_empty_answer_is_refused_by_the_block_schema_and_never_published(course):
+    asked = [prompt for task, prompt in course.generator.asked if task == "node:mt-node-204"]
+    assert len(asked) == 2 and "at least one content block" in asked[1].instructions
+    published = course.machine.store.revisions[1].nodes["mt-node-204"].content
+    assert published and published.get("blocks")
+
+
 def test_a_timeout_is_retried_under_the_same_key_and_lands_once(course):
     timeouts = [s for s in course.machine.trace() if s["event"] == "Timeout"]
     assert len(timeouts) == 1

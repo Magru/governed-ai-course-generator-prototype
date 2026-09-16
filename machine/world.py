@@ -35,6 +35,9 @@ class World:
         """The document OPA evaluates against — grants, thresholds, approval."""
         return {"grants": {pid: {"may_author_for": p["may_author_for"]}
                            for pid, p in self.people.items()},
+                # Who holds which role, so a signature is checked against the
+                # person rather than against the title written on it.
+                "people": {pid: {"role": p["role"]} for pid, p in self.people.items()},
                 "thresholds": self.thresholds,
                 "approval": self.org_approval}
 

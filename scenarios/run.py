@@ -22,6 +22,7 @@ from scenarios.machine_runs import SIGNATURES, machine             # noqa: E402
 
 AUTHOR = {"id": "author-1", "kind": "person", "role": "course-author"}
 ADMIN = {"id": "admin-1", "kind": "person", "role": "training-administrator"}
+NOTICE = "Hand tool safety is available: complete it before your next workshop shift."
 
 
 def pipeline(generator=None, screener=None) -> Pipeline:
@@ -43,8 +44,8 @@ def _revision_verdict(p: Pipeline, rev) -> str:
 
 
 def approve(p: Pipeline, node: str, **extra) -> None:
-    out = p.membrane.request("approve_node", {"node": node, "actor": AUTHOR["id"],
-                                              "what_was_shown": "formal verdict", **extra}, AUTHOR)
+    out = p.membrane.request("approve_node", {"node": node, "what_was_shown": "formal verdict",
+                                              **extra}, AUTHOR)
     assert out.ran, out
 
 
@@ -52,7 +53,7 @@ def publish(p: Pipeline) -> None:
     m = p.machine
     m.fire("CourseChecksRequested")
     m.fire("ApprovalGranted", {"signatures": SIGNATURES})
-    out = p.membrane.request("publish_revision", {"actor": ADMIN["id"], "revision": m.current.id}, ADMIN)
+    out = p.membrane.request("publish_revision", {"revision": m.current.id}, ADMIN)
     assert out.ran, out
 
 
@@ -69,7 +70,7 @@ def the_course() -> Pipeline:
     p.generate_node(w.E1, AUTHOR)
     approve(p, w.E1)
     publish(p)
-    out = p.membrane.request("notify_learners", {"actor": ADMIN["id"], "notice_approved": True,
+    out = p.membrane.request("notify_learners", {"notice": NOTICE, "notice_approved": True,
                                                  "recipients": 40}, ADMIN)
     assert out.ran, out
     return p

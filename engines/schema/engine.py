@@ -51,8 +51,19 @@ def check_blocks(node: dict, block_types: list[str]) -> Verdict:
     glossary keeps them apart, and a package that answers a question the guard
     registry does not list is a map with a road missing from it.
     """
+    blocks = node.get("blocks")
+    if not isinstance(blocks, list) or not blocks:
+        # A node with no blocks has no shape to be wrong about, so the loop
+        # below would pass it — and an empty answer from the model would
+        # travel through every later check and be published as a lesson.
+        return refused(
+            kind="failing-path",
+            summary=f"{node.get('id')}.blocks: expected at least one content block",
+            detail=[{"path": f"{node.get('id')}.blocks", "expected": "minItems: 1",
+                     "found": repr(blocks)}],
+            engine=ENGINE)
     failures = []
-    for index, one in enumerate(node.get("blocks") or []):
+    for index, one in enumerate(blocks):
         verdict = check(one, "block", block_types=block_types)
         if not verdict.ok:
             for failure in verdict.refusal.detail if isinstance(

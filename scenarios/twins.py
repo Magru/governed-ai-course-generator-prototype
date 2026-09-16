@@ -69,7 +69,7 @@ def stale_node_at_publication():
     m = p.machine
     m.fire("ReviseRequested", {"revision": 1})
     m.fire("NodeEdited", {"node": w.T2, "content": copy.deepcopy(w.CONTENT[w.T2])})
-    out = p.membrane.request("publish_revision", {"actor": "admin-1", "revision": m.current.id},
+    out = p.membrane.request("publish_revision", {"revision": m.current.id},
                              {"id": "admin-1", "kind": "person"})
     return out.check, out.reason.split(";")[0]
 

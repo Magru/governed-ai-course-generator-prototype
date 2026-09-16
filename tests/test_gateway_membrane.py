@@ -46,7 +46,7 @@ def test_an_extra_field_is_refused_not_ignored(gate):
 
 
 def test_legality_is_the_machines_answer(gate):
-    out = gate.request("publish_revision", {"actor": "admin-1", "revision": 1},
+    out = gate.request("publish_revision", {"revision": 1},
                        {"id": "admin-1", "kind": "person", "role": "training-administrator"})
     assert (out.ran, out.check) == (False, "legal_in_state")
     assert "PublishRequested is not permitted" in out.reason
@@ -69,7 +69,7 @@ def test_issued_and_landed_are_two_facts(gate):
                        AUTHOR, perform=_content).key
     assert key in gate.issued                      # before the effect
     assert key in gate.machine.store.used_keys     # after it, recorded by the store
-    refused = gate.request("publish_revision", {"actor": "admin-1", "revision": 1},
+    refused = gate.request("publish_revision", {"revision": 1},
                            {"id": "admin-1", "kind": "person", "role": "training-administrator"})
     assert refused.key is None and len(gate.issued) == 1
 
@@ -77,13 +77,14 @@ def test_issued_and_landed_are_two_facts(gate):
 def test_an_action_the_registry_gives_a_person_is_refused_to_the_system(gate):
     assert gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
                         AUTHOR, perform=_content).ran
-    assert gate.request("admit_to_revision", {"node": N1, "verdict": "allow", "artifact": N1, "screened": "sha-1"},
-                        SYSTEM).ran
-    out = gate.request("approve_node", {"node": N1, "actor": "author-1",
-                                        "what_was_shown": "the verdict"}, SYSTEM)
-    assert (out.ran, out.check) == (False, "approval_present")
-    ok = gate.request("approve_node", {"node": N1, "actor": "author-1",
-                                       "what_was_shown": "the verdict"}, AUTHOR)
+    assert gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1"},
+                        SYSTEM, perform=lambda key: {"verdict": "allow"}).ran
+    out = gate.request("approve_node", {"node": N1, "what_was_shown": "the verdict"}, SYSTEM)
+    # The policy answers first now that it judges every action; the registry's
+    # Requires column stays behind it as the second line.
+    assert (out.ran, out.check) == (False, "policy_allows") and "person_only" in out.reason
+    assert gate.machine.current.nodes[N1].state != "NodeApproved"
+    ok = gate.request("approve_node", {"node": N1, "what_was_shown": "the verdict"}, AUTHOR)
     assert ok.ran and gate.machine.current.nodes[N1].state == "NodeApproved"
 
 
@@ -113,3 +114,26 @@ def test_a_call_that_never_answered_is_retried_under_the_same_key(gate):
     retry = gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
                          AUTHOR, perform=_content)
     assert retry.ran and retry.key == lost.key
+
+
+def test_nobody_acts_in_someone_elses_name(gate):
+    """Who acts is the caller. An author cannot publish as the administrator by
+    writing the administrator's id or role into the request."""
+    out = gate.request("publish_revision", {"revision": 1, "actor": "admin-1"}, AUTHOR)
+    assert (out.ran, out.check) == (False, "schema_valid")
+    posing = {"id": "author-1", "kind": "person", "role": "training-administrator"}
+    out = gate.request("publish_revision", {"revision": 1}, posing)
+    assert (out.ran, out.check) == (False, "policy_allows")
+
+
+def test_a_verdict_cannot_be_declared_only_screened(gate):
+    assert gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-1"},
+                        AUTHOR, perform=_content).ran
+    out = gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1",
+                                             "verdict": "allow"}, SYSTEM,
+                       perform=lambda key: {"verdict": "allow"})
+    assert (out.ran, out.check) == (False, "schema_valid")
+    with pytest.raises(TypeError):
+        gate.request("admit_to_revision", {"node": N1, "artifact": N1, "screened": "sha-1"}, SYSTEM)
+    with pytest.raises(TypeError):
+        gate.request("generate_node_content", {"node": N1, "prompt": "prompt-sha-2"}, AUTHOR)

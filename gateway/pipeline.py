@@ -22,8 +22,8 @@ from typing import Any
 
 from engines.schema.schemas import OUTLINE
 
-from .membrane import Membrane
-from .provider.port import GuardrailUnavailable, Prompt
+from .membrane import GATEWAY, Membrane
+from .provider.port import Prompt
 from .retrieval import retrieve
 
 OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learning objectives "
@@ -109,52 +109,54 @@ class Pipeline:
     def _generate(self, prompt: Prompt, schema: dict, subject: str) -> dict:
         generated = self.generator.generate(prompt, schema)
         self._stage(5, "generation", subject, generated.model_id)
+        # Whatever came back lands as it came, and the machine's checks judge
+        # it: an empty lesson is refused by the block schema at NodeChecks and
+        # repaired with that reason, not mended or discarded here where no
+        # trace would show it.
         return generated.content
 
     def _screen_node(self, node_id: str) -> None:
         content = self.machine.current.nodes[node_id].content or {}
         text = " ".join(b.get("text") or b.get("question") or b.get("caption") or ""
                         for b in content.get("blocks") or [])
-        screened = hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
-        verdict = self._screen("node-out", node_id, text, "text", admit=False)
-        if verdict is None:
-            return
-        for i, block in enumerate(content.get("blocks") or []):
-            if verdict.allowed and block.get("type") == "image":
-                verdict = self._screen("image-out", f"{node_id}.blocks[{i}]", block.get("src", ""),
-                                       "image", admit=False)
-                if verdict is None:
-                    return
-        self._admit(node_id, node_id, verdict, screened)
 
-    def _screen(self, point: str, subject: str, content: str, modality: str, admit: bool = True):
-        try:
-            verdict = self.screener.screen(content, modality, point, subject=subject)
-        except GuardrailUnavailable as exc:
-            self._stage(6, "guardrail", subject, f"unreachable: {exc}")
-            scope = {"node": subject.split(".")[0]} if subject.startswith("mt-node") else {}
-            self.machine.fire("ServiceUnreachable", scope, producer="gateway")
-            return None
+        def screen(key):
+            verdict = self._verdict("node-out", node_id, text, "text")
+            for i, block in enumerate(content.get("blocks") or []):
+                if verdict.allowed and block.get("type") == "image":
+                    verdict = self._verdict("image-out", f"{node_id}.blocks[{i}]",
+                                            block.get("src", ""), "image")
+            return _as_payload(verdict)
+
+        self._admit(node_id, node_id, _sha(json.dumps(content, sort_keys=True)), screen)
+
+    def _screen(self, point: str, subject: str, content: str, modality: str) -> None:
+        self._admit(subject, None, _sha(content),
+                    lambda key: _as_payload(self._verdict(point, subject, content, modality)))
+
+    def _verdict(self, point: str, subject: str, content: str, modality: str):
+        verdict = self.screener.screen(content, modality, point, subject=subject)
         self._stage(6 if point != "brief-in" else 3, f"guardrail {point}", subject,
                     "allow" if verdict.allowed else f"deny: {verdict.category}")
-        if admit:
-            self._admit(subject, None, verdict, hashlib.sha256(content.encode()).hexdigest())
         return verdict
 
-    def _admit(self, artifact: str, node: str | None, verdict, screened: str) -> None:
-        # What was screened is part of the key: admitting a repaired outline is
-        # a different action from admitting the one it replaced.
-        args = {"artifact": artifact, "verdict": "allow" if verdict.allowed else "deny",
-                "screened": screened}
-        if node:
-            args["node"] = node
-        if verdict.category:
-            args["category"] = verdict.category
-        out = self.membrane.request("admit_to_revision", args,
-                                    {"id": "gateway", "kind": "system", "role": "system"})
-        if not out.ran:
-            self._stage(10, "admission", artifact, f"{out.check}: {out.reason}")
+    def _admit(self, artifact: str, node: str | None, screened: str, screen) -> None:
+        """Admission is the screening. The verdict it lands is whatever the
+        screener answered inside the call — there is no argument through which
+        anyone could state it instead. What was screened is part of the key:
+        admitting a repaired outline is a different action from admitting the
+        one it replaced."""
+        args = {"artifact": artifact, "screened": screened, **({"node": node} if node else {})}
+        out = self.membrane.request("admit_to_revision", args, GATEWAY, perform=screen)
+        if out.check == "effect":
+            self._stage(6, "guardrail", artifact, f"unreachable: {out.reason}")
+            self.machine.fire("ServiceUnreachable", {"node": node} if node else {},
+                              producer="gateway")
             return
+        if not out.ran:
+            # A screened artifact that cannot be admitted is not a quiet no-op:
+            # the node would wait in OutputGuardrail for a verdict nobody sends.
+            raise GatewayRefused(f"admission of {artifact}: {out.check}: {out.reason}")
         # Stages 7–9 are NodeChecks, run by the machine on the admitted content.
         target = self.machine.current.nodes.get(node) if node else self.machine.current
         result = target.state
@@ -171,6 +173,15 @@ class Pipeline:
 
     def _stage(self, number: int, name: str, subject: str, result) -> None:
         self.stages.append((number, name, subject, result))
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _as_payload(verdict) -> dict:
+    return {"verdict": "allow" if verdict.allowed else "deny",
+            **({"category": verdict.category} if verdict.category else {})}
 
 
 class GatewayRefused(RuntimeError):

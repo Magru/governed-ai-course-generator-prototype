@@ -12,6 +12,67 @@ import rego.v1
 
 default allow := false
 
+AUTHORING := {"submit_brief", "generate_outline", "generate_node"}
+
+# What a person does to a course once it exists, and who may. Signing off a
+# node is an author's act as much as an administrator's; what reaches or leaves
+# learners is the administrator's alone.
+PERSON_ACTS := {
+	"approve_node": {"course-author", "training-administrator"},
+	"publish_revision": {"training-administrator"},
+	"withdraw_revision": {"training-administrator"},
+	"archive_revision": {"training-administrator"},
+	"notify_learners": {"training-administrator"},
+}
+
+# Taken by the system on its own behalf, never by a person: admitting screened
+# content, moving the live pointer, reading sources for a prompt.
+SYSTEM_ACTS := {"admit_to_revision", "move_live_pointer", "retrieve_sources"}
+
+KNOWN := ((AUTHORING | {name | some name, _ in PERSON_ACTS}) | SYSTEM_ACTS) | {"grant_approval"}
+
+allow if {
+	some roles
+	roles = PERSON_ACTS[input.action]
+	input.actor.kind == "person"
+	input.actor.role in roles
+	audience_permitted
+}
+
+allow if {
+	input.action in SYSTEM_ACTS
+	input.actor.kind == "system"
+}
+
+deny contains reason if {
+	some roles
+	roles = PERSON_ACTS[input.action]
+	input.actor.kind == "person"
+	not input.actor.role in roles
+	reason := {
+		"rule": "known_role",
+		"message": sprintf("%v may not %v; it needs one of %v", [input.actor.id, input.action, roles]),
+	}
+}
+
+deny contains reason if {
+	PERSON_ACTS[input.action]
+	not input.actor.kind == "person"
+	reason := {
+		"rule": "person_only",
+		"message": sprintf("%v is a person's act; %v is not a person", [input.action, input.actor.id]),
+	}
+}
+
+deny contains reason if {
+	input.action in SYSTEM_ACTS
+	not input.actor.kind == "system"
+	reason := {
+		"rule": "system_only",
+		"message": sprintf("%v is taken by the system on its own behalf, not by %v", [input.action, input.actor.id]),
+	}
+}
+
 allow if {
 	input.action in {"submit_brief", "generate_outline", "generate_node"}
 	input.actor.role in {"course-author", "training-administrator"}
@@ -63,7 +124,20 @@ approval_chain_satisfied if {
 		some signature in input.signatures
 		signature.role == role
 	}
-	count(input.signatures) >= data.org.approval.minimum_signatures
+	count(signers) >= data.org.approval.minimum_signatures
+	count(false_signatures) == 0
+}
+
+# A signature counts once per person. Two entries by one person are one consent,
+# and a chain of two that one administrator signed twice is a chain of one.
+signers := {s.actor | some s in input.signatures}
+
+# A signature is a person of this organisation signing in the role they hold.
+# Checking only the role written on the signature would accept any name at all
+# under the right title.
+false_signatures contains s if {
+	some s in input.signatures
+	not data.org.people[s.actor].role == s.role
 }
 
 deny contains reason if {
@@ -81,10 +155,19 @@ deny contains reason if {
 
 deny contains reason if {
 	input.action == "grant_approval"
-	count(input.signatures) < data.org.approval.minimum_signatures
+	count(signers) < data.org.approval.minimum_signatures
 	reason := {
 		"rule": "approval_chain_satisfied",
-		"message": sprintf("%v signatures present, %v required", [count(input.signatures), data.org.approval.minimum_signatures]),
+		"message": sprintf("%v distinct signers present, %v required", [count(signers), data.org.approval.minimum_signatures]),
+	}
+}
+
+deny contains reason if {
+	input.action == "grant_approval"
+	some s in false_signatures
+	reason := {
+		"rule": "approval_chain_satisfied",
+		"message": sprintf("%v is not a %v of this organisation", [s.actor, s.role]),
 	}
 }
 
@@ -100,7 +183,17 @@ deny contains reason if {
 
 # Refusing with the rule that denied and a sentence a person can act on. A bare
 # `allow = false` would tell an author nothing about what to change.
+# Asked of whoever authors, and of a person acting on a course. A system asked
+# to take a person's act is refused for that, not for having no audience.
+audience_question if input.action in AUTHORING
+
+audience_question if {
+	PERSON_ACTS[input.action]
+	input.actor.kind == "person"
+}
+
 deny contains reason if {
+	audience_question
 	not audience_permitted
 	ungranted := [team |
 		some team in input.brief.audience
@@ -113,6 +206,7 @@ deny contains reason if {
 }
 
 deny contains reason if {
+	input.action in AUTHORING
 	input.brief.node_count > data.org.thresholds.max_nodes_per_course
 	reason := {
 		"rule": "within_limits",
@@ -167,7 +261,7 @@ deny contains reason if {
 }
 
 deny contains reason if {
-	not input.action in {"submit_brief", "generate_outline", "generate_node", "grant_approval"}
+	not input.action in KNOWN
 	reason := {
 		"rule": "known_action",
 		"message": sprintf("%v is not an action this policy governs", [input.action]),

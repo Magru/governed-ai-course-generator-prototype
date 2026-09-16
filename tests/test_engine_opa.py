@@ -8,6 +8,7 @@ from engines.opa import engine
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 ORG = yaml.safe_load((ROOT / "fixtures" / "organisation.yaml").read_text(encoding="utf-8"))
 DATA = {"grants": {p["id"]: {"may_author_for": p["may_author_for"]} for p in ORG["people"]},
+        "people": {p["id"]: {"role": p["role"]} for p in ORG["people"]},
         "thresholds": ORG["thresholds"]}
 AUTHOR = {"id": "author-1", "role": "course-author"}
 
@@ -153,3 +154,48 @@ def test_the_same_refusal_reads_the_same_way_twice():
     runs = [engine.check_approval(1, FULL_CHAIN[:1], APPROVAL_ORG).refusal.summary
             for _ in range(3)]
     assert len(set(runs)) == 1
+
+
+def test_a_signer_the_organisation_does_not_know_is_refused_by_name():
+    forged = [{"actor": "admin-1", "role": "training-administrator"},
+              {"actor": "someone", "role": "compliance-officer"}]
+    v = engine.check_approval(1, forged, APPROVAL_ORG)
+    assert not v.ok and any("someone" in d["message"] for d in v.refusal.detail)
+
+
+def test_a_title_written_on_a_signature_is_not_the_role_its_signer_holds():
+    """author-1 is a course author; writing 'compliance-officer' next to the name
+    does not make the chain complete."""
+    claimed = [{"actor": "admin-1", "role": "training-administrator"},
+               {"actor": "author-1", "role": "compliance-officer"}]
+    assert not engine.check_approval(1, claimed, APPROVAL_ORG).ok
+
+
+def test_one_person_signing_twice_is_one_signer():
+    twice = FULL_CHAIN + [{"actor": "admin-1", "role": "training-administrator"}]
+    assert engine.check_approval(1, twice, APPROVAL_ORG | {"approval": {
+        **ORG["approval"], "minimum_signatures": 3}}).ok is False
+
+
+# ------------------------------------------------- actions after authoring
+
+ADMIN = {"id": "admin-1", "kind": "person", "role": "training-administrator"}
+PERSON_AUTHOR = {"id": "author-1", "kind": "person", "role": "course-author"}
+GATEWAY = {"id": "gateway", "kind": "system", "role": "system"}
+
+
+@pytest.mark.parametrize("action,actor,ok", [
+    ("approve_node", PERSON_AUTHOR, True),
+    ("publish_revision", PERSON_AUTHOR, False),
+    ("publish_revision", ADMIN, True),
+    ("notify_learners", PERSON_AUTHOR, False),
+    ("publish_revision", GATEWAY, False),
+    ("admit_to_revision", GATEWAY, True),
+    ("admit_to_revision", ADMIN, False),
+    ("move_live_pointer", ADMIN, False),
+])
+def test_every_registered_action_is_a_question_for_the_policy(action, actor, ok):
+    v = engine.check(action, actor, brief(), "Approved", DATA)
+    assert v.ok is ok
+    if not ok:
+        assert {d["rule"] for d in v.refusal.detail} & {"known_role", "person_only", "system_only"}

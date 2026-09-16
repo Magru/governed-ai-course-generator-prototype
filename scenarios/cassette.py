@@ -28,13 +28,13 @@ def leaking(node: str) -> dict:
 def course_generator() -> RecordedGenerator:
     """The walkthrough's model calls: an outline with an invented skill and its
     repair, three topics — one citing a source its audience cannot see, one
-    timing out — and the exam."""
+    timing out — and the exam, whose first answer is an empty object."""
     return RecordedGenerator({
         "outline": [copy.deepcopy(w.INVENTED), copy.deepcopy(w.OUTLINE)],
         f"node:{w.T1}": [copy.deepcopy(w.CONTENT[w.T1])],
         f"node:{w.T2}": [leaking(w.T2), copy.deepcopy(w.CONTENT[w.T2])],
         f"node:{w.T3}": ["timeout", copy.deepcopy(w.CONTENT[w.T3])],
-        f"node:{w.E1}": [copy.deepcopy(w.CONTENT[w.E1])],
+        f"node:{w.E1}": [{}, copy.deepcopy(w.CONTENT[w.E1])],
     })
 
 
