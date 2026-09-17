@@ -52,6 +52,7 @@ class Machine(Settling, Recording):
         self.table = table or load()
         self.store = Store(config, dict(world.versions))
         self.store.readers = dict(config.get("readers") or {})
+        self.store.enrolled_learners = config.get("enrolled_learners")
         self.current = self.store.new_revision()
         self.evaluator = Evaluator(self)
         self._depth = 0
@@ -209,6 +210,13 @@ class Machine(Settling, Recording):
                                                       copy.deepcopy(node.content),
                                                       stamps=dict(node.stamps),
                                                       checked_stamps=dict(node.checked_stamps))
+            if node.state in ("NodeApproved", "Validated") and any(
+                    self.store.current[k] != v for k, v in node.checked_stamps.items()):
+                # A fork starts under the rules in force. The revision it came
+                # from may keep old stamps while nobody edits it; this one will
+                # be edited, and what it inherits checked under a replaced
+                # version is checked again before anyone can publish it.
+                child.nodes[nid].state = "NeedsRevalidation"
             if nid in rev.screened:
                 # The fork carries the node's content, so it carries the verdict
                 # on that content — and the version that gave it. A verdict on

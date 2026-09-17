@@ -120,6 +120,8 @@ class Pipeline:
     def screen_waiting(self) -> None:
         """Screen every node of the draft that waits for a verdict nobody asked
         for yet — the nodes a configuration change sent back to be checked."""
+        if self.machine.current.state != "ContentInProgress":
+            return
         for node_id, node in list(self.machine.current.nodes.items()):
             if node.state == "OutputGuardrail":
                 self._screen_node(node_id)
@@ -164,8 +166,13 @@ class Pipeline:
             verdict = self._verdict("node-out", node_id, text, "text")
             for i, block in enumerate(blocks):
                 if verdict.allowed and block.get("type") == "image":
+                    src = block.get("src", "")
+                    # A source that is not a string is screened as what it is;
+                    # the block schema refuses it at the checks that follow.
                     verdict = self._verdict("image-out", f"{node_id}.blocks[{i}]",
-                                            block.get("src", ""), "image")
+                                            src if isinstance(src, str) else json.dumps(src, sort_keys=True,
+                                                                                       default=str),
+                                            "image")
             return _as_payload(verdict)
 
         self._admit(node_id, node_id, _sha(json.dumps(content, sort_keys=True)), screen)
@@ -206,6 +213,11 @@ class Pipeline:
             return
         if out.check == "idempotency_key_unused":
             self._stage(10, "admission", artifact, "already admitted")
+            return
+        if out.check == "legal_in_state" and node and self.machine.current.state != "ContentInProgress":
+            # A node's screening and its checks wait for the course to be back
+            # at work; asked now, nothing was paid for and nothing moved.
+            self._stage(6, "guardrail", artifact, f"waits: the course is {self.machine.current.state}")
             return
         if not out.ran:
             # A screened artifact that cannot be admitted is not a quiet no-op:

@@ -426,11 +426,21 @@ revision:
     to_kind: state
     to: ["Published"]
     to_note: "no move; the notice is recorded"
+  - event: "ApprovalGranted"
+    from_raw: "Published"
+    from_kind: state
+    from: ["Published"]
+    guard: "approval_chain_satisfied"
+    layer: "Human · OPA"
+    to_raw: "Published (no move; consent to the notice is recorded)"
+    to_kind: state
+    to: ["Published"]
+    to_note: "no move; consent to the notice is recorded"
   - event: "(auto)"
     from_raw: "StaleReview"
     from_kind: state
     from: ["StaleReview"]
-    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ ¬lost_live_pointer(revision)"
+    guard: "guardrail_clean ∧ no_permission_leak ∧ grounded ∧ block_schemas_valid ∧ policy_allows under current versions ∧ ¬lost_live_pointer(revision)"
     layer: "All layers"
     to_raw: "Published (re-stamped)"
     to_kind: state
@@ -440,7 +450,7 @@ revision:
     from_raw: "StaleReview"
     from_kind: state
     from: ["StaleReview"]
-    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ rollback_requested(revision)"
+    guard: "guardrail_clean ∧ no_permission_leak ∧ grounded ∧ block_schemas_valid ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ rollback_requested(revision)"
     layer: "All layers"
     to_raw: "Published (re-stamped)"
     to_kind: state
@@ -450,7 +460,7 @@ revision:
     from_raw: "StaleReview"
     from_kind: state
     from: ["StaleReview"]
-    guard: "guardrail_clean ∧ no_permission_leak ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ ¬rollback_requested(revision)"
+    guard: "guardrail_clean ∧ no_permission_leak ∧ grounded ∧ block_schemas_valid ∧ policy_allows under current versions ∧ lost_live_pointer(revision) ∧ ¬rollback_requested(revision)"
     layer: "All layers"
     to_raw: "Superseded (re-stamped)"
     to_kind: state
@@ -647,8 +657,8 @@ node:
     from_raw: "NodeRecovery"
     from_kind: state
     from: ["NodeRecovery"]
-    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = generation"
-    layer: "Human · State store"
+    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ recovery_from(node) = generation ∧ content_approved(topics(node))"
+    layer: "Human · State store · Datalog"
     to_raw: "ContentDrafting (repair_count = 0)"
     to_kind: state
     to: ["ContentDrafting"]
@@ -667,7 +677,7 @@ node:
     from_raw: "OutputGuardrail"
     from_kind: state
     from: ["OutputGuardrail"]
-    guard: "guardrail_clean(text ∧ images)"
+    guard: "course_state = ContentInProgress ∧ guardrail_clean(text ∧ images)"
     layer: "Guardrail"
     to_raw: "NodeChecks"
     to_kind: state
@@ -676,7 +686,7 @@ node:
     from_raw: "OutputGuardrail"
     from_kind: state
     from: ["OutputGuardrail"]
-    guard: "¬guardrail_clean(text ∧ images)"
+    guard: "course_state = ContentInProgress ∧ ¬guardrail_clean(text ∧ images)"
     layer: "Guardrail"
     to_raw: "NodeRepair"
     to_kind: state
@@ -749,7 +759,7 @@ node:
     from_raw: "NodeRepair"
     from_kind: state
     from: ["NodeRepair"]
-    guard: "course_state = ContentInProgress ∧ ¬retry_budget_left(node) ∧ ¬content_approved(topics(node))"
+    guard: "course_state = ContentInProgress ∧ ¬waiting_for_topics(node) ∧ ¬retry_budget_left(node) ∧ ¬content_approved(topics(node))"
     layer: "Human · State store · Datalog"
     to_raw: "NodeRepair (repair_count = 0)"
     to_kind: state
@@ -814,7 +824,7 @@ node:
     from_raw: "NeedsRevalidation"
     from_kind: state
     from: ["NeedsRevalidation"]
-    guard: "hand_edited(node)"
+    guard: "course_state = ContentInProgress ∧ hand_edited(node)"
     layer: "State store"
     to_raw: "OutputGuardrail"
     to_kind: state
@@ -823,7 +833,7 @@ node:
     from_raw: "NeedsRevalidation"
     from_kind: state
     from: ["NeedsRevalidation"]
-    guard: "¬hand_edited(node) ∧ versions_current(node)"
+    guard: "course_state = ContentInProgress ∧ ¬hand_edited(node) ∧ versions_current(node)"
     layer: "State store"
     to_raw: "NodeChecks"
     to_kind: state
@@ -832,7 +842,7 @@ node:
     from_raw: "NeedsRevalidation"
     from_kind: state
     from: ["NeedsRevalidation"]
-    guard: "¬hand_edited(node) ∧ ¬versions_current(node)"
+    guard: "course_state = ContentInProgress ∧ ¬hand_edited(node) ∧ ¬versions_current(node)"
     layer: "State store"
     to_raw: "OutputGuardrail"
     to_kind: state

@@ -87,6 +87,11 @@ def _restamp(m, t, rev, old, payload):
         if node.state != "Removed":
             node.stamps = dict(m.store.current)
             node.checked_stamps = dict(m.store.current)
+            # The revision was screened whole under the version in force, its
+            # nodes' text included; a verdict left naming the old version would
+            # stamp the next check of that node with it.
+            if node.id in rev.screened:
+                rev.screened[node.id]["guardrail_version"] = m.store.current["guardrail"]
     rev.stale_nodes.clear()
     rev.affected = False
     rev.re_verified = True
@@ -110,6 +115,7 @@ NOTES = {
     "spawn; this revision does not move": _spawn,
     "spawn": _spawn,
     "no move; the notice is recorded": _nothing,     # the step itself is the record
+    "no move; consent to the notice is recorded": _nothing,  # on_event recorded it
     "re-stamped": _restamp,
     "recovery_from = generation": _set_recovery("generation"),
     "recovery_from = guardrail": _set_recovery("guardrail"),
@@ -176,9 +182,13 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
                              or m.store.current["guardrail"]}
     elif event == "ApprovalGranted" and machine == "revision":
         # approvals[] holds every approval with its scope; the publication chain
-        # is the entries scoped to publication, never a node's approval.
-        rev.approvals.extend({**sig, "scope": "publication"}
-                             for sig in payload.get("signatures") or [])
+        # is the entries scoped to publication, never a node's approval. On a
+        # published revision the chain consents to its notice instead, and a
+        # fresh consent replaces the one before it.
+        scope = "notice" if rev.state == "Published" else "publication"
+        if scope == "notice":
+            rev.approvals = [a for a in rev.approvals if a.get("scope") != "notice"]
+        rev.approvals.extend({**sig, "scope": scope} for sig in payload.get("signatures") or [])
 
 
 def after_transition(m, t, obj, old: str, payload: dict) -> None:

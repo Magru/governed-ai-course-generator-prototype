@@ -21,6 +21,7 @@ effect is recorded.
 """
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
@@ -71,7 +72,8 @@ class Membrane:
     machine: Any
     course: str
     rate_limit: int = 20
-    spent: dict = field(default_factory=dict)
+    window_s: float = 60.0
+    spent: dict = field(default_factory=dict)    # actor → times of the actions in the window
     issued: set = field(default_factory=set)
 
     def request(self, name: str, args: dict, actor: dict, perform=None) -> Outcome:
@@ -130,15 +132,23 @@ class Membrane:
         if action.requires in (PERSON, SYSTEM) and actor["kind"] != action.requires:
             return self._no("approval_present",
                             f"{name} needs a {action.requires}; a {actor['kind']} asked")
-        if self.spent.get(actor.get("id"), 0) >= self.rate_limit:
-            return self._no("within_rate_limit", f"{actor.get('id')} spent {self.rate_limit} actions")
+        now = time.monotonic()
+        # A ceiling per window, not per lifetime. Admission is not under it: the
+        # gateway screens what the machine sends it to screen, a rule change can
+        # send a whole draft at once, and what bounds that is the retry budget,
+        # not a count that would leave half a draft unscreened.
+        recent = [t for t in self.spent.get(actor.get("id"), []) if now - t < self.window_s]
+        self.spent[actor.get("id")] = recent
+        if name != "admit_to_revision" and len(recent) >= self.rate_limit:
+            return self._no("within_rate_limit",
+                            f"{actor.get('id')} spent {self.rate_limit} actions in {self.window_s:.0f} s")
         # Issued before the effect, landed after it — two facts, not one. The
         # store's used_keys means *landed*: it is what NodeRecovery reads to
         # decide whether to regenerate. Recording the key there before the call
         # would make a crash between the two look like a write that landed, and
         # the node would move on with no content.
         self.issued.add(key)
-        self.spent[actor.get("id")] = self.spent.get(actor.get("id"), 0) + 1
+        self.spent[actor.get("id")].append(now)
         if perform is not None:
             try:
                 answer, wrong = _answer(action.event, perform(key))

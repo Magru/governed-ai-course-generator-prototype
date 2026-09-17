@@ -237,7 +237,10 @@ def _integer(value) -> bool:
     and refusing here what the layer before passed would be two opinions."""
     if isinstance(value, bool):
         return False
-    return isinstance(value, int) or (isinstance(value, float) and value.is_integer())
+    # A float is whole only while it is exact: past 2**53 `1e300` is a float
+    # that happens to have no fraction, not a count anyone wrote.
+    return isinstance(value, int) or (isinstance(value, float) and value.is_integer()
+                                      and abs(value) <= 2 ** 53)
 
 
 def _not_integers(node: dict, questions) -> list[dict]:

@@ -117,6 +117,15 @@ def _coverage(lit: Literal, ctx: Context) -> Verdict:
         f"rev-{ctx.rev.id}", [skill], _nodes_in_scope(ctx), in_brief, scope="node")
 
 
+def _every_node(ctx: Context, check) -> Verdict:
+    """A node guard asked of a whole revision — re-verification after a catalog
+    change — holds when it holds for every node, and refuses with the first."""
+    if ctx.node is not None:
+        return check(engine_node(ctx.node))
+    verdicts = [check(node) for node in course_nodes(ctx.rev)]
+    return next((v for v in verdicts if not v.ok), verdicts[0] if verdicts else check({"blocks": None}))
+
+
 ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
     "schema_valid(artifact)": _schema,
     "policy_allows(action, role, state)": _policy,
@@ -139,12 +148,14 @@ ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
         sorted(n.id for n in ctx.rev.nodes.values() if n.state == "NodeApproved")),
     "trace_satisfies_ltl(course)": lambda lit, ctx: IMPLEMENTED["trace_satisfies_ltl(course)"](
         ctx.machine.trace()),
-    "block_schemas_valid(node)": lambda lit, ctx: IMPLEMENTED["block_schemas_valid(node)"](
-        engine_node(ctx.node), ctx.world.block_types, ctx.world.block_schemas),
+    "block_schemas_valid(node)": lambda lit, ctx: _every_node(
+        ctx, lambda node: IMPLEMENTED["block_schemas_valid(node)"](
+            node, ctx.world.block_types, ctx.world.block_schemas)),
     "arithmetic_consistent(node)": lambda lit, ctx: IMPLEMENTED["arithmetic_consistent(node)"](
         engine_node(ctx.node), ctx.world.thresholds),
     "approval_chain_satisfied(revision)": lambda lit, ctx: IMPLEMENTED["approval_chain_satisfied(revision)"](
-        ctx.rev.id, [a for a in ctx.rev.approvals if a.get("scope") == "publication"],
+        ctx.rev.id, [a for a in ctx.rev.approvals
+                     if a.get("scope") == ("notice" if ctx.rev.state == "Published" else "publication")],
         ctx.world.policy_data),
 }
 # depends_on is the fifteenth. It answers with a path rather than a verdict and

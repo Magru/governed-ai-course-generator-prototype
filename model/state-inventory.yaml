@@ -79,6 +79,13 @@ variables:
     recovery: "count CheckFailed events and retries taken out of NodeRecovery, since the last approval"
     note: "read by retry_budget_left; exhausting it is what sends work to a person"
 
+  - variable: "enrolled_learners"
+    type: "Authoritative"
+    owner: "Platform enrolment"
+    valid_values: "integer >= 0, per course"
+    recovery: "query the platform's enrolment for the course"
+    note: "the recipient set of a notice; read by notice_approved and never passed in by a caller"
+
   - variable: "waiting_for_topics"
     type: "Operational"
     owner: "State store"

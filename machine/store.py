@@ -32,6 +32,7 @@ INVENTORY_TO_TRACE = {
     "blocked_at": "routing for the way out of BlockedRecoverable; no invariant reads it",
     "recovery_from": "routing for the way out of NodeRecovery; no invariant reads it",
     "waiting_for_topics": "routing for the way out of NodeRepair; no invariant reads it",
+    "enrolled_learners": "read by notice_approved; the trace records the LearnersNotified event",
     "approvals[]": "read by approval_chain_satisfied; the trace records the ApprovalGranted event",
     "idempotency_key": "carried in the envelope of every side-effecting step",
     "trace_id": "carried in the envelope as correlation_id",
@@ -112,6 +113,7 @@ class Store:
     used_keys: set = field(default_factory=set)
     steps: list = field(default_factory=list)
     readers: dict = field(default_factory=dict)   # revision → learners mid-course
+    enrolled_learners: int | None = None          # the course's enrolment, as the platform holds it
     discarded: list = field(default_factory=list) # events no row accepted, and why
 
     def budget(self) -> int:

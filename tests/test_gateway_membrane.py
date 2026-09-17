@@ -100,6 +100,8 @@ def test_the_rate_limit_is_a_ceiling(gate):
     assert gate.request("retrieve_sources", {"query": "a", "audience": ["apprentices"]}, SYSTEM).ran
     out = gate.request("retrieve_sources", {"query": "b", "audience": ["apprentices"]}, SYSTEM)
     assert (out.ran, out.check) == (False, "within_rate_limit")
+    gate.window_s = 0                                # the window has passed
+    assert gate.request("retrieve_sources", {"query": "c", "audience": ["apprentices"]}, SYSTEM).ran
 
 
 def test_a_call_that_never_answered_is_retried_under_the_same_key(gate):

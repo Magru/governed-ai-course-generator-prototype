@@ -72,6 +72,7 @@ stateDiagram-v2
     Xanystateinthelivelineage --> Withdrawn : WithdrawRequested
     Published --> Superseded : LivePointerMoved
     Published --> Published : LearnersNotified
+    Published --> Published : ApprovalGranted
     StaleReview --> Published : auto
     StaleReview --> Published : auto
     StaleReview --> Superseded : auto

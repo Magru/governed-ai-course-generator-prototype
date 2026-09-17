@@ -44,7 +44,8 @@ SIGNATURES = [{"actor": "admin-1", "role": "training-administrator", "what_was_s
 
 def machine(**config) -> Machine:
     world = world_module.load()
-    return Machine(world, {"thresholds": world.thresholds, "author": "author-1", **config})
+    return Machine(world, {"thresholds": world.thresholds, "author": "author-1",
+                           "enrolled_learners": 40, **config})
 
 
 def brief(**changes) -> dict:

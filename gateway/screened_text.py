@@ -34,13 +34,25 @@ def prose(value) -> list[str]:
     return []
 
 
+def _not_ids(value) -> list[str]:
+    """What sits in an id field without being an id — a sentence in a wrapper."""
+    values = value if isinstance(value, list) else [value]
+    return [s for v in values if not isinstance(v, str) for s in prose(v)]
+
+
 def block_prose(block: dict) -> list[str]:
     skip = BLOCK_IDS | ({"src"} if block.get("type") == "image" else set())
-    return [s for k, v in block.items() if k not in skip for s in prose(v)]
+    said = [s for k, v in block.items() if k not in skip for s in [k, *prose(v)] if isinstance(s, str)]
+    return said + [s for k in skip if k in block for s in _not_ids(block[k])]
 
 
 def screened_text(content) -> str:
     if not isinstance(content, dict):
         return " ".join(prose(content))
-    around = [s for k, v in content.items() if k not in NODE_IDS | {"blocks"} for s in prose(v)]
+    blocks = content.get("blocks")
+    around = [s for k, v in content.items() if k not in NODE_IDS | {"blocks"}
+              for s in [k, *prose(v)] if isinstance(s, str)]
+    around += [s for k in NODE_IDS if k in content for s in _not_ids(content[k])]
+    if blocks is not None and not isinstance(blocks, list):
+        around += prose(blocks)            # not a list of blocks, and still text the record keeps
     return " ".join([s for block in blocks_of(content) for s in block_prose(block)] + around)

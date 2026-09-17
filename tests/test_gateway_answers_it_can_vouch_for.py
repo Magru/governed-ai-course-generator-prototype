@@ -120,3 +120,12 @@ def test_a_notice_cannot_be_declared_approved_by_its_sender():
     out = p.membrane.request("notify_learners", {"notice": "x", "recipients": 1, "notice_approved": True},
                              run.ADMIN, perform=lambda key: {})
     assert out.check == "schema_valid"
+
+
+def test_an_image_source_that_is_not_a_string_is_repaired_not_crashed_on():
+    odd = copy.deepcopy(w.CONTENT[w.T1])
+    odd["blocks"][1]["src"] = {"url": "x"}
+    p = _draft(**{f"node:{w.T1}": [odd, copy.deepcopy(w.CONTENT[w.T1])]})
+    p.generate_node(w.T1, run.AUTHOR)
+    assert p.machine.current.nodes[w.T1].state == "Validated"
+    assert "src" in _prompts(p, w.T1)[1]

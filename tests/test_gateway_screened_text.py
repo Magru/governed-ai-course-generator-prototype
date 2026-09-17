@@ -11,6 +11,14 @@ def test_keys_and_fields_beside_the_blocks_are_read():
     assert "k-1" not in text and "k-2" not in text
 
 
+def test_what_sits_in_an_id_field_without_being_an_id_is_read():
+    content = {"blocks": {"x": "in a dict of blocks"}, "cites": [{"c": "in a cite"}]}
+    text = screened_text(content)
+    assert "in a dict of blocks" in text and "in a cite" in text
+    block = {"blocks": [{"type": "image", "src": {"s": "in a source"}, "cites": [{"c": "a"}]}]}
+    assert "in a source" in screened_text(block)
+
+
 def test_a_source_is_prose_everywhere_but_on_an_image():
     content = {"blocks": [{"type": "paragraph", "text": "a", "src": "said"},
                           {"type": "image", "src": "img.png", "alt": "b"}]}

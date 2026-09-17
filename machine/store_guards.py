@@ -192,13 +192,18 @@ def _notice_approved(lit: Literal, ctx: Context) -> bool:
     if screening.get("guardrail_version") != ctx.store.current["guardrail"]:
         raise Undecidable(f"{lit.raw}: the notice was screened by {screening.get('guardrail_version')}, "
                           f"and {ctx.store.current['guardrail']} is in force")
-    # Consent to this notice is consent to these recipients: every approver of
-    # the publication was shown a count, and a different count is a notice
-    # nobody approved. It waits for a fresh approval.
+    # Consent to this notice is consent to these recipients. The set is the
+    # course's enrolled learners as the store holds them now, never a number a
+    # caller passes; every consent shown another count is consent to a notice
+    # nobody is sending, and it waits for a fresh approval.
+    enrolled = ctx.store.enrolled_learners
+    if enrolled is None:
+        raise Undecidable(f"{lit.raw}: the store holds no enrolment for this course")
+    scope = "notice" if any(a.get("scope") == "notice" for a in ctx.rev.approvals) else "publication"
     shown = [(a.get("what_was_shown") or {}).get("recipients") for a in ctx.rev.approvals
-             if a.get("scope") == "publication"]
-    return (screening.get("verdict") == "allow" and bool(shown)
-            and all(count == payload.get("recipients") for count in shown))
+             if a.get("scope") == scope]
+    return (screening.get("verdict") == "allow" and payload.get("recipients") == enrolled
+            and bool(shown) and all(count == enrolled for count in shown))
 
 
 def _depends_on(lit: Literal, ctx: Context) -> bool:
@@ -216,7 +221,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
     "has_nodes(revision)": lambda lit, ctx: bool(ctx.rev.nodes),
     "has_outline(revision)": lambda lit, ctx: bool(ctx.rev.proposal or ctx.rev.committed_outline),
     "reason_given(action)": lambda lit, ctx: bool((ctx.payload or {}).get("reason")),
-    "is_draft_revision(revision)": lambda lit, ctx: not ctx.rev.ever_published,
+    "is_draft_revision(revision)": lambda lit, ctx: not ctx.rev.ever_published and ctx.rev.state != "Archived",
     "in_live_lineage(revision)": lambda lit, ctx: (
         ctx.rev.ever_published and ctx.rev.state in LIVE_LINEAGE),
     "lost_live_pointer(revision)": lambda lit, ctx: ctx.store.live_pointer not in (None, ctx.rev.id),
