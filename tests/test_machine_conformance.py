@@ -52,10 +52,13 @@ def test_a_sweep_that_reaches_a_revision_marks_it_affected_on_the_step_about_it(
     m.screener = None                          # re-verification cannot finish
     with pytest.raises(MachineRefused):
         m.fire("PolicyChanged", {"to": "pol-2"})
+    before = len(m.trace())
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {1: True, 2: False}})
-    step = m.trace()[-1]
+    step = m.trace()[before]
     assert (step["event"], step["revision"], step["course_state"], step["affected"]) == \
         ("PolicyChanged", 1, "StaleReview", True)
+    # The draft is not swept: its checked nodes are simply checked again.
+    assert all(n.state != "NodeApproved" for n in m.store.revisions[2].nodes.values())
 
 
 # ── conformance ──────────────────────────────────────────────────────────────

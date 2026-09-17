@@ -108,3 +108,19 @@ def test_an_exam_with_no_retries_left_is_released_to_wait_for_a_topic_in_repair(
     run.approve(p, w.T2)
     assert exam.state == "ContentDrafting"
     assert temporal.check(m.trace()).ok
+
+
+def test_an_exam_whose_last_attempt_was_in_flight_waits_without_blocking_the_course():
+    p = _draft()
+    m = p.machine
+    m.fire("NodeGenerationRequested", {"node": w.E1, "actor": run.AUTHOR["id"]})
+    for _ in range(m.store.budget()):
+        m.fire("ModelError", {"node": w.E1})
+    assert (m.current.nodes[w.E1].state, m.current.nodes[w.E1].repair_count) == ("ContentDrafting", 2)
+    m.fire("NodeEdited", {"node": w.T1, "content": _edited(w.T1)})
+    assert m.current.state == "ContentInProgress"
+    assert m.current.nodes[w.E1].state == "NodeRepair"
+    m.fire("GuardrailVerdict", {"node": w.T1, "verdict": "allow"})
+    run.approve(p, w.T1, visuals_reviewed=[f"{w.T1}.blocks[1]"])
+    assert m.current.nodes[w.E1].state == "ContentDrafting"
+    assert temporal.check(m.trace()).ok

@@ -51,6 +51,22 @@ class Settling:
                 return
         raise MachineRefused(f"revision {rev.id}: its reactions to its nodes do not settle")
 
+    @staticmethod
+    def _dependencies(rev) -> dict:
+        """What each node rests on, as its outline entry says."""
+        return {nid: {d for key in ("topics", "requires", "refers_to")
+                      for d in (node.spec.get(key) or []) if isinstance(d, str)}
+                for nid, node in rev.nodes.items()}
+
+    def _dependencies_added(self, rev, before: dict) -> None:
+        """An approved outline that gives a node a dependency it did not have
+        changed what the node rests on, though nothing was edited: an exam
+        being written when its outline gains a topic must wait for that topic."""
+        for nid, now in self._dependencies(rev).items():
+            for added in sorted(now - before.get(nid, set())):
+                if added in rev.nodes:
+                    self._take("node", rev.nodes[nid], "(dependency changed)", {"node": added}, [])
+
     def _dependency_changed(self, rev, edited: str) -> None:
         for node in rev.nodes.values():
             if node.id != edited:

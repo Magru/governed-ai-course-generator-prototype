@@ -138,3 +138,9 @@ def test_the_cascade_reaches_the_exam_that_tests_an_edited_topic():
 
 def test_the_cascade_of_an_untouched_leaf_is_empty():
     assert S.cascade(COURSE, "n3") == []
+
+
+def test_a_reference_that_is_not_an_id_is_refused_rather_than_crashing():
+    v = S.check_references_live([{"id": "n5", "refers_to": [{"id": "n1"}]}], OUTLINE, "v3")
+    assert not v.ok
+    assert S.cascade([{"id": "n5", "refers_to": {"id": "n1"}}, {"id": "n1"}], "n1") == []

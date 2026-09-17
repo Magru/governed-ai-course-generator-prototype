@@ -31,7 +31,7 @@ INVENTORY_TO_TRACE = {
     "outline_version": "read by guards through committed_outline, never by an invariant",
     "blocked_at": "routing for the way out of BlockedRecoverable; no invariant reads it",
     "recovery_from": "routing for the way out of NodeRecovery; no invariant reads it",
-    "waiting_for_topics": "whether leaving NodeRepair spends a retry; read through retry_budget_left",
+    "waiting_for_topics": "routing for the way out of NodeRepair; no invariant reads it",
     "approvals[]": "read by approval_chain_satisfied; the trace records the ApprovalGranted event",
     "idempotency_key": "carried in the envelope of every side-effecting step",
     "trace_id": "carried in the envelope as correlation_id",
@@ -66,6 +66,7 @@ class NodeRecord:
     hand_edited: bool = False
     pending_operation: Operation | None = None
     stamps: dict = field(default_factory=dict)
+    checked_stamps: dict = field(default_factory=dict)   # versions the last checks ran under
     visuals_reviewed: bool = True
     issued_key: str | None = None       # the generation this node is waiting on
     last_refusal: str | None = None     # what the next repair prompt is told
@@ -89,6 +90,7 @@ class RevisionRecord:
     repair_count: int = 0
     pending_operation: Operation | None = None
     stamps: dict = field(default_factory=dict)
+    checked_stamps: dict = field(default_factory=dict)   # versions the whole-course checks ran under
     approvals: list = field(default_factory=list)
     permission_checked: set = field(default_factory=set)
     used_restricted: set = field(default_factory=set)

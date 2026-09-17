@@ -48,13 +48,23 @@ def _base(*, nodes=(), catalog_skills=(), outline=(), approved_nodes=()):
         pd.assert_fact("position", node["id"], position)
         if node.get("skill"):
             pd.assert_fact("node_teaches", node["id"], node["skill"])
-        for target in node.get("refers_to") or []:
+        for target in _ids(node.get("refers_to")):
             pd.assert_fact("refers_to", node["id"], target)
-        for required in node.get("requires") or []:
+        for required in _ids(node.get("requires")):
             pd.assert_fact("prerequisite", node["id"], required)
-        for topic in node.get("topics") or []:
+        for topic in _ids(node.get("topics")):
             pd.assert_fact("exam_topic", node["id"], topic)
     return rules(pd, RULES)
+
+
+def _ids(values) -> list[str]:
+    """Node ids as written. A value that is not an id — a model's `{"id": ...}`
+    where a string belongs — stays in the base as what it is, so it names no
+    node and `references_live` refuses it by name; as itself it could not be a
+    fact at all, and the check crashed instead of refusing."""
+    if values is None:
+        return []
+    return [v if isinstance(v, str) else repr(v) for v in (values if isinstance(values, list) else [values])]
 
 
 def check_skills_grounded(nodes: list[dict], catalog_skills: list[str]) -> Verdict:

@@ -82,9 +82,11 @@ def _restamp(m, t, rev, old, payload):
     # Re-judged against today's versions: the revision and every node on it
     # now carry them, and nothing on it is stale any more.
     rev.stamps = dict(m.store.current)
+    rev.checked_stamps = dict(m.store.current)
     for node in rev.nodes.values():
         if node.state != "Removed":
             node.stamps = dict(m.store.current)
+            node.checked_stamps = dict(m.store.current)
     rev.stale_nodes.clear()
     rev.affected = False
     rev.re_verified = True
@@ -202,10 +204,14 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
             # Consent is to this version. Signatures given before the revision
             # went back to work are for a course that no longer exists.
             obj.approvals = [a for a in obj.approvals if a.get("scope") != "publication"]
-        if new == "Approved" and old == "PendingApproval":
+            obj.checked_stamps = {}      # the whole-course checks will run again
+        if new == "PendingApproval" and old != new:
             # walkthrough step 23: "the course is stamped as a whole, the same
-            # way each node was".
-            obj.stamps = dict(m.store.current)
+            # way each node was" — with the versions its whole-course checks ran
+            # under, recorded here and written when the approval is given.
+            obj.checked_stamps = dict(m.store.current)
+        if new == "Approved" and old == "PendingApproval":
+            obj.stamps = dict(obj.checked_stamps)
         if new == "ErrorRecovery" and old != new:
             obj.pending_operation = Operation(
                 payload.get("idempotency_key") or f"{old}:{obj.id}:{len(m.store.steps)}",
@@ -252,11 +258,18 @@ def after_transition(m, t, obj, old: str, payload: dict) -> None:
             obj.repair_count += not obj.waiting_for_topics
         if old == "NodeRepair" and new != old:
             obj.waiting_for_topics = False
+        if new == "Validated":
+            # The versions the checks just ran under, the guardrail's as its
+            # verdict gave it. An approval later records these, not the ones
+            # in force by then: a guardrail changed in between was never asked.
+            screened = m.rev_of(obj).screened.get(obj.id) or {}
+            obj.checked_stamps = {**m.store.current,
+                                  "guardrail": screened.get("guardrail_version")}
         if new == "NodeApproved":
             # What an earlier attempt was refused for is settled; a later repair
             # told it would mend something that is no longer wrong.
             obj.last_refusal = None
-            obj.stamps = dict(m.store.current)
+            obj.stamps = dict(obj.checked_stamps)
             obj.repair_count = 0         # "since the last approval"
             m.rev_of(obj).approvals.append({
                 "actor": payload.get("actor"), "scope": obj.id,

@@ -89,6 +89,8 @@ guards:
     owner: "State store"
   - name: "retry_budget_left(scope)"
     owner: "State store"
+  - name: "waiting_for_topics(node)"
+    owner: "State store"
   - name: "idempotency_key_unused(operation)"
     owner: "State store"
   - name: "versions_current(artifact)"

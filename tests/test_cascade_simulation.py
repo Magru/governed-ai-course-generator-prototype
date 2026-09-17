@@ -20,7 +20,8 @@ def test_an_edit_reaches_part_of_a_course_through_the_real_closure():
     assert set(exam["topics"]) <= {n["id"] for n in nodes}
 
 
-@pytest.mark.parametrize("between, expected", [(False, 1), (True, 1 + sim.REPAIR_BUDGET)])
-def test_the_cascade_withdraws_approvals_and_settles(between, expected):
+@pytest.mark.parametrize("between", [False, True])
+def test_the_cascade_sends_the_exam_back_once_and_settles(between):
     s = sim.settling_on_the_machine(between)
-    assert (s["sent_back"], s["settled_in"]) == (expected, "ReadyForReview")
+    assert (s["sent_back"], s["settled_in"]) == (1, "ReadyForReview")
+    assert s["approvals_refused"] == (sim.REPAIR_BUDGET if between else 0)

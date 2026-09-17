@@ -306,6 +306,15 @@ revision:
     to_raw: "ContentInProgress"
     to_kind: state
     to: ["ContentInProgress"]
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
+    from_raw: "ReadyForReview · WholeCourseChecks · PendingApproval · Approved"
+    from_kind: alternatives
+    from: ["ReadyForReview", "WholeCourseChecks", "PendingApproval", "Approved"]
+    guard: "is_draft_revision ∧ ¬versions_current(revision)"
+    layer: "State store"
+    to_raw: "ContentInProgress"
+    to_kind: state
+    to: ["ContentInProgress"]
   - event: "CourseChecksRequested"
     from_raw: "ReadyForReview"
     from_kind: state
@@ -571,8 +580,8 @@ node:
     from_raw: "ContentDrafting"
     from_kind: state
     from: ["ContentDrafting"]
-    guard: "course_state = ContentInProgress"
-    layer: "State store"
+    guard: "course_state = ContentInProgress ∧ content_approved(topics(node))"
+    layer: "State store · Datalog"
     to_raw: "Generated"
     to_kind: state
     to: ["Generated"]
@@ -703,7 +712,7 @@ node:
     from_raw: "NodeRepair"
     from_kind: state
     from: ["NodeRepair"]
-    guard: "course_state = ContentInProgress ∧ retry_budget_left(node) ∧ content_approved(topics(node))"
+    guard: "course_state = ContentInProgress ∧ ¬waiting_for_topics(node) ∧ retry_budget_left(node) ∧ content_approved(topics(node))"
     layer: "State store · Datalog"
     to_raw: "ContentDrafting"
     to_kind: state
@@ -712,7 +721,16 @@ node:
     from_raw: "NodeRepair"
     from_kind: state
     from: ["NodeRepair"]
-    guard: "¬retry_budget_left(node)"
+    guard: "course_state = ContentInProgress ∧ waiting_for_topics(node) ∧ content_approved(topics(node))"
+    layer: "State store · Datalog"
+    to_raw: "ContentDrafting"
+    to_kind: state
+    to: ["ContentDrafting"]
+  - event: "(auto)"
+    from_raw: "NodeRepair"
+    from_kind: state
+    from: ["NodeRepair"]
+    guard: "¬waiting_for_topics(node) ∧ ¬retry_budget_left(node)"
     layer: "State store"
     to_raw: "course → BlockedRecoverable"
     to_kind: cross_machine
@@ -741,8 +759,8 @@ node:
     from_raw: "Validated"
     from_kind: state
     from: ["Validated"]
-    guard: "all_visuals_reviewed(node)"
-    layer: "Catalog flag · Human"
+    guard: "all_visuals_reviewed(node) ∧ content_approved(topics(node))"
+    layer: "Catalog flag · Human · Datalog"
     to_raw: "NodeApproved"
     to_kind: state
     to: ["NodeApproved"]
@@ -760,6 +778,15 @@ node:
     from_kind: state
     from: ["NodeApproved"]
     guard: "is_draft_revision"
+    layer: "State store"
+    to_raw: "NeedsRevalidation"
+    to_kind: state
+    to: ["NeedsRevalidation"]
+  - event: "PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated"
+    from_raw: "NodeApproved · Validated"
+    from_kind: alternatives
+    from: ["NodeApproved", "Validated"]
+    guard: "is_draft_revision ∧ ¬versions_current(node)"
     layer: "State store"
     to_raw: "NeedsRevalidation"
     to_kind: state
@@ -796,11 +823,20 @@ node:
     from_raw: "NeedsRevalidation"
     from_kind: state
     from: ["NeedsRevalidation"]
-    guard: "¬hand_edited(node)"
+    guard: "¬hand_edited(node) ∧ versions_current(node)"
     layer: "State store"
     to_raw: "NodeChecks"
     to_kind: state
     to: ["NodeChecks"]
+  - event: "(auto)"
+    from_raw: "NeedsRevalidation"
+    from_kind: state
+    from: ["NeedsRevalidation"]
+    guard: "¬hand_edited(node) ∧ ¬versions_current(node)"
+    layer: "State store"
+    to_raw: "OutputGuardrail"
+    to_kind: state
+    to: ["OutputGuardrail"]
   - event: "OutlineApproved"
     from_raw: "any state but Removed"
     from_kind: expression

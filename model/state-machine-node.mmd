@@ -35,4 +35,7 @@ stateDiagram-v2
     NodeRecovery --> NodeRepair : (dependency changed)
     NeedsRevalidation --> OutputGuardrail : auto
     NeedsRevalidation --> NodeChecks : auto
+    NeedsRevalidation --> OutputGuardrail : auto
+    NodeApproved --> NeedsRevalidation : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
+    Validated --> NeedsRevalidation : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
     XanystatebutRemoved --> Removed : OutlineApproved

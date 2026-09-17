@@ -56,6 +56,10 @@ stateDiagram-v2
     WholeCourseChecks --> ContentInProgress : NodeEdited(any)
     PendingApproval --> ContentInProgress : NodeEdited(any)
     Approved --> ContentInProgress : NodeEdited(any)
+    ReadyForReview --> ContentInProgress : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
+    WholeCourseChecks --> ContentInProgress : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
+    PendingApproval --> ContentInProgress : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
+    Approved --> ContentInProgress : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
     ReadyForReview --> WholeCourseChecks : CourseChecksRequested
     WholeCourseChecks --> PendingApproval : auto
     WholeCourseChecks --> ContentInProgress : CheckFailed(layer, nodes)
@@ -125,6 +129,9 @@ stateDiagram-v2
     NodeRecovery --> NodeRepair : (dependency changed)
     NeedsRevalidation --> OutputGuardrail : auto
     NeedsRevalidation --> NodeChecks : auto
+    NeedsRevalidation --> OutputGuardrail : auto
+    NodeApproved --> NeedsRevalidation : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
+    Validated --> NeedsRevalidation : PolicyChanged · GuardrailChanged · CatalogChanged · KBUpdated
     XanystatebutRemoved --> Removed : OutlineApproved
 ```
 

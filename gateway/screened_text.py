@@ -4,16 +4,17 @@ Picking named fields — text, question, caption — left the rest unread, and t
 rest is where a refused sentence goes next: a checklist item, a quiz option, an
 image's alt text, a title beside the blocks. So the screened text is every
 string in the node, except what is not prose: a block's type and citations,
-an image's source, which goes to the image screening, and the ids the outline
-owns.
+an image's source, which goes to the image screening, and the node's citations.
 """
 from __future__ import annotations
 
 #: Top-level fields of a block that are not prose. `src` only on an image: on
 #: any other block it is a string a learner may be shown, and it is read.
 BLOCK_IDS = {"type", "cites"}
-#: Top-level fields of a node that name things rather than say them.
-NODE_IDS = {"id", "cites", "type", "skill", "topics", "requires", "refers_to"}
+#: Top-level fields of a node that are not prose: the chunks it cites. Every
+#: other string beside the blocks is read — ids included, since a model can put
+#: a sentence where an id belongs and the record keeps what it wrote.
+NODE_IDS = {"cites"}
 
 
 def blocks_of(content) -> list[dict]:
@@ -22,11 +23,12 @@ def blocks_of(content) -> list[dict]:
 
 
 def prose(value) -> list[str]:
-    """Every string, at any depth. A key is never prose, and never a way out."""
+    """Every string at any depth, keys included: beside the blocks a node's
+    fields are open, and a key is text the record keeps like any other."""
     if isinstance(value, str):
         return [value]
     if isinstance(value, dict):
-        return [s for v in value.values() for s in prose(v)]
+        return [s for k, v in value.items() for s in [k, *prose(v)] if isinstance(s, str)]
     if isinstance(value, list):
         return [s for v in value for s in prose(v)]
     return []

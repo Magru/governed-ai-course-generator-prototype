@@ -117,6 +117,13 @@ class Pipeline:
             if m.current.nodes[node_id].state == "OutputGuardrail":
                 self._screen_node(node_id)
 
+    def screen_waiting(self) -> None:
+        """Screen every node of the draft that waits for a verdict nobody asked
+        for yet — the nodes a configuration change sent back to be checked."""
+        for node_id, node in list(self.machine.current.nodes.items()):
+            if node.state == "OutputGuardrail":
+                self._screen_node(node_id)
+
     # ── the notice to learners ────────────────────────────────────────────
     def notify_learners(self, notice: str, recipients: int, actor: dict):
         """The notice is screened as it is sent: a person writes it, the

@@ -71,14 +71,17 @@ def fingerprint(rev) -> str:
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
-def _versions_current(ctx: Context) -> bool:
-    """Every stamp on the revision and on each of its nodes names the version
-    in force. A revision is stamped with policy and guardrail when its brief is
-    checked; a node with all four when it is approved. An unstamped artifact is
-    not current — it was never judged against anything."""
+def _versions_current(lit: Literal, ctx: Context) -> bool:
+    """Every stamp names the version in force. A node's is the versions its last
+    checks ran under. A revision's is its own — the whole-course checks' once
+    they have run, the brief's before — and every node's. An unstamped artifact
+    is not current: it was never judged against anything."""
     current = ctx.store.current
-    artifacts = [ctx.rev.stamps] + [n.stamps for n in ctx.rev.nodes.values()
-                                    if n.state != "Removed"]
+    if lit.arg == "node":
+        artifacts = [ctx.node.checked_stamps]
+    else:
+        artifacts = [ctx.rev.checked_stamps or ctx.rev.stamps] + [
+            n.checked_stamps or n.stamps for n in ctx.rev.nodes.values() if n.state != "Removed"]
     return all(a and all(current[k] == v for k, v in a.items()) for a in artifacts)
 
 
@@ -136,8 +139,9 @@ def _guardrail_clean(lit: Literal, ctx: Context) -> bool:
             raise ServiceDown(f"{lit.raw}: the guardrail did not answer: {exc}") from exc
         except (TypeError, ValueError) as exc:
             # A port that answers with anything but (verdict, version) has not
-            # said what it screened with; that is not a verdict to act on.
-            raise Undecidable(f"{lit.raw}: the screening port gave no (verdict, version): {exc}") from exc
+            # said what it screened with; that is no answer, and the Timeout
+            # row is the one that records it and waits.
+            raise ServiceDown(f"{lit.raw}: the screening port gave no (verdict, version): {exc}") from exc
         if answered_as != current:
             # During a rollout the service can still be the version being
             # replaced. Its verdict is not the one re-verification needs, and
@@ -188,7 +192,13 @@ def _notice_approved(lit: Literal, ctx: Context) -> bool:
     if screening.get("guardrail_version") != ctx.store.current["guardrail"]:
         raise Undecidable(f"{lit.raw}: the notice was screened by {screening.get('guardrail_version')}, "
                           f"and {ctx.store.current['guardrail']} is in force")
-    return screening.get("verdict") == "allow"
+    # Consent to this notice is consent to these recipients: every approver of
+    # the publication was shown a count, and a different count is a notice
+    # nobody approved. It waits for a fresh approval.
+    shown = [(a.get("what_was_shown") or {}).get("recipients") for a in ctx.rev.approvals
+             if a.get("scope") == "publication"]
+    return (screening.get("verdict") == "allow" and bool(shown)
+            and all(count == payload.get("recipients") for count in shown))
 
 
 def _depends_on(lit: Literal, ctx: Context) -> bool:
@@ -211,6 +221,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
         ctx.rev.ever_published and ctx.rev.state in LIVE_LINEAGE),
     "lost_live_pointer(revision)": lambda lit, ctx: ctx.store.live_pointer not in (None, ctx.rev.id),
     "retry_budget_left(scope)": lambda lit, ctx: _obj(lit, ctx).repair_count < ctx.store.budget(),
+    "waiting_for_topics(node)": lambda lit, ctx: ctx.node.waiting_for_topics,
     "idempotency_key_unused(operation)": lambda lit, ctx: _key_unused(lit, ctx),
     "hand_edited(node)": lambda lit, ctx: ctx.node.hand_edited,
     "in_outline(node, committed_outline)": _in_outline,
@@ -218,7 +229,7 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
         n.state == "NodeApproved" for n in ctx.rev.nodes.values() if n.state != "Removed"),
     "no_stale_nodes(revision)": lambda lit, ctx: not (
         ctx.rev.stale_nodes or any(n.state == "NeedsRevalidation" for n in ctx.rev.nodes.values())),
-    "versions_current(artifact)": lambda lit, ctx: _versions_current(ctx),
+    "versions_current(artifact)": _versions_current,
     "differs_from_live(revision)": _differs_from_live,
     "all_visuals_reviewed(node)": _all_visuals_reviewed,
     "notice_approved(recipient_set)": _notice_approved,

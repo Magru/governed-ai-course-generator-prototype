@@ -15,8 +15,9 @@ Three questions, each answered with numbers rather than asserted:
   1. an edit to one topic — how much of the course does it send back?
   2. a change that reaches the whole revision — what does re-verification cost?
   3. does the cascade settle when the edit's own repair fails and regenerates?
-     Since spec-v2.9 a regeneration is an edit, so a failed repair withdraws any
-     approval a dependent was given meanwhile. The repair budget bounds how often.
+     Since spec-v2.9 a regeneration is an edit, so a failed repair would withdraw
+     any approval a dependent was given meanwhile; since spec-v2.12 an exam
+     cannot be approved while its topic is in repair, so there is none to withdraw.
 """
 from __future__ import annotations
 
@@ -33,7 +34,7 @@ sys.path.insert(0, str(ROOT))
 
 from engines.datalog.structure import cascade                        # noqa: E402
 from scenarios import walkthrough as w                               # noqa: E402
-from scenarios.run import approve, the_course                        # noqa: E402
+from scenarios.run import AUTHOR, approve, the_course                # noqa: E402
 
 BUDGET = yaml.safe_load((ROOT / "model" / "latency-budget.yaml").read_text(encoding="utf-8"))
 
@@ -98,11 +99,11 @@ def settling_on_the_machine(approve_between: bool, failures: int = REPAIR_BUDGET
     """The walkthrough course on the real machine: a topic is edited, its new
     content is refused `failures` times and regenerated each time.
 
-    The cascade withdraws approvals; it does not chase nodes that hold none. So
-    the exam that tests the topic goes back once per approval it was given in
-    the meantime — once if nobody approves it during the repair, once per landing
-    if someone approves it after each. Either way a re-checked exam lands no
-    content, so it starts no wave of its own."""
+    The cascade withdraws approvals; it does not chase nodes that hold none. The
+    exam that tests the topic goes back once, when the edit lands. Someone who
+    tries to approve it during the repair is refused — its topic does not stand
+    approved — so no approval is given to withdraw, and a re-checked exam lands
+    no content, so it starts no wave of its own."""
     p = the_course()
     m = p.machine
     m.fire("ReviseRequested", {"revision": 1})
@@ -110,10 +111,13 @@ def settling_on_the_machine(approve_between: bool, failures: int = REPAIR_BUDGET
     edit = copy.deepcopy(w.CONTENT[w.T2])
     edit["blocks"][0]["text"] = "an edit that will need repair"
     m.fire("NodeEdited", {"node": w.T2, "content": edit})
+    refused = 0
     for attempt in range(failures):
         m.fire("GuardrailVerdict", {"node": w.T2, "verdict": "deny", "category": "unsafe"})
         if approve_between:
-            approve(p, w.E1)
+            out = p.membrane.request("approve_node", {"node": w.E1, "what_was_shown": "formal verdict"},
+                                     AUTHOR)
+            refused += not out.ran
         regenerated = copy.deepcopy(w.CONTENT[w.T2]) | {"minutes": 19 - attempt}
         m.fire("NodeGenerated", {"node": w.T2, "content": regenerated,
                                  "idempotency_key": f"repair-{attempt}"})
@@ -127,7 +131,7 @@ def settling_on_the_machine(approve_between: bool, failures: int = REPAIR_BUDGET
     approve(p, w.T2)
     approve(p, w.E1)
     return {"landings": 1 + failures, "sent_back": back, "settled_in": m.current.state,
-            "expected": 1 + failures if approve_between else 1}
+            "approvals_refused": refused, "expected": 1}
 
 
 def settling_at_scale(nodes: list[dict]) -> dict:
@@ -160,15 +164,17 @@ def main() -> int:
         s = settling_on_the_machine(between)
         holds = s["sent_back"] == s["expected"] and s["settled_in"] == "ReadyForReview"
         ok &= holds
-        print(f"    {'the exam approved after each failure' if between else 'nobody approves the exam meanwhile':<38}"
-              f" {s['landings']} landings · exam sent back {s['sent_back']} · settles in {s['settled_in']}"
+        print(f"    {'someone tries to approve the exam' if between else 'nobody approves the exam meanwhile':<38}"
+              f" {s['landings']} landings · exam sent back {s['sent_back']} · "
+              f"approvals refused {s['approvals_refused']} · settles in {s['settled_in']}"
               f"{'' if holds else '  ✗ expected ' + str(s['expected'])}")
     a = settling_at_scale(course(96))
     print(f"    at {len(course(96))} nodes, repair failing {REPAIR_FAILURE:.0%}: {a['expected_landings']:.2f} "
           f"landings per edit · {a['reached']:.1f} re-checks if nobody approves meanwhile, "
           f"{a['worst_rechecks']:.0f} at worst")
-    print("    " + ("it settles: the cascade withdraws approvals and a re-checked dependent lands no "
-                    "content, so only the edited node makes waves and the repair budget bounds them"
+    print("    " + ("it settles: a dependent cannot be approved over a topic in repair, and a re-checked "
+                    "dependent lands no content, so only the edited node makes waves and the repair budget "
+                    "bounds them"
                     if ok else "IT DOES NOT SETTLE"))
     return 0 if ok else 1
 

@@ -19,7 +19,7 @@ catalog:
   # a block row carries what the platform's registry carries, plus the two the
   # specification adds: what a guardrail must inspect, and whether a person has
   # to look at it before approval.
-  # A text field must carry a letter or a digit; an answer option or a checklist item
+  # A text field must carry a letter or a digit (not an underscore, not a filler); an answer option or a checklist item
   # need only a visible character — "<", "=", "—" and "✓" are real options, and
   # an invisible one (a zero-width space) is not.
   blocks:
@@ -29,7 +29,7 @@ catalog:
       kb: true
       modality: text
       requires_visual_review: false
-      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "\\w"}}}
+      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}}}
     - id: paragraph
       category: text
       interactive: false
@@ -40,7 +40,7 @@ catalog:
         type: object
         required: [text, cites]
         properties:
-          text: {type: string, minLength: 1, pattern: "\\w"}
+          text: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}
           cites: {type: array, items: {type: string}, minItems: 1}
     - id: image
       category: image
@@ -52,9 +52,9 @@ catalog:
         type: object
         required: [src, alt, caption, cites]
         properties:
-          src: {type: string, minLength: 1, pattern: "\\w"}
-          alt: {type: string, minLength: 1, pattern: "\\w"}
-          caption: {type: string, minLength: 1, pattern: "\\w"}
+          src: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}
+          alt: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}
+          caption: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}
           cites: {type: array, items: {type: string}, minItems: 1}
     - id: checklist
       category: text
@@ -65,7 +65,7 @@ catalog:
       schema:
         type: object
         required: [items]
-        properties: {items: {type: array, items: {type: string, minLength: 1, pattern: "[^\\s\\u200b-\\u200d\\u2060\\ufeff]"}, minItems: 1}}
+        properties: {items: {type: array, items: {type: string, minLength: 1, pattern: "[^\\s\\u00ad\\u034f\\u115f\\u1160\\u17b4\\u17b5\\u180b-\\u180f\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u206f\\u0300-\\u036f\\u061c\\u2800\\u3164\\ufe00-\\ufe0f\\uffa0\\ufeff\\U000e0000-\\U000e007f]"}, minItems: 1}}
     - id: quiz
       category: assessment
       interactive: true
@@ -76,8 +76,8 @@ catalog:
         type: object
         required: [question, options, answer, points]
         properties:
-          question: {type: string, minLength: 1, pattern: "\\w"}
-          options: {type: array, items: {type: string, minLength: 1, pattern: "[^\\s\\u200b-\\u200d\\u2060\\ufeff]"}, minItems: 2, uniqueItems: true}
+          question: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}
+          options: {type: array, items: {type: string, minLength: 1, pattern: "[^\\s\\u00ad\\u034f\\u115f\\u1160\\u17b4\\u17b5\\u180b-\\u180f\\u200b-\\u200f\\u202a-\\u202e\\u2060-\\u206f\\u0300-\\u036f\\u061c\\u2800\\u3164\\ufe00-\\ufe0f\\uffa0\\ufeff\\U000e0000-\\U000e007f]"}, minItems: 2, uniqueItems: true}
           answer: {type: integer}
           points: {type: integer}
     - id: callout
@@ -86,4 +86,4 @@ catalog:
       kb: true
       modality: text
       requires_visual_review: false
-      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "\\w"}}}
+      schema: {type: object, required: [text], properties: {text: {type: string, minLength: 1, pattern: "[^\\W_\\u115f\\u1160\\u3164\\uffa0]"}}}

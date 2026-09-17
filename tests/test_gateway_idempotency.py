@@ -83,19 +83,21 @@ def test_a_notice_sent_is_not_sent_again_by_a_restarted_gateway():
     assert correction.ran
 
 
-def test_a_dependent_approved_during_a_repair_is_verified_against_what_the_repair_made(course):
-    """An exam approved while the topic it tests was being repaired was approved
+def test_an_exam_is_not_approved_while_the_topic_it_tests_is_in_repair(course):
+    """An exam approved while its topic was being repaired would be approved
     against content that no longer exists once the repair lands."""
     m = course.machine
     refused = copy.deepcopy(w.CONTENT[w.T2])
     refused["blocks"][0]["text"] = "wording the guardrail refuses"
     m.fire("NodeEdited", {"node": w.T2, "content": refused})
     m.fire("GuardrailVerdict", {"node": w.T2, "verdict": "deny", "category": "unsafe"})
-    assert _approve(course, w.E1).ran                      # the topic is still in repair
+    assert _approve(course, w.E1).check == "legal_in_state"    # the topic is still in repair
     m.fire("NodeGenerated", {"node": w.T2, "content": copy.deepcopy(w.CONTENT[w.T2]),
                              "idempotency_key": "regenerated"})
-    assert m.current.nodes[w.E1].state != "NodeApproved"
-    assert m.current.state == "ContentInProgress"
+    m.fire("GuardrailVerdict", {"node": w.T2, "verdict": "allow"})
+    assert _approve(course, w.T2).ran
+    assert _approve(course, w.E1).ran
+    assert m.current.state == "ReadyForReview"
 
 
 def test_an_exam_rejected_while_its_topic_is_in_repair_waits_for_the_topic(course):

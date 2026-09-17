@@ -221,3 +221,9 @@ def test_a_number_that_is_not_a_whole_number_is_refused_with_its_path(field, val
     exam = {"id": "e", "type": "exam", "blocks": [quiz], "points_total": 5, "minutes": 5}
     v = engine.check_arithmetic({**exam, field: value}, {})
     assert not v.ok and v.refusal.summary == f"e.{field}: expected an integer"
+
+
+def test_a_whole_number_written_with_a_decimal_point_is_a_whole_number():
+    quiz = {"type": "quiz", "question": "q", "options": ["a", "b"], "answer": 0, "points": 5}
+    exam = {"id": "e", "type": "exam", "blocks": [quiz], "points_total": 5.0, "minutes": 5}
+    assert engine.check_arithmetic(exam, {}).ok

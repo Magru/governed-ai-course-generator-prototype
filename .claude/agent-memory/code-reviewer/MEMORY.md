@@ -1,0 +1,1 @@
+- [Fence one state narrow](project_fence_one_state_narrow.md) — recurring: spec fixes guard only the reported path; check all entries + landing guard

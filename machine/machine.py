@@ -125,6 +125,7 @@ class Machine(Settling, Recording):
             # this event reports, not the one it replaced.
             self.store.live_pointer = payload["to"]
         moved, why, undecided, acted = False, [], [], None
+        rested_on = {rev.id: self._dependencies(rev) for rev in revs} if event == "OutlineApproved" else {}
         for rev in revs:
             bookkeeping.on_event(self, "revision", rev, event, payload)
             rev_moved = self._take("revision", rev, event, payload, why, undecided=undecided)
@@ -153,6 +154,9 @@ class Machine(Settling, Recording):
             # be approved against content that a repair then replaced, and the
             # course went to review with the exam never checked against it.
             self._dependency_changed(revs[0], payload["node"])
+        for rev in revs:
+            if rev.id in rested_on:
+                self._dependencies_added(rev, rested_on[rev.id])
         if not moved and event not in BROADCAST:
             where = ", ".join(f"revision {r.id} is {r.state}" for r in revs)
             said = f" ({payload['layer']}: {payload['reason']})" if payload.get("layer") else ""
@@ -203,7 +207,13 @@ class Machine(Settling, Recording):
         for nid, node in rev.nodes.items():
             child.nodes[nid] = bookkeeping.NodeRecord(nid, copy.deepcopy(node.spec), node.state,
                                                       copy.deepcopy(node.content),
-                                                      stamps=dict(node.stamps))
+                                                      stamps=dict(node.stamps),
+                                                      checked_stamps=dict(node.checked_stamps))
+            if nid in rev.screened:
+                # The fork carries the node's content, so it carries the verdict
+                # on that content — and the version that gave it. A verdict on
+                # the revision as a whole is not carried: the fork will differ.
+                child.screened[nid] = dict(rev.screened[nid])
         child.state = "ContentInProgress"
         self.current = child
 
@@ -218,7 +228,9 @@ class Machine(Settling, Recording):
         if payload.get("node"):
             node = rev.nodes.get(payload["node"])
             return [node] if node else []
-        return list(rev.nodes.values()) if event in ALL_NODES else []
+        # A configuration change reaches every node: a draft's checked nodes are
+        # checked again, and the rows say which — a published revision's none.
+        return list(rev.nodes.values()) if event in ALL_NODES | BROADCAST else []
 
     def _candidates(self, machine, obj, event, payload):
         for t in self.table[machine]:

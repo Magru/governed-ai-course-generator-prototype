@@ -37,8 +37,9 @@ CONTENT = {
                        "points": 10}],
            "questions": [{"points": 10}], "points_total": 10, "minutes": 20, "cites": []},
 }
-SIGNATURES = [{"actor": "admin-1", "role": "training-administrator"},
-              {"actor": "compliance-1", "role": "compliance-officer"}]
+#: Each approver was shown how many learners the notice will reach.
+SIGNATURES = [{"actor": "admin-1", "role": "training-administrator", "what_was_shown": {"recipients": 40}},
+              {"actor": "compliance-1", "role": "compliance-officer", "what_was_shown": {"recipients": 40}}]
 
 
 def machine(**config) -> Machine:
@@ -76,7 +77,7 @@ def to_published(m: Machine) -> None:
     m.fire("CourseChecksRequested")
     m.fire("ApprovalGranted", {"signatures": SIGNATURES})
     m.fire("PublishRequested")
-    m.fire("LearnersNotified", {"actor": "admin-1", "notice_screening": {
+    m.fire("LearnersNotified", {"actor": "admin-1", "recipients": 40, "notice_screening": {
         "verdict": "allow", "guardrail_version": m.store.current["guardrail"]}})
 
 

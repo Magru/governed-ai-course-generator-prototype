@@ -107,3 +107,16 @@ def test_an_answer_option_needs_a_visible_character_not_a_letter(options):
     quiz = {"type": "quiz", "question": "which is it?", "options": options, "answer": 0, "points": 1}
     assert engine.check_blocks({"id": "n", "blocks": [quiz]}, world.block_types,
                                world.block_schemas).ok
+
+
+@pytest.mark.parametrize("block", [
+    {"type": "paragraph", "text": "_", "cites": ["mt-kb-001"]},
+    {"type": "paragraph", "text": "ㅤ", "cites": ["mt-kb-001"]},
+    {"type": "quiz", "question": "q", "options": ["́", "b"], "answer": 1, "points": 1},
+    {"type": "quiz", "question": "q", "options": ["⠀", "b"], "answer": 1, "points": 1},
+])
+def test_a_filler_or_a_lone_mark_is_not_something_a_learner_can_read(block):
+    from machine.world import load
+    world = load()
+    assert not engine.check_blocks({"id": "n", "blocks": [block]}, world.block_types,
+                                   world.block_schemas).ok

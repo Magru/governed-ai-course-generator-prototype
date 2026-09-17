@@ -233,7 +233,11 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
 
 
 def _integer(value) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool)
+    """A whole number. `5.0` is one — the schema layer accepts it as an integer,
+    and refusing here what the layer before passed would be two opinions."""
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int) or (isinstance(value, float) and value.is_integer())
 
 
 def _not_integers(node: dict, questions) -> list[dict]:
