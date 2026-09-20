@@ -15,6 +15,7 @@ reviewer disagree with one.
 """
 from __future__ import annotations
 
+from . import store_guards
 from .endpoints import PHASE_OF
 
 
@@ -108,10 +109,8 @@ def _spend_consent(m, t, rev, old, payload):
     """The notice went out under this consent; a correction is a second notice,
     and it needs a second consent. Spent after the row was taken, not when the
     event arrived — the guard reads the consent this notice is going under."""
-    scope = "notice" if rev.ever_published else "publication"
-    for approval in rev.approvals:
-        if approval.get("scope") == scope:
-            approval["spent"] = True
+    for approval in store_guards.unspent_consents(rev):
+        approval["spent"] = True
 
 
 def _spawn(m, t, rev, old, payload):

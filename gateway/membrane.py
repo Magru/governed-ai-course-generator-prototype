@@ -22,6 +22,7 @@ effect is recorded.
 from __future__ import annotations
 
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Any
@@ -181,6 +182,10 @@ class Membrane:
         The membrane is an in-process boundary: the service in front of it
         authenticates a person's session and passes the id it proved. Proving
         that id is outside this prototype; using nothing else is not."""
+        if not isinstance(actor, Mapping):
+            # Anything that is not a request we can read the caller from holds
+            # no role: a refusal, not an exception out of the membrane.
+            return {"id": None, "kind": "unauthenticated", "role": None}
         course = {"course": actor["course"]} if "course" in actor else {}
         if actor is GATEWAY:
             return {"id": GATEWAY["id"], "kind": SYSTEM, "role": SYSTEM, **course}

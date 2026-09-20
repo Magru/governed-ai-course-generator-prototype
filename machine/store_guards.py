@@ -192,6 +192,18 @@ def is_draft(rev) -> bool:
     return not rev.ever_published and rev.state not in TERMINAL
 
 
+def unspent_consents(rev) -> list[dict]:
+    """The consents a notice would go out under, and the ones it spends — one
+    function, because two readings of "which consent" let a notice be sent
+    under one and spend another, and the second notice went out unapproved.
+
+    A fresh consent to a notice replaces the publication's; until one is given,
+    the publication's signatures are what the notice rests on."""
+    fresh = [a for a in rev.approvals if a.get("scope") == "notice" and not a.get("spent")]
+    return fresh or [a for a in rev.approvals
+                     if a.get("scope") == "publication" and not a.get("spent")]
+
+
 def _notice_approved(lit: Literal, ctx: Context) -> bool:
     """A person sends it, and the guardrail read it first. The notice is the one
     text a learner reads that no model wrote, and nothing else screens it; a
@@ -212,10 +224,7 @@ def _notice_approved(lit: Literal, ctx: Context) -> bool:
     enrolled = ctx.store.enrolled_learners
     if not isinstance(enrolled, int) or isinstance(enrolled, bool) or enrolled < 1:
         raise Undecidable(f"{lit.raw}: the store holds no enrolment for this course: {enrolled!r}")
-    consents = [a for a in ctx.rev.approvals if a.get("scope") == "notice" and not a.get("spent")]
-    if not consents:
-        consents = [a for a in ctx.rev.approvals if a.get("scope") == "publication"
-                    and not a.get("spent")]
+    consents = unspent_consents(ctx.rev)
     shown = [a.get("what_was_shown") or {} for a in consents]
     # Consent is to this text and these people, and it is spent by the notice
     # it authorised: one approval must not send a second, different notice that

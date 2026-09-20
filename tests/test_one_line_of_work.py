@@ -104,3 +104,31 @@ def test_a_notice_finds_the_revision_learners_were_reading_when_the_course_is_of
     notice = "Hand tool safety is off air while we correct module two."
     m.fire("ApprovalGranted", {"signatures": run.signatures(notice), "revision": 1})
     assert p.notify_learners(notice, 40, run.ADMIN).ran        # no revision named
+
+
+def test_the_consent_a_notice_went_out_under_is_the_one_it_spends():
+    """The guard and the bookkeeping must read "which consent" the same way, or
+    the notice goes out under one and spends another — and the next one goes
+    out under a consent nobody gave."""
+    p, m = _published(notices=2)
+    m.fire("ReviseRequested", {"revision": 1})           # work starts on the next revision
+    correction = "Module two has been corrected; please take it again."
+    first = p.notify_learners(correction, 40, run.ADMIN, revision=1)
+    assert (first.ran, first.check) == (False, "legal_in_state")   # the first notice spent it
+    m.fire("ApprovalGranted", {"signatures": run.signatures(correction), "revision": 1})
+    assert p.notify_learners(correction, 40, run.ADMIN, revision=1).ran
+    assert not p.notify_learners(correction, 40, run.ADMIN, revision=1).ran
+
+
+def test_a_count_written_as_a_decimal_is_the_same_act():
+    p, m = _published(notices=1)
+    assert not p.membrane.request(
+        "notify_learners", {"notice": run.NOTICE, "recipients": 40.0, "revision": 1}, run.ADMIN,
+        perform=lambda key: {"notice_screening": {"verdict": "allow",
+                                                  "guardrail_version": "guard-1"}}).ran
+
+
+def test_an_actor_that_is_not_a_request_holds_no_role():
+    p, m = _published()
+    out = p.membrane.request("publish_revision", {"revision": 1}, "admin-1")
+    assert (out.ran, out.check) == (False, "policy_allows")

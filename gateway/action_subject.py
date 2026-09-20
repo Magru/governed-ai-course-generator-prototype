@@ -25,12 +25,27 @@ NODE_ROUNDS = {"OutputGuardrail", "NeedsRevalidation"}
 REVISION_ROUNDS = {"BriefValidation", "OutlineGuardrail", "PendingApproval", "StaleReview"}
 
 
+def canonical(value):
+    """The same act written twice must hash the same. JSON schema reads 40.0 as
+    an integer, and `40.0` beside `40` is two keys for one act — which is a
+    second irreversible notice."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, dict):
+        return {k: canonical(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [canonical(v) for v in value]
+    return value
+
+
 def key_of(name: str, args: dict, course: str, subject: dict | None = None) -> str:
     """sha256 of the canonical action — the inventory's definition of the key."""
-    canonical = json.dumps({"action": name, "args": args, "course": course,
-                            "subject": subject or {}},
-                           sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode()).hexdigest()
+    written = json.dumps({"action": name, "args": canonical(args), "course": course,
+                          "subject": canonical(subject or {})},
+                         sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(written.encode()).hexdigest()
 
 
 #: Actions that land what a model made: the state an answer is asked from, and
@@ -48,7 +63,10 @@ def subject_of(machine, args: dict, event: str | None) -> dict:
     and is 'already done'. A repair, a rejection, or an answer in the wrong shape
     asks again — and may ask with the same prompt — so it is a new act with a
     new key."""
-    rev = machine.current
+    # The act is about the revision it names, not the one being edited: a
+    # notice about the live course and a notice about the draft are different
+    # acts, and reading `current` for both made the second look like a repeat.
+    rev = machine.store.revisions.get(args.get("revision"), machine.current)
     node = rev.nodes.get(args.get("node")) if args.get("node") else None
     if event in DRAFTING:
         drafting, recovery = DRAFTING[event]

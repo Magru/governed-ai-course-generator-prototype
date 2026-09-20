@@ -129,8 +129,13 @@ class Pipeline:
         pointer = self.machine.store.live_pointer
         if pointer is not None:
             return pointer
-        published = [r.id for r in self.machine.store.revisions.values() if r.ever_published]
-        return published[-1] if published else self.machine.current.id
+        # A rollback leaves the revision learners were reading Superseded and
+        # the one they read now Published; with no pointer at all, the last one
+        # that was on air is the one they were reading.
+        served = [r.id for r in self.machine.store.revisions.values()
+                  if r.state in ("Withdrawn", "Published")]
+        ever = [r.id for r in self.machine.store.revisions.values() if r.ever_published]
+        return (served or ever or [self.machine.current.id])[-1]
 
     def screen_waiting(self) -> None:
         """Screen every node of the draft that waits for a verdict nobody asked
