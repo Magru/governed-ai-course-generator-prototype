@@ -19,11 +19,11 @@ from gateway.pipeline import Pipeline                              # noqa: E402
 from gateway.screened_text import screened_text                    # noqa: E402
 from gateway.provider.port import GuardrailUnavailable             # noqa: E402
 from scenarios import cassette, walkthrough as w                   # noqa: E402
-from scenarios.machine_runs import SIGNATURES, machine             # noqa: E402
+from scenarios.machine_runs import SIGNATURES, machine, signatures  # noqa: E402
 
 AUTHOR = {"id": "author-1", "kind": "person", "role": "course-author"}
 ADMIN = {"id": "admin-1", "kind": "person", "role": "training-administrator"}
-NOTICE = "Hand tool safety is available: complete it before your next workshop shift."
+from scenarios.machine_runs import NOTICE                          # noqa: E402,F401
 
 
 def pipeline(generator=None, screener=None) -> Pipeline:
@@ -60,10 +60,11 @@ def approve(p: Pipeline, node: str, **extra) -> None:
     assert out.ran, out
 
 
-def publish(p: Pipeline) -> None:
+def publish(p: Pipeline, notice: str = NOTICE) -> None:
+    """Consent is to the notice the approvers were shown, so publishing names it."""
     m = p.machine
     m.fire("CourseChecksRequested")
-    m.fire("ApprovalGranted", {"signatures": SIGNATURES})
+    m.fire("ApprovalGranted", {"signatures": signatures(notice)})
     out = p.membrane.request("publish_revision", {"revision": m.current.id}, ADMIN)
     assert out.ran, out
 

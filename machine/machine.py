@@ -33,6 +33,7 @@ from . import bookkeeping, endpoints
 from .evaluation import Evaluator
 from .store import Store
 from .recording import Recording
+from . import store_guards
 from .refusal import MachineRefused  # noqa: F401 — the name callers import from here
 from .settling import Settling
 from .transition_table import load
@@ -76,6 +77,12 @@ class Machine(Settling, Recording):
         try:
             self._fire(event, payload, producer)
         except bookkeeping.ApprovalOfUncheckedOutline as exc:
+            self._restore(saved, event, str(exc))
+            raise MachineRefused(str(exc)) from exc
+        except store_guards.ServiceDown as exc:
+            # A verdict from a guardrail version that is no longer in force is
+            # no answer. Inside a settle the table has a row for that; asked
+            # as an event, it is an event the machine cannot take.
             self._restore(saved, event, str(exc))
             raise MachineRefused(str(exc)) from exc
         except MachineRefused as exc:
@@ -203,7 +210,7 @@ class Machine(Settling, Recording):
 
     def fork(self, rev) -> None:
         child = self.store.new_revision(forked_from=rev.id)
-        for field in ("brief", "proposal", "committed_outline", "outline_version", "stamps"):
+        for field in ("brief", "author", "proposal", "committed_outline", "outline_version", "stamps"):
             setattr(child, field, copy.deepcopy(getattr(rev, field)))
         for nid, node in rev.nodes.items():
             child.nodes[nid] = bookkeeping.NodeRecord(nid, copy.deepcopy(node.spec), node.state,
@@ -233,6 +240,12 @@ class Machine(Settling, Recording):
         return [self.store.revisions[rid]] if rid else [self.current]
 
     def _nodes_for(self, rev, event, payload):
+        # "Every node transition runs inside a draft revision" — the tables say
+        # so in prose and no row repeats it, so it is held here: a published,
+        # withdrawn, archived or finally-blocked revision has nodes that no
+        # event moves.
+        if not store_guards.is_draft(rev):
+            return []
         if payload.get("node"):
             node = rev.nodes.get(payload["node"])
             return [node] if node else []

@@ -13,7 +13,7 @@ export AWS_EC2_METADATA_DISABLED   ?= true
 export BEDROCK_ACCOUNT_ID
 
 PY := .venv/bin/python
-SPEC_TAG ?= spec-v2.13
+SPEC_TAG ?= spec-v2.14
 
 .PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test live aws whoami clean
 

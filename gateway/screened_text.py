@@ -53,6 +53,8 @@ def screened_text(content) -> str:
     around = [s for k, v in content.items() if k not in NODE_IDS | {"blocks"}
               for s in [k, *prose(v)] if isinstance(s, str)]
     around += [s for k in NODE_IDS if k in content for s in _not_ids(content[k])]
-    if blocks is not None and not isinstance(blocks, list):
+    if isinstance(blocks, list):
+        around += [s for b in blocks if not isinstance(b, dict) for s in prose(b)]
+    elif blocks is not None:
         around += prose(blocks)            # not a list of blocks, and still text the record keeps
     return " ".join([s for block in blocks_of(content) for s in block_prose(block)] + around)

@@ -113,14 +113,23 @@ class Trace(Sequence[Step]):
         return iter(self._steps)
 
     def before(self, i: int) -> Step:
-        """The state the event at step i arrived in — the previous step.
+        """The state the event at step i arrived in — the step before it *on
+        its own revision*.
 
-        The whole reason a step carries one state rather than two. Step 0 is the
-        initial state and carries no event, so no check ever asks for its before.
+        The whole reason a step carries one state rather than two. One trace
+        holds every revision of a course, so the step physically before this one
+        may belong to another: a notice sent on the live course between two
+        steps of a draft made "the state this arrived in" say Published, and the
+        draft failed an invariant it never broke. Step 0 is the initial state
+        and carries no event, so no check ever asks for its before.
         """
         if i == 0:
             raise Unrecorded("(schema)", 0, "a step before the initial state")
-        return self._steps[i - 1]
+        revision = self._steps[i].maybe("revision")
+        for j in range(i - 1, 0, -1):
+            if self._steps[j].maybe("revision") == revision:
+                return self._steps[j]
+        return self._steps[0]
 
 
 # ------------------------------------------------------------------ building

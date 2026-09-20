@@ -12,6 +12,11 @@ copy that drifts.
 from __future__ import annotations
 
 ID = {"type": "string", "minLength": 1}
+#: The record keeps a screening per artifact, and the whole revision, its brief
+#: and its outline are artifacts too. A node that took one of their names would
+#: be recorded as having their screening.
+RESERVED = ["revision", "brief", "outline", "notice"]
+NODE_ID = {**ID, "not": {"enum": RESERVED}}
 
 BRIEF = {
     "type": "object",
@@ -38,7 +43,7 @@ OUTLINE = {
                 "type": "object",
                 "required": ["id", "type"],
                 "properties": {
-                    "id": ID,
+                    "id": NODE_ID,
                     "type": {"enum": ["topic", "exam"]},
                     "skill": ID,
                     "topics": {"type": "array", "items": ID},

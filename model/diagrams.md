@@ -73,6 +73,8 @@ stateDiagram-v2
     Published --> Superseded : LivePointerMoved
     Published --> Published : LearnersNotified
     Published --> Published : ApprovalGranted
+    Withdrawn --> Withdrawn : LearnersNotified
+    Withdrawn --> Withdrawn : ApprovalGranted
     StaleReview --> Published : auto
     StaleReview --> Published : auto
     StaleReview --> Superseded : auto

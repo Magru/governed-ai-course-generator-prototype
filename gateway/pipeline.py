@@ -98,6 +98,11 @@ class Pipeline:
     # ── one node ──────────────────────────────────────────────────────────
     def generate_node(self, node_id: str, actor: dict) -> None:
         m = self.machine
+        if m.current.nodes[node_id].state == "OutputGuardrail":
+            # Written already, and waiting for a verdict nobody asked for: the
+            # screening is what this node needs, not another paid generation.
+            self._screen_node(node_id)
+            return
         if m.current.nodes[node_id].state == "Planned":
             m.fire("NodeGenerationRequested", {"node": node_id, "actor": actor["id"]})
         while m.current.nodes[node_id].state == "ContentDrafting":
@@ -127,12 +132,17 @@ class Pipeline:
                 self._screen_node(node_id)
 
     # ── the notice to learners ────────────────────────────────────────────
-    def notify_learners(self, notice: str, recipients: int, actor: dict):
+    def notify_learners(self, notice: str, recipients: int, actor: dict, revision: int | None = None):
         """The notice is screened as it is sent: a person writes it, the
-        guardrail reads it, and a deny is a refusal, not a notice."""
-        subject = f"notice:revision-{self.machine.current.id}"
+        guardrail reads it, and a deny is a refusal, not a notice.
+
+        It names the revision it is about, because the one being edited is not
+        the one learners are reading."""
+        revision = revision if revision is not None else (
+            self.machine.store.live_pointer or self.machine.current.id)
+        subject = f"notice:revision-{revision}"
         return self.membrane.request(
-            "notify_learners", {"notice": notice, "recipients": recipients}, actor,
+            "notify_learners", {"notice": notice, "recipients": recipients, "revision": revision}, actor,
             perform=lambda key: {"notice_screening": _as_payload(
                 self._verdict("notice-out", subject, notice, "text"))})
 
@@ -159,6 +169,19 @@ class Pipeline:
         return generated.content
 
     def _screen_node(self, node_id: str) -> None:
+        """Screen the node, and go on asking while the service leaves it
+        waiting. A screening that does not answer sends the node to recovery
+        and the table sends it straight back here; nobody else asks again, and
+        a node nobody asks about waits for ever. The retry budget ends it."""
+        for _ in range(self.machine.store.budget() + 1):
+            before = len(self.machine.store.steps)
+            self._screen_once(node_id)
+            node = self.machine.current.nodes[node_id]
+            if node.state != "OutputGuardrail" or len(self.machine.store.steps) == before:
+                return
+        raise GatewayRefused(f"{node_id}: the guardrail never answered and the budget is spent")
+
+    def _screen_once(self, node_id: str) -> None:
         content = self.machine.current.nodes[node_id].content or {}
         blocks, text = blocks_of(content), screened_text(content)
 

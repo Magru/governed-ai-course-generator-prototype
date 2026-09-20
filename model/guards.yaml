@@ -97,6 +97,8 @@ guards:
     owner: "State store"
   - name: "in_live_lineage(revision)"
     owner: "State store"
+  - name: "no_open_draft(course)"
+    owner: "State store"
   - name: "is_draft_revision(revision)"
     owner: "State store"
   - name: "differs_from_live(revision)"

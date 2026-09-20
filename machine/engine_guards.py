@@ -155,7 +155,7 @@ ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
         engine_node(ctx.node), ctx.world.thresholds),
     "approval_chain_satisfied(revision)": lambda lit, ctx: IMPLEMENTED["approval_chain_satisfied(revision)"](
         ctx.rev.id, [a for a in ctx.rev.approvals
-                     if a.get("scope") == ("notice" if ctx.rev.state == "Published" else "publication")],
+                     if a.get("scope") == ("notice" if ctx.rev.ever_published else "publication")],
         ctx.world.policy_data),
 }
 # depends_on is the fifteenth. It answers with a path rather than a verdict and

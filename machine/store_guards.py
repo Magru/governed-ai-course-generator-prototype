@@ -80,7 +80,11 @@ def _versions_current(lit: Literal, ctx: Context) -> bool:
     if lit.arg == "node":
         artifacts = [ctx.node.checked_stamps]
     else:
-        artifacts = [ctx.rev.checked_stamps or ctx.rev.stamps] + [
+        # A draft's own stamp is the one its whole-course checks ran under; the
+        # brief-time stamp is not it, or every later change would send a
+        # revision back to work for checks it has not run yet.
+        own = ctx.rev.checked_stamps or (ctx.rev.stamps if ctx.rev.ever_published else None)
+        artifacts = [own if own is not None else ctx.store.current] + [
             n.checked_stamps or n.stamps for n in ctx.rev.nodes.values() if n.state != "Removed"]
     return all(a and all(current[k] == v for k, v in a.items()) for a in artifacts)
 
@@ -179,6 +183,15 @@ def _has_active_readers(lit: Literal, ctx: Context) -> bool:
     return readers[ctx.rev.id] > 0
 
 
+#: A draft nobody can finish is not an open draft: these two are terminal.
+TERMINAL = ("Archived", "BlockedFinal")
+
+
+def is_draft(rev) -> bool:
+    """A revision still being worked on: never published, not given up on."""
+    return not rev.ever_published and rev.state not in TERMINAL
+
+
 def _notice_approved(lit: Literal, ctx: Context) -> bool:
     """A person sends it, and the guardrail read it first. The notice is the one
     text a learner reads that no model wrote, and nothing else screens it; a
@@ -197,13 +210,19 @@ def _notice_approved(lit: Literal, ctx: Context) -> bool:
     # caller passes; every consent shown another count is consent to a notice
     # nobody is sending, and it waits for a fresh approval.
     enrolled = ctx.store.enrolled_learners
-    if enrolled is None:
-        raise Undecidable(f"{lit.raw}: the store holds no enrolment for this course")
-    scope = "notice" if any(a.get("scope") == "notice" for a in ctx.rev.approvals) else "publication"
-    shown = [(a.get("what_was_shown") or {}).get("recipients") for a in ctx.rev.approvals
-             if a.get("scope") == scope]
+    if not isinstance(enrolled, int) or isinstance(enrolled, bool) or enrolled < 0:
+        raise Undecidable(f"{lit.raw}: the store holds no enrolment for this course: {enrolled!r}")
+    consents = [a for a in ctx.rev.approvals if a.get("scope") == "notice" and not a.get("spent")]
+    if not consents:
+        consents = [a for a in ctx.rev.approvals if a.get("scope") == "publication"
+                    and not a.get("spent")]
+    shown = [a.get("what_was_shown") or {} for a in consents]
+    # Consent is to this text and these people, and it is spent by the notice
+    # it authorised: one approval must not send a second, different notice that
+    # cannot be unsent.
     return (screening.get("verdict") == "allow" and payload.get("recipients") == enrolled
-            and bool(shown) and all(count == enrolled for count in shown))
+            and bool(shown) and all(s.get("recipients") == enrolled for s in shown)
+            and all(s.get("notice") == payload.get("notice") for s in shown))
 
 
 def _depends_on(lit: Literal, ctx: Context) -> bool:
@@ -221,7 +240,9 @@ STORE_GUARDS: dict[str, Callable[[Literal, Context], bool]] = {
     "has_nodes(revision)": lambda lit, ctx: bool(ctx.rev.nodes),
     "has_outline(revision)": lambda lit, ctx: bool(ctx.rev.proposal or ctx.rev.committed_outline),
     "reason_given(action)": lambda lit, ctx: bool((ctx.payload or {}).get("reason")),
-    "is_draft_revision(revision)": lambda lit, ctx: not ctx.rev.ever_published and ctx.rev.state != "Archived",
+    "is_draft_revision(revision)": lambda lit, ctx: is_draft(ctx.rev),
+    "no_open_draft(course)": lambda lit, ctx: not any(
+        is_draft(r) for r in ctx.store.revisions.values()),
     "in_live_lineage(revision)": lambda lit, ctx: (
         ctx.rev.ever_published and ctx.rev.state in LIVE_LINEAGE),
     "lost_live_pointer(revision)": lambda lit, ctx: ctx.store.live_pointer not in (None, ctx.rev.id),

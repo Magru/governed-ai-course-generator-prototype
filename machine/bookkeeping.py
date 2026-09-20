@@ -104,6 +104,15 @@ def _nothing(m, t, obj, old, payload):
     pass
 
 
+def _spend_consent(m, t, rev, old, payload):
+    """The notice went out under this consent; a correction is a second notice,
+    and it needs a second consent. Spent after the row was taken, not when the
+    event arrived — the guard reads the consent this notice is going under."""
+    for approval in rev.approvals:
+        if approval.get("scope") in ("notice", "publication"):
+            approval["spent"] = True
+
+
 def _spawn(m, t, rev, old, payload):
     m.fork(rev)
 
@@ -114,7 +123,7 @@ NOTES = {
     "blocked_at = node": _block_at_node,
     "spawn; this revision does not move": _spawn,
     "spawn": _spawn,
-    "no move; the notice is recorded": _nothing,     # the step itself is the record
+    "no move; the notice is recorded": _spend_consent,
     "no move; consent to the notice is recorded": _nothing,  # on_event recorded it
     "re-stamped": _restamp,
     "recovery_from = generation": _set_recovery("generation"),
@@ -185,7 +194,7 @@ def on_event(m, machine: str, obj, event: str, payload: dict) -> None:
         # is the entries scoped to publication, never a node's approval. On a
         # published revision the chain consents to its notice instead, and a
         # fresh consent replaces the one before it.
-        scope = "notice" if rev.state == "Published" else "publication"
+        scope = "notice" if rev.ever_published else "publication"
         if scope == "notice":
             rev.approvals = [a for a in rev.approvals if a.get("scope") != "notice"]
         rev.approvals.extend({**sig, "scope": scope} for sig in payload.get("signatures") or [])

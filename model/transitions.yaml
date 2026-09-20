@@ -382,7 +382,7 @@ revision:
     from_raw: "Published"
     from_kind: state
     from: ["Published"]
-    guard: "—"
+    guard: "no_open_draft(course)"
     layer: "Human"
     to_raw: "rev n+1 · ContentInProgress (spawn; this revision does not move)"
     to_kind: other_object
@@ -520,6 +520,26 @@ revision:
     to_raw: "Archived"
     to_kind: state
     to: ["Archived"]
+  - event: "LearnersNotified"
+    from_raw: "Withdrawn"
+    from_kind: state
+    from: ["Withdrawn"]
+    guard: "notice_approved(recipient_set)"
+    layer: "Human · Guardrail"
+    to_raw: "Withdrawn (no move; the notice is recorded)"
+    to_kind: state
+    to: ["Withdrawn"]
+    to_note: "no move; the notice is recorded"
+  - event: "ApprovalGranted"
+    from_raw: "Withdrawn"
+    from_kind: state
+    from: ["Withdrawn"]
+    guard: "approval_chain_satisfied"
+    layer: "Human · OPA"
+    to_raw: "Withdrawn (no move; consent to the notice is recorded)"
+    to_kind: state
+    to: ["Withdrawn"]
+    to_note: "no move; consent to the notice is recorded"
   - event: "ArchiveRequested"
     from_raw: "Withdrawn"
     from_kind: state
@@ -533,7 +553,7 @@ revision:
     from_raw: "Withdrawn"
     from_kind: state
     from: ["Withdrawn"]
-    guard: "—"
+    guard: "no_open_draft(course)"
     layer: "Human"
     to_raw: "rev n+1 · ContentInProgress (spawn)"
     to_kind: other_object

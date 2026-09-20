@@ -66,22 +66,24 @@ def test_a_node_screened_by_the_version_being_replaced_is_not_stamped_as_screene
     m = p.machine
     m.fire("GuardrailChanged", {"to": "guard-2", "reaches": {1: False}})
     p.generate_node(w.T2, run.AUTHOR)                  # the service still answers as guard-1
-    assert m.current.nodes[w.T2].state == "OutputGuardrail"
+    # It is asked again while the budget lasts, and the course stops when it runs out.
+    assert m.current.state == "BlockedRecoverable"
     assert w.T2 not in m.current.screened
-    assert "ServiceUnreachable" in [s["event"] for s in m.store.steps]
+    assert [s["event"] for s in m.store.steps].count("ServiceUnreachable") == m.store.budget() + 1
 
     p.screener.version = "guard-2"                     # the rollout reaches the service
+    m.fire("BlockedInputFixed", {"actor": run.AUTHOR["id"]})
     p._screen_node(w.T2)
     assert m.current.nodes[w.T2].state == "Validated"
     assert m.current.screened[w.T2]["guardrail_version"] == "guard-2"
 
 
-def test_a_screening_answered_in_the_wrong_shape_waits_for_an_answer():
+def test_a_screening_answered_in_the_wrong_shape_is_asked_again_until_the_budget_ends():
     p = _draft(screener=Screening(odd_at="node-out"))
     m = p.machine
     p.generate_node(w.T2, run.AUTHOR)
-    assert m.current.nodes[w.T2].state == "OutputGuardrail"
-    assert "ServiceUnreachable" in [s["event"] for s in m.store.steps]
+    assert m.current.state == "BlockedRecoverable"
+    assert [s["event"] for s in m.store.steps].count("ServiceUnreachable") == m.store.budget() + 1
 
 
 def test_a_title_beside_the_blocks_is_screened():
