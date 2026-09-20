@@ -197,6 +197,18 @@ payload_fields:
     means: "the nodes an exam tests"
     on_events: ["NodeGenerated"]
     read_by: ["I2"]
+  - name: "notice"
+    type: "string"
+    on_events: ["LearnersNotified"]
+    means: "the words that went to learners"
+    read_by: []
+    note: "carried for the record, not for a check: the notice cannot be unsent, so the trace has to say what was said"
+  - name: "recipients"
+    type: "integer"
+    on_events: ["LearnersNotified"]
+    means: "how many learners it reached"
+    read_by: []
+    note: "carried with the notice for the same reason; the guard reads the store's enrolment, not this number"
   - name: "rolled_back_to"
     type: "revision"
     on_events: ["LivePointerMoved"]

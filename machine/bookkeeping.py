@@ -108,8 +108,9 @@ def _spend_consent(m, t, rev, old, payload):
     """The notice went out under this consent; a correction is a second notice,
     and it needs a second consent. Spent after the row was taken, not when the
     event arrived — the guard reads the consent this notice is going under."""
+    scope = "notice" if rev.ever_published else "publication"
     for approval in rev.approvals:
-        if approval.get("scope") in ("notice", "publication"):
+        if approval.get("scope") == scope:
             approval["spent"] = True
 
 

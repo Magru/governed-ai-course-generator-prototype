@@ -124,7 +124,7 @@ def test_a_fork_of_a_revision_the_change_did_not_reach_starts_under_the_rules_in
     edited = copy.deepcopy(w.CONTENT[w.T2])
     edited["blocks"][0]["text"] = "check every tool for splits before use"
     m.fire("NodeEdited", {"node": w.T2, "content": edited})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
     _approve_all(p)
     run.publish(p)
     assert m.current.state == "Published"

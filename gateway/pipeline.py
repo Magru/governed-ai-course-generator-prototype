@@ -101,7 +101,7 @@ class Pipeline:
         if m.current.nodes[node_id].state == "OutputGuardrail":
             # Written already, and waiting for a verdict nobody asked for: the
             # screening is what this node needs, not another paid generation.
-            self._screen_node(node_id)
+            self.screen_node(node_id)
             return
         if m.current.nodes[node_id].state == "Planned":
             m.fire("NodeGenerationRequested", {"node": node_id, "actor": actor["id"]})
@@ -120,7 +120,17 @@ class Pipeline:
                 self._unknown_or_refused(out, {"node": node_id}, "Timeout")
                 continue
             if m.current.nodes[node_id].state == "OutputGuardrail":
-                self._screen_node(node_id)
+                self.screen_node(node_id)
+
+    def _about(self) -> int:
+        """Which revision a notice is about, when the caller does not say: the
+        one learners are reading, or the last one they were — a course pulled
+        off air has no pointer, and that is exactly when they must be told."""
+        pointer = self.machine.store.live_pointer
+        if pointer is not None:
+            return pointer
+        published = [r.id for r in self.machine.store.revisions.values() if r.ever_published]
+        return published[-1] if published else self.machine.current.id
 
     def screen_waiting(self) -> None:
         """Screen every node of the draft that waits for a verdict nobody asked
@@ -129,7 +139,7 @@ class Pipeline:
             return
         for node_id, node in list(self.machine.current.nodes.items()):
             if node.state == "OutputGuardrail":
-                self._screen_node(node_id)
+                self.screen_node(node_id)
 
     # ── the notice to learners ────────────────────────────────────────────
     def notify_learners(self, notice: str, recipients: int, actor: dict, revision: int | None = None):
@@ -138,8 +148,7 @@ class Pipeline:
 
         It names the revision it is about, because the one being edited is not
         the one learners are reading."""
-        revision = revision if revision is not None else (
-            self.machine.store.live_pointer or self.machine.current.id)
+        revision = revision if revision is not None else self._about()
         subject = f"notice:revision-{revision}"
         return self.membrane.request(
             "notify_learners", {"notice": notice, "recipients": recipients, "revision": revision}, actor,
@@ -168,7 +177,7 @@ class Pipeline:
         # trace would show it.
         return generated.content
 
-    def _screen_node(self, node_id: str) -> None:
+    def screen_node(self, node_id: str) -> None:
         """Screen the node, and go on asking while the service leaves it
         waiting. A screening that does not answer sends the node to recovery
         and the table sends it straight back here; nobody else asks again, and

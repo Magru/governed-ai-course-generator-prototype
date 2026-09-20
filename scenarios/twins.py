@@ -82,7 +82,7 @@ def stale_node_at_publication():
     edited = copy.deepcopy(w.CONTENT[w.T2])
     edited["blocks"][0]["text"] = "check every tool for splits and loose handles before use"
     m.fire("NodeEdited", {"node": w.T2, "content": edited})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
     approve(p, w.T2)
     stale = sorted(n.id for n in m.current.nodes.values() if n.state != "NodeApproved")
     held = m.current.state

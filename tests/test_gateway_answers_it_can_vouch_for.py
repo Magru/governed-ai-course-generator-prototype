@@ -73,7 +73,7 @@ def test_a_node_screened_by_the_version_being_replaced_is_not_stamped_as_screene
 
     p.screener.version = "guard-2"                     # the rollout reaches the service
     m.fire("BlockedInputFixed", {"actor": run.AUTHOR["id"]})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
     assert m.current.nodes[w.T2].state == "Validated"
     assert m.current.screened[w.T2]["guardrail_version"] == "guard-2"
 

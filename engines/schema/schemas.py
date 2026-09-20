@@ -16,7 +16,8 @@ ID = {"type": "string", "minLength": 1}
 #: and its outline are artifacts too. A node that took one of their names would
 #: be recorded as having their screening.
 RESERVED = ["revision", "brief", "outline", "notice"]
-NODE_ID = {**ID, "not": {"enum": RESERVED}}
+#: Matched loosely — case and stray spaces do not make a different name.
+NODE_ID = {**ID, "not": {"pattern": "(?i)^\\s*(" + "|".join(RESERVED) + ")\\s*$"}}
 
 BRIEF = {
     "type": "object",

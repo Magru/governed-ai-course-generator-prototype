@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from engines.temporal.trace import SIDE_EFFECTING
 
-_PAYLOAD_KEYS = {"node", "artifact", "node_type", "topics", "rolled_back_to"}
+_PAYLOAD_KEYS = {"node", "artifact", "node_type", "topics", "rolled_back_to",
+                 "notice", "recipients"}
 
 
 class Recording:

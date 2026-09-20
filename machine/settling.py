@@ -10,6 +10,7 @@ ServiceUnreachable. Kept apart from dispatch so each file reads as one idea.
 from __future__ import annotations
 
 from .refusal import MachineRefused
+from . import store_guards
 from .store_guards import ServiceDown
 from .transition_table import AUTO, REACTIONS
 
@@ -35,7 +36,9 @@ class Settling:
                     moved["rolled_back_to"] = rev.id
                 self.fire("LivePointerMoved", moved, producer="system")
                 return True
-            for node in list(rev.nodes.values()):
+            for node in list(rev.nodes.values()) if store_guards.is_draft(rev) else []:
+                # Only a draft's nodes move — the same rule dispatch holds, and
+                # a settle that reaches into a published revision would break it.
                 if self._auto("node", node, AUTO):
                     return True
             if self._auto("revision", rev, AUTO):
@@ -68,6 +71,8 @@ class Settling:
                     self._take("node", rev.nodes[nid], "(dependency changed)", {"node": added}, [])
 
     def _dependency_changed(self, rev, edited: str) -> None:
+        if not store_guards.is_draft(rev):
+            return
         for node in rev.nodes.values():
             if node.id != edited:
                 self._take("node", node, "(dependency changed)", {"node": edited}, [])

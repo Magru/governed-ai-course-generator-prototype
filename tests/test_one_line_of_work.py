@@ -35,7 +35,7 @@ def test_a_notice_on_the_live_course_is_not_read_as_the_drafts_own_past():
     edited = copy.deepcopy(w.CONTENT[w.T2])
     edited["blocks"][0]["text"] = "check every tool for splits before use"
     m.fire("NodeEdited", {"node": w.T2, "content": edited})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
     assert temporal.check(m.trace()).ok
 
 
@@ -80,3 +80,27 @@ def test_a_withdrawn_course_can_tell_its_learners_and_needs_consent_to_do_it():
     m.fire("ApprovalGranted", {"signatures": run.signatures(notice), "revision": 1})
     assert p.notify_learners(notice, 40, run.ADMIN, revision=1).ran
     assert temporal.check(m.trace()).ok
+
+
+def test_an_action_naming_a_revision_that_does_not_exist_is_refused_not_crashed_on():
+    p, m = _published()
+    out = p.membrane.request("withdraw_revision", {"revision": 99, "reason": "a typo"}, run.ADMIN)
+    assert (out.ran, out.check) == (False, "legal_in_state")
+    assert "does not exist" in out.reason
+    assert m.store.revisions[1].state == "Published"
+
+
+def test_a_notice_to_nobody_is_not_a_notice():
+    p, m = _published(notices=1)
+    m.store.enrolled_learners = 0
+    assert not p.notify_learners("Anyone there?", 0, run.ADMIN, revision=1).ran
+
+
+def test_a_notice_finds_the_revision_learners_were_reading_when_the_course_is_off_air():
+    p, m = _published(notices=1)
+    p.membrane.request("withdraw_revision", {"revision": 1, "reason": "an error in module two"},
+                       run.ADMIN)
+    assert m.store.live_pointer is None
+    notice = "Hand tool safety is off air while we correct module two."
+    m.fire("ApprovalGranted", {"signatures": run.signatures(notice), "revision": 1})
+    assert p.notify_learners(notice, 40, run.ADMIN).ran        # no revision named

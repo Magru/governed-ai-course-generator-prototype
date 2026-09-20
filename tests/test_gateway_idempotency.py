@@ -32,7 +32,7 @@ def _edit(p, text):
     if text:
         content["blocks"][0]["text"] = text
     p.machine.fire("NodeEdited", {"node": w.T2, "content": content})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
 
 
 def _approve(p, node):

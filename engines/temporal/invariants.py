@@ -107,13 +107,15 @@ def i4(trace: Trace) -> list[Violation]:
     return bad
 
 
+#: What is "new" is new for this revision: one trace holds them all, and the
+#: step physically before this one may belong to another revision entirely.
 @invariant("I5", "G(removed(N) → O outline_committed_without(N))")
 def i5(trace: Trace) -> list[Violation]:
     bad = []
     for i, s in enumerate(trace):
         if i == 0:
             continue                     # the initial state is given, not done
-        newly = removed(s, "I5") - removed(trace[i - 1], "I5")
+        newly = removed(s, "I5") - removed(trace.before(i), "I5")
         for node in sorted(newly):
             # Inclusive: the commit that drops the node from the outline is the
             # removal. Strict past forbids the only legal way to remove anything.
@@ -141,7 +143,7 @@ def i6(trace: Trace) -> list[Violation]:
     for i, s in enumerate(trace):
         if i == 0:
             continue                     # see I5 — nothing is "newly" at step 0
-        newly = admitted(s, "I6") - admitted(trace[i - 1], "I6")
+        newly = admitted(s, "I6") - admitted(trace.before(i), "I6")
         for artifact in sorted(newly):
             # Inclusive: the verdict that clears the artifact and the step that
             # admits it are one transition, so strict past finds nothing.
@@ -200,7 +202,7 @@ def i8(trace: Trace) -> list[Violation]:
     for i, s in enumerate(trace):
         if i == 0:
             continue
-        prior = set(trace[i - 1].maybe("used_restricted") or [])
+        prior = set(trace.before(i).maybe("used_restricted") or [])
         for node in sorted(set(s.maybe("used_restricted") or []) - prior):
             # Inclusive: a restricted use is known only because the rights check
             # found it, and the step that records the use records the check.

@@ -114,7 +114,9 @@ class Machine(Settling, Recording):
         try:
             self._fire(event, payload, "membrane")
             return True, ""
-        except MachineRefused as exc:
+        except (MachineRefused, store_guards.ServiceDown) as exc:
+            # A service that cannot answer is not a permission: the question
+            # was "may this happen now", and the answer is no, with the reason.
             return False, str(exc)
         finally:
             self._depth -= 1
@@ -237,6 +239,11 @@ class Machine(Settling, Recording):
         if event in BROADCAST:
             return list(self.store.revisions.values())
         rid = payload.get("revision")
+        if rid is not None and rid not in self.store.revisions:
+            # The caller named a revision. Checked here rather than one line
+            # later, where indexing it turned a refusal into a KeyError that
+            # left the gateway as an internal error with nothing recorded.
+            raise MachineRefused(f"{event} names revision {rid}, which does not exist")
         return [self.store.revisions[rid]] if rid else [self.current]
 
     def _nodes_for(self, rev, event, payload):

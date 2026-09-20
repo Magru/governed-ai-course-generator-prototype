@@ -93,7 +93,7 @@ def after_publication(p: Pipeline) -> None:
     edited = copy.deepcopy(w.CONTENT[w.T2])
     edited["blocks"][0]["text"] = "check every tool for splits and loose handles before use"
     m.fire("NodeEdited", {"node": w.T2, "content": edited})
-    p._screen_node(w.T2)
+    p.screen_node(w.T2)
     for node in (w.T2, w.E1):
         if m.current.nodes[node].state != "NodeApproved":
             approve(p, node)

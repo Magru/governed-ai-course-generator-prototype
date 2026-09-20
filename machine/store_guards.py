@@ -210,7 +210,7 @@ def _notice_approved(lit: Literal, ctx: Context) -> bool:
     # caller passes; every consent shown another count is consent to a notice
     # nobody is sending, and it waits for a fresh approval.
     enrolled = ctx.store.enrolled_learners
-    if not isinstance(enrolled, int) or isinstance(enrolled, bool) or enrolled < 0:
+    if not isinstance(enrolled, int) or isinstance(enrolled, bool) or enrolled < 1:
         raise Undecidable(f"{lit.raw}: the store holds no enrolment for this course: {enrolled!r}")
     consents = [a for a in ctx.rev.approvals if a.get("scope") == "notice" and not a.get("spent")]
     if not consents:

@@ -120,3 +120,12 @@ def test_a_filler_or_a_lone_mark_is_not_something_a_learner_can_read(block):
     world = load()
     assert not engine.check_blocks({"id": "n", "blocks": [block]}, world.block_types,
                                    world.block_schemas).ok
+
+
+@pytest.mark.parametrize("name", ["revision", "Revision", " outline ", "notice"])
+def test_a_node_may_not_be_named_after_an_artifact_the_record_screens(name):
+    from scenarios import walkthrough as w
+    import copy as _copy
+    outline = _copy.deepcopy(w.OUTLINE)
+    outline["nodes"][0]["id"] = name
+    assert not engine.check(outline, "outline").ok

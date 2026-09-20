@@ -97,7 +97,7 @@ def verify(remote: bool = False) -> int:
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "verify":
         raise SystemExit(verify(remote="--remote" in sys.argv))
-    arg = sys.argv[1] if len(sys.argv) > 1 else "spec-v2.14"
+    arg = sys.argv[1] if len(sys.argv) > 1 else "spec-v2.15"
     if arg.startswith("-"):   # otherwise a mistyped flag is fetched as a tag
         raise SystemExit(f"unknown option {arg!r}; usage: tools_model_sync.py [tag | verify [--remote]]")
     sync(arg)
