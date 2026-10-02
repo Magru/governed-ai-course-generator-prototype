@@ -7,7 +7,7 @@ implementations behind one port is the only way to know the port is a port.
 from __future__ import annotations
 import json, os, pathlib
 
-from .port import Generated, Generator, Prompt, ProviderUnavailable
+from .port import Generated, Generator, MalformedAnswer, Prompt, ProviderUnavailable
 
 
 def _key() -> str:
@@ -40,6 +40,9 @@ def for_gemini(schema):
     if not isinstance(schema, dict):
         return schema
     out = {k: for_gemini(v) for k, v in schema.items() if k in GEMINI_KEYWORDS and k != "properties"}
+    if "enum" in out and "type" not in out:
+        # An enum with no type is not read as a constraint by Gemini.
+        out["type"] = "string"
     if "properties" in schema:
         out["properties"] = {name: for_gemini(sub) for name, sub in schema["properties"].items()}
     return out
@@ -70,11 +73,20 @@ class GeminiGenerator(Generator):
                     response_schema=for_gemini(schema),
                 ),
             )
+        except ValueError as exc:
+            # The SDK parses the answer against the schema inside the call. A
+            # parse that fails is an answer that cannot be read — a number
+            # thousands of digits long, a string where an object belongs.
+            raise MalformedAnswer(f"the answer could not be read: {exc}") from exc
         except Exception as exc:                  # noqa: BLE001
             raise ProviderUnavailable(f"generation failed: {exc}") from exc
+        try:
+            content = json.loads(response.text)
+        except (TypeError, ValueError) as exc:
+            raise MalformedAnswer(f"the answer is not JSON: {exc}") from exc
         usage = getattr(response, "usage_metadata", None)
         return Generated(
-            content=json.loads(response.text),
+            content=content,
             model_id=self.MODEL,
             usage={"total_tokens": getattr(usage, "total_token_count", 0)} if usage else {},
         )

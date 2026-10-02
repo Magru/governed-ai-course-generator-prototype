@@ -20,35 +20,11 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from engines.schema.schemas import OUTLINE
-
+from .asking import NODE_SCHEMA, node_request, outline_request  # noqa: F401  NODE_SCHEMA is read by tests
 from .membrane import GATEWAY, Membrane
 from .provider.port import GuardrailUnavailable, Prompt
 from .retrieval import retrieve
 from .screened_text import blocks_of, screened_text
-
-OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learning objectives "
-                 "only. Every skill must be one the catalog lists. Return the outline schema.")
-NODE_RULES = ("node:{node}\nWrite this node from the sources only. Cite every claim by chunk "
-              "id; cite nothing you were not given. Blocks must be catalog block types.")
-# What the model is asked to return. The catalog's block schemas judge each
-# block afterwards; this only has to name every field a block may carry, since a
-# provider that is told nothing about an array's items may refuse to fill it.
-BLOCK_FIELDS = {"type": {"type": "string"}, "text": {"type": "string"},
-                "cites": {"type": "array", "items": {"type": "string"}},
-                "src": {"type": "string"}, "alt": {"type": "string"}, "caption": {"type": "string"},
-                "items": {"type": "array", "items": {"type": "string"}},
-                "question": {"type": "string"},
-                "options": {"type": "array", "items": {"type": "string"}},
-                "answer": {"type": "integer"}, "points": {"type": "integer"}}
-NODE_SCHEMA = {"type": "object", "required": ["blocks", "cites"],
-               "properties": {"blocks": {"type": "array", "items": {"type": "object", "required": ["type"],
-                                                                    "properties": BLOCK_FIELDS}},
-                              "cites": {"type": "array", "items": {"type": "string"}},
-                              "minutes": {"type": "integer"}, "points_total": {"type": "integer"},
-                              "questions": {"type": "array", "items": {
-                                  "type": "object", "properties": {"points": {"type": "integer"}}}}}}
-
 
 def digest(prompt: Prompt) -> str:
     parts = {"instructions": prompt.instructions, "author": prompt.author,
@@ -97,13 +73,14 @@ class Pipeline:
     # ── the skeleton ──────────────────────────────────────────────────────
     def draft_outline(self, actor: dict) -> None:
         m = self.machine
-        prompt = Prompt(self._with_feedback(OUTLINE_RULES, m.current),
+        rules, schema = outline_request(m.world)
+        prompt = Prompt(self._with_feedback(rules, m.current),
                         author=json.dumps({k: m.current.brief[k] for k in ("title", "objectives")}),
                         sources=self._sources())
         self._stage(4, "routing", "outline", type(self.generator).__name__)
         out = self.membrane.request(
             "propose_outline", {"prompt": digest(prompt)}, actor,
-            perform=lambda key: {"outline": self._generate(prompt, OUTLINE, "outline")})
+            perform=lambda key: {"outline": self._generate(prompt, schema, "outline")})
         if not out.ran:
             return self._unknown_or_refused(out, {}, "Timeout")
         self._screen("outline-out", "outline", json.dumps(m.current.proposal), "text")
@@ -120,12 +97,13 @@ class Pipeline:
             m.fire("NodeGenerationRequested", {"node": node_id, "actor": actor["id"]})
         while m.current.nodes[node_id].state == "ContentDrafting":
             node = m.current.nodes[node_id]
-            prompt = Prompt(self._with_feedback(NODE_RULES.format(node=node_id), node),
+            rules, schema = node_request(m.world, node_id)
+            prompt = Prompt(self._with_feedback(rules, node),
                             author=json.dumps(node.spec, sort_keys=True), sources=self._sources())
             self._stage(4, "routing", node_id, type(self.generator).__name__)
             out = self.membrane.request(
                 "generate_node_content", {"node": node_id, "prompt": digest(prompt)}, actor,
-                perform=lambda key, p=prompt: {"content": self._generate(p, NODE_SCHEMA, node_id)})
+                perform=lambda key, p=prompt, sc=schema: {"content": self._generate(p, sc, node_id)})
             if not out.ran and out.check == "legal_in_state" and out.key is not None:
                 self._stage(5, "generation", node_id, f"not landed: {m.current.nodes[node_id].state}")
                 return

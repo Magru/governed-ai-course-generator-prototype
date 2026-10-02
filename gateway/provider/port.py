@@ -23,6 +23,12 @@ class ProviderUnavailable(RuntimeError):
     """The service could not be reached. An unknown, never a permission."""
 
 
+class MalformedAnswer(RuntimeError):
+    """The provider answered, and what came back cannot be read. Not an
+    outage: waiting would change nothing, and the table's ModelError row sends
+    the node to recovery as a model fault, not as a service that went quiet."""
+
+
 class GuardrailNotConfigured(RuntimeError):
     """No guardrail is configured at all — a deployment error, not a runtime one."""
 

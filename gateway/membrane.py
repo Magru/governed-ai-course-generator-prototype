@@ -34,7 +34,7 @@ from machine.refusal import MachineRefused
 
 from .action_subject import key_of, subject_of
 from .actions import PERSON, PRODUCED, REGISTRY, SYSTEM
-from .provider.port import GuardrailUnavailable, ProviderUnavailable
+from .provider.port import GuardrailUnavailable, MalformedAnswer, ProviderUnavailable
 
 
 NEXT = {
@@ -153,6 +153,8 @@ class Membrane:
         if perform is not None:
             try:
                 answer, wrong = _answer(action.event, perform(key))
+            except MalformedAnswer as exc:
+                return Outcome(False, "answer", str(exc), NEXT["answer"], key)
             except (ProviderUnavailable, GuardrailUnavailable) as exc:
                 return Outcome(False, "effect", str(exc), NEXT["effect"], key)
             if wrong:
