@@ -103,7 +103,11 @@
       : lastStage(s.last_act.stages, /^(deny|unreachable|effect)/)
       || (stuck && `${stuck.type === "exam" ? "Exam" : words(stuck.skill)} — ${stuck.last_refusal || NODE_PILL[stuck.state][1].toLowerCase()}`)
       || (heard && `${heard.engine} — ${heard.summary}`) || s.revision.last_refusal || "see the Gateway log";
-    why.hidden = !refused; why.textContent = refused ? `Stopped at ${st} · ${refused}` : "";
+    // The course checks can also send a course back rather than block it: the
+    // machine moves on, so nothing else on the page would say why.
+    const sentBack = !refused && s.events[s.events.length - 1]?.event === "CheckFailed" && s.revision.last_refusal;
+    why.hidden = !(refused || sentBack);
+    why.textContent = refused ? `Stopped at ${st} · ${refused}` : sentBack ? `Sent back by the course checks · ${sentBack}` : "";
 
     if (!s.nodes.length) {
       const empty = el("div", "empty");

@@ -145,7 +145,7 @@
   "correlation_id": "lineage-1",
   "causation_id": "e0003",
   "schema_version": "1",
-  "idempotency_key": "43aa64453556399e76120f284762f91289ba937803a7950710088d211bb37a5e"
+  "idempotency_key": "52ad521dfe54fc9bb06175a716b6840ba5fb0300d50c3e5e36ed811560e24136"
  },
  {
   "event": "GuardrailVerdict",
@@ -264,7 +264,7 @@
   "correlation_id": "lineage-1",
   "causation_id": "e0007",
   "schema_version": "1",
-  "idempotency_key": "512877a7a9cb6b099816656ce2b86eaa4ec59d8cac5966227f9e170fa6d4eb19"
+  "idempotency_key": "70938cc2e484c976d7f781b3dde6b28fa98dc5962d44a37acb59e58908316160"
  },
  {
   "event": "GuardrailVerdict",

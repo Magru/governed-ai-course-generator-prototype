@@ -53,11 +53,15 @@ def test_an_enum_is_sent_with_its_type_or_gemini_does_not_hold_the_model_to_it()
 
 def test_the_model_is_told_the_catalogs_skills_and_blocks_and_held_to_them():
     from gateway.asking import node_request, outline_request
+    from gateway.provider.gemini import for_gemini
     from machine.world import load
     world = load()
     rules, schema = outline_request(world)
     assert "outline" == rules.split("\n", 1)[0] and "bench-safety" in rules
     assert schema["properties"]["nodes"]["items"]["properties"]["skill"]["enum"] == world.skills
+    # Told nothing, a live model filled an exam's topics with learning objectives.
+    assert "ids of the topic nodes" in rules
+    assert "ids of topic nodes" in for_gemini(schema)["properties"]["nodes"]["items"]["properties"]["topics"]["description"]
     rules, schema = node_request(world, "mt-node-201")
     assert rules.split("\n", 1)[0] == "node:mt-node-201" and "quiz (question, options, answer, points)" in rules
     shapes = schema["properties"]["blocks"]["items"]["anyOf"]

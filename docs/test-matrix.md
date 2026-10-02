@@ -381,10 +381,10 @@ Each test's name is the sentence it checks; the column *expects* is that name re
 | [`test_the_full_schema_is_kept_for_the_checks_that_follow`](../tests/test_gemini_schema.py#L42) | the full schema is kept for the checks that follow | passed |
 | [`test_an_enum_is_sent_with_its_type_or_gemini_does_not_hold_the_model_to_it`](../tests/test_gemini_schema.py#L48) | an enum is sent with its type or gemini does not hold the model to it | passed |
 | [`test_the_model_is_told_the_catalogs_skills_and_blocks_and_held_to_them`](../tests/test_gemini_schema.py#L54) | the model is told the catalogs skills and blocks and held to them | passed |
-| [`test_each_block_shape_offers_exactly_what_its_catalog_row_allows`](../tests/test_gemini_schema.py#L68) | each block shape offers exactly what its catalog row allows | passed |
-| [`test_the_sdk_accepts_the_shape_a_node_is_asked_for`](../tests/test_gemini_schema.py#L79) | the sdk accepts the shape a node is asked for | passed |
-| [`test_an_answer_that_cannot_be_read_is_a_model_fault_not_an_outage`](../tests/test_gemini_schema.py#L104) | an answer that cannot be read is a model fault not an outage | passed ×3 |
-| [`test_the_gateway_reads_an_unreadable_answer_as_a_model_error`](../tests/test_gemini_schema.py#L120) | the gateway reads an unreadable answer as a model error | passed |
+| [`test_each_block_shape_offers_exactly_what_its_catalog_row_allows`](../tests/test_gemini_schema.py#L72) | each block shape offers exactly what its catalog row allows | passed |
+| [`test_the_sdk_accepts_the_shape_a_node_is_asked_for`](../tests/test_gemini_schema.py#L83) | the sdk accepts the shape a node is asked for | passed |
+| [`test_an_answer_that_cannot_be_read_is_a_model_fault_not_an_outage`](../tests/test_gemini_schema.py#L108) | an answer that cannot be read is a model fault not an outage | passed ×3 |
+| [`test_the_gateway_reads_an_unreadable_answer_as_a_model_error`](../tests/test_gemini_schema.py#L124) | the gateway reads an unreadable answer as a model error | passed |
 
 **`test_gateway_answers_it_can_vouch_for.py`** — What lands in the record is what the gateway can vouch for.
 

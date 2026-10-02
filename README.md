@@ -106,9 +106,9 @@ join them.
 
 ## The live provider
 
-Run on 2 October 2026: [`docs/live-run.md`](docs/live-run.md) has the three runs —
-what the model got wrong, which layer refused it, and what changed in the gateway
-between them. Gemini generates and Amazon Bedrock Guardrails screens, behind the
+Run on 2 October 2026: [`docs/live-run.md`](docs/live-run.md) has the five runs —
+what the model got wrong, which layer refused it, and what changed between them.
+The fifth, from the course builder, published a course. Gemini generates and Amazon Bedrock Guardrails screens, behind the
 same two ports as the recordings. Both adapters are written and tested against
 stand-ins for their services; the Bedrock generator is not built, because
 development generates with Gemini. The guardrail itself is built from the

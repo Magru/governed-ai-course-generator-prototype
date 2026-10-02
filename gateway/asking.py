@@ -17,7 +17,13 @@ import copy
 from engines.schema.schemas import OUTLINE
 
 OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learning objectives "
-                 "only. Every skill must be one the catalog lists. Return the outline schema.")
+                 "only. Every skill must be one the catalog lists. An exam's topics are the ids "
+                 "of the topic nodes in this outline that it tests, and nothing else; a topic "
+                 "node has no topics. Return the outline schema.")
+# What `topics` means, said where the model reads the field: told nothing, a
+# model fills it with learning objectives, which name no node an exam can wait for.
+TOPICS = {"type": "array", "items": {"type": "string"},
+          "description": "exam only: ids of topic nodes in this same outline"}
 NODE_RULES = ("node:{node}\nWrite this node from the sources only. Cite every claim by chunk "
               "id; cite nothing you were not given. Blocks must be catalog block types.")
 
@@ -49,6 +55,7 @@ def outline_request(world) -> tuple[str, dict]:
     rules = f"{OUTLINE_RULES}\nThe catalog's skills: {', '.join(world.skills)}."
     schema = copy.deepcopy(OUTLINE)
     schema["properties"]["nodes"]["items"]["properties"]["skill"] = {"type": "string", "enum": list(world.skills)}
+    schema["properties"]["nodes"]["items"]["properties"]["topics"] = copy.deepcopy(TOPICS)
     return rules, schema
 
 
