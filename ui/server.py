@@ -83,7 +83,9 @@ class Handler(BaseHTTPRequestHandler):
                 preset = body.get("preset") if body.get("preset") in PRESETS else "course"
                 try:
                     STATE["session"] = Session(mode, preset)
-                except Exception as exc:              # noqa: BLE001 — e.g. live without keys
+                except RuntimeError as exc:           # live without keys: the reason is the message
+                    return self._json({"ok": False, "error": str(exc)})
+                except Exception as exc:              # noqa: BLE001 — shown, never swallowed
                     return self._json({"ok": False, "error": f"{type(exc).__name__}: {exc}"})
                 return self._json({"ok": True})
             if name not in ACTIONS:

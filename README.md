@@ -94,6 +94,9 @@ join them.
 - [`docs/risks.md`](docs/risks.md) — the specification's failure modes and
   assumptions, each with what this repository shows about it, and the
   prototype's own open risks.
+- [`docs/ui-runbook.md`](docs/ui-runbook.md) — the course builder checked by
+  hand: what a person gives the page and what it must show back, on four
+  screen sizes, with the last run and what it fixed.
 - `fixtures/evil-twins/` — each fixture names the guard that must refuse it and
   the layer that owns that guard, and a test checks both against
   `model/guards.yaml`. Five of the seven were wrong when first written.

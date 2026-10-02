@@ -112,6 +112,7 @@ class BedrockScreener(Screener):
         self._guardrail = os.environ.get("BEDROCK_GUARDRAIL_ID", "").strip()
         self._version = os.environ.get("BEDROCK_GUARDRAIL_VERSION", "").strip()
         self._runtime = runtime
+        self.guardrail = self._guardrail or None
         self.version = self._version or None
 
     def screen(self, content: str, modality: Modality, point: Point, subject: str = "") -> Verdict:

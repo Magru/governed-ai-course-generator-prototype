@@ -12,7 +12,7 @@
   const COURSE_ACTS = { "approve-outline": "OutlineReview", "checks": "ReadyForReview", "sign": "PendingApproval",
     "publish": "Approved", "release": "BlockedRecoverable" };
   const NODE_PILL = {
-    Planned: ["", "Planned"], ContentDrafting: ["work", "Drafting"], Generated: ["work", "Drafting"],
+    Proposed: ["review", "Proposed"], Refused: ["bad", "Refused"], Planned: ["", "Planned"], ContentDrafting: ["work", "Drafting"], Generated: ["work", "Drafting"],
     OutputGuardrail: ["work", "Screening"], NodeChecks: ["work", "Checking"], Validated: ["review", "Awaiting review"],
     NodeApproved: ["ok", "Approved"], NeedsRevalidation: ["work", "Re-checking"], NodeRepair: ["bad", "Needs a person"],
     NodeRecovery: ["bad", "Recovering"], BlockedFinal: ["bad", "Blocked"], Removed: ["", "Removed"],
@@ -44,12 +44,14 @@
     document.querySelectorAll("button").forEach(b => { if (on) b.dataset.was = b.disabled ? "1" : ""; b.disabled = on || b.dataset.was === "1"; });
   }
 
+  function quiet() { clearTimeout(toast.timer); $("#toast").className = "toast"; }
+
   async function act(name, body = {}, title = "Working…") {
-    working(true, title);
+    working(true, title); quiet();
     try {
       const out = await api(name, body);
       if (!out.ok) toast(out.error, true);
-    } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
+    } catch { /* the server is gone: refresh() below says so */ } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
   }
 
   // ── the header, the lifecycle, the tabs ─────────────────────────────
@@ -63,6 +65,10 @@
     $("#save").textContent = `revision ${s.revision.id} · ${st} · ${s.generator} · guardrail ${s.guardrail}`;
     $("#side-guard").textContent = `v${s.guardrail}`.replace("vguard-", "v");
     Object.entries(COURSE_ACTS).forEach(([name, at]) => { $(`[data-act="${name}"]`).hidden = st !== at; });
+    // A person can release what blocked a lesson. A brief or an outline that
+    // cannot hold is not released but drafted again from a new brief, and the
+    // page has no button that would draft it, so there is nothing to press.
+    if (["brief", "outline"].includes(s.revision.blocked_at)) $('[data-act="release"]').hidden = true;
     document.querySelectorAll("[data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === s.mode));
     $("#count-nodes").textContent = s.nodes.length;
     $("#count-stages").textContent = s.stages.length;
@@ -87,19 +93,26 @@
     const tree = $("#tree"); tree.replaceChildren();
     const st = s.revision.state;
     const why = $("#why");
-    const lastEngine = s.engine_log[s.engine_log.length - 1];
-    // Who stopped it, in the order a reader looks: a screening that denied, an
-    // engine's refusal with its artifact, then whatever reason the machine kept.
-    const refused = BAD.has(st) ? (lastStage(s, /^(deny|unreachable|effect)/)
-      || (lastEngine && `${lastEngine.engine} — ${lastEngine.summary}`) || s.revision.last_refusal) : null;
+    // Who stopped it, in the order a reader looks: what the last button hit —
+    // a screening that denied, a call that failed — then a lesson waiting for a
+    // person, then an engine's refusal with its artifact, then whatever reason
+    // the machine kept. An earlier step's refusal, already settled, is not it.
+    const stuck = s.nodes.find(n => ["NodeRepair", "NodeRecovery", "BlockedFinal"].includes(n.state));
+    const heard = s.last_act.engines[s.last_act.engines.length - 1];
+    const refused = !BAD.has(st) ? null
+      : lastStage(s.last_act.stages, /^(deny|unreachable|effect)/)
+      || (stuck && `${stuck.type === "exam" ? "Exam" : words(stuck.skill)} — ${stuck.last_refusal || NODE_PILL[stuck.state][1].toLowerCase()}`)
+      || (heard && `${heard.engine} — ${heard.summary}`) || s.revision.last_refusal || "see the Gateway log";
     why.hidden = !refused; why.textContent = refused ? `Stopped at ${st} · ${refused}` : "";
 
     if (!s.nodes.length) {
       const empty = el("div", "empty");
       const tile = el("div", "tile"); tile.append(icon("sparkles"));
-      empty.append(tile, el("b", "", st === "AwaitingBrief" ? "Create this course with AI" : "No outline yet"),
-        el("span", "muted", st === "AwaitingBrief" ? "Describe the course; the model drafts an outline, and nothing reaches a learner until a person approves it."
-          : "The brief did not get as far as an outline."));
+      const hint = st === "AwaitingBrief" ? "Describe the course; the model drafts an outline, and nothing reaches a learner until a person approves it."
+        : st === "BlockedFinal" ? "This brief is refused for good. Start over with a different one."
+        : s.revision.blocked_at === "brief" ? "The brief cannot hold as written. Start over with a different one."
+        : "The brief did not get as far as an outline.";
+      empty.append(tile, el("b", "", st === "AwaitingBrief" ? "Create this course with AI" : "No outline yet"), el("span", "muted", hint));
       if (st === "AwaitingBrief") {
         const b = el("button", "btn primary"); b.type = "button"; b.append(icon("sparkles"), document.createTextNode("Create with AI"));
         b.onclick = openDrawer; empty.append(b);
@@ -135,7 +148,7 @@
     });
   }
 
-  function lastStage(s, re) { const hit = [...s.stages].reverse().find(x => re.test(String(x[3]))); return hit ? `${hit[1]} — ${hit[3]}` : ""; }
+  function lastStage(stages, re) { const hit = [...stages].reverse().find(x => re.test(String(x[3]))); return hit ? `${hit[1]} — ${hit[3]}` : ""; }
 
   // ── governance ──────────────────────────────────────────────────────
   function stageItem([n, name, subject, result], fresh) {
@@ -148,7 +161,8 @@
 
   function drawGovernance(s) {
     const eng = $("#engines"); eng.replaceChildren();
-    if (!s.engine_log.length) eng.append(el("li", "muted", "Nothing refused yet."));
+    if (!s.engine_log.length) eng.append(el("li", "muted", BAD.has(s.revision.state)
+      ? "No engine refused this course; what stopped it is named above the structure." : "Nothing refused yet."));
     [...s.engine_log].reverse().forEach(e => { const li = el("li"); li.append(el("span", "eng", e.engine), el("span", "kind", e.kind), document.createTextNode(e.summary)); eng.append(li); });
     const recent = $("#recent"); recent.replaceChildren();
     s.stages.slice(-9).forEach((x, i, all) => recent.append(stageItem(x, s.stages.length - all.length + i >= seenStages)));
@@ -186,7 +200,7 @@
   function closeDrawer() { $("#drawer").hidden = true; $("#scrim").hidden = true; }
 
   async function create() {
-    closeDrawer();
+    closeDrawer(); quiet();
     working(true, "Reading the brief…");
     try {
       const reset = await api("reset", { mode: state.mode, preset: chosen });
@@ -194,7 +208,7 @@
       seenStages = 0;
       const out = await api("submit", { brief: presets[chosen].brief });
       if (!out.ok) toast(out.error, true);
-    } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
+    } catch { /* refresh() below says the server is gone */ } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
   }
 
   // ── a node in the lesson editor ─────────────────────────────────────
@@ -235,12 +249,11 @@
   // Starting over discards the course on screen, so it asks first once there is one.
   async function startOver(mode) {
     if (state.revision.state !== "AwaitingBrief" && !confirm("Start over? The course on screen is discarded.")) return;
-    working(true, "Starting over…");
+    working(true, "Starting over…"); quiet();
     try {
       const out = await api("reset", { mode, preset: state.preset });
-      if (!out.ok) toast(out.error, true);
-      seenStages = 0;
-    } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
+      if (out.ok) seenStages = 0; else toast(out.error, true);
+    } catch { /* refresh() below says the server is gone */ } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
   }
   document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.mode !== state.mode) startOver(b.dataset.mode);
@@ -252,6 +265,7 @@
   $("#reset").addEventListener("click", () => startOver(state.mode));
   $("#drawer-cancel").addEventListener("click", closeDrawer);
   $("#scrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });
   $("#create").addEventListener("click", create);
   $("#ed-close").addEventListener("click", () => $("#editor").close());
 

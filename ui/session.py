@@ -39,14 +39,18 @@ PRESETS = {
 }
 
 
-def _revised(node: str) -> dict:
+# How many times a person may reject one lesson before the recording runs out.
+REVISIONS = 3
+
+
+def _revised(node: str, round_: int) -> dict:
     """What the recorded model writes after a person rejects a lesson: the same
     lesson, told it was revised, so a Reject on the page is followed by a new
     draft rather than by a recording that has run out."""
     content = copy.deepcopy(w.CONTENT[node])
     first = content["blocks"][0]
     key = "question" if "question" in first else "text"
-    first[key] = f"{first[key]} (revised after review)"
+    first[key] = f"{first[key]} (revised after review {round_})"
     return content
 
 
@@ -54,9 +58,10 @@ def _recorded(preset: str):
     if preset == "course":
         generator, screener = cassette.course_generator(), cassette.course_screener()
         for node in (w.T1, w.T2, w.T3, w.E1):
-            generator.answers[f"node:{node}"].append(_revised(node))
-            screener.verdicts.setdefault(("node-out", node), []).append("allow")
-        screener.verdicts.setdefault(("image-out", f"{w.T1}.blocks[1]"), []).append("allow")
+            for round_ in range(1, REVISIONS + 1):
+                generator.answers[f"node:{node}"].append(_revised(node, round_))
+                screener.verdicts.setdefault(("node-out", node), []).append("allow")
+        screener.verdicts.setdefault(("image-out", f"{w.T1}.blocks[1]"), []).extend(["allow"] * REVISIONS)
         return generator, screener
     # The refusal presets never reach a model: the brief is refused first.
     return RecordedGenerator({}), RecordedScreener({("brief-in", "brief"): [PRESETS[preset][2]]})
@@ -72,7 +77,7 @@ class Session:
     def __init__(self, mode: str = "recorded", preset: str = "course"):
         self.mode, self.preset = mode, preset
         generator, screener = _live() if mode == "live" else _recorded(preset)
-        if mode == "live" and not screener.version:
+        if mode == "live" and not (screener.guardrail and (screener.version or "").isdigit()):
             raise RuntimeError("live mode needs BEDROCK_GUARDRAIL_ID and BEDROCK_GUARDRAIL_VERSION in .env "
                                "(make guardrail-create writes them)")
         self.p = run.pipeline(generator=generator, screener=screener)
@@ -82,6 +87,7 @@ class Session:
         self.brief = copy.deepcopy(PRESETS[preset][1])
         self.engine_log: list[dict] = []
         self.messages: list[dict] = []
+        self.mark = (0, 0)          # where the stage list and the engine log stood before the last button
 
     # ── what a person does ──────────────────────────────────────────────
     def submit(self, brief: dict | None = None) -> None:
@@ -129,6 +135,7 @@ class Session:
     # ── doing it, and saying what happened ──────────────────────────────
     def act(self, name: str, *args) -> dict:
         before = len(self.p.machine.store.steps)
+        self.mark = (len(self.p.stages), len(self.engine_log))
         try:
             with _listening(self.engine_log):
                 getattr(self, name)(*args)
@@ -157,13 +164,28 @@ class Session:
             "nodes": [{"id": n.id, "type": n.spec.get("type"), "skill": n.spec.get("skill"),
                        "topics": n.spec.get("topics"), "state": n.state, "repairs": n.repair_count,
                        "last_refusal": n.last_refusal, "content": n.content}
-                      for n in rev.nodes.values()],
+                      for n in rev.nodes.values()] or _offered(rev),
             "stages": [list(s) for s in self.p.stages][-160:],
             "events": [{"event": s["event"], "state": s.get("course_state")} for s in m.store.steps][-60:],
             "ltl": "every invariant holds" if verdict.ok else verdict.refusal.summary,
             "engine_log": self.engine_log[-40:],
+            # What the last button heard, so a stop is told by what caused it
+            # and not by a refusal an earlier step already settled.
+            "last_act": {"stages": [list(x) for x in self.p.stages[self.mark[0]:]],
+                         "engines": self.engine_log[self.mark[1]:]},
             "messages": self.messages[-12:],
         }
+
+
+def _offered(rev) -> list[dict]:
+    """The outline the model offered, before any node exists: a person has to
+    see what they are approving, and what was refused if the checks stopped it.
+    It is the model's output, so nothing in it is trusted to have a shape."""
+    nodes = (rev.proposal or {}).get("nodes") if isinstance(rev.proposal, dict) else None
+    state = "Proposed" if rev.state == "OutlineReview" else "Refused"
+    return [{"id": str(spec["id"]), "type": spec.get("type"), "skill": spec.get("skill"),
+             "topics": spec.get("topics"), "state": state, "repairs": 0, "last_refusal": None, "content": None}
+            for spec in (nodes if isinstance(nodes, list) else []) if isinstance(spec, dict) and spec.get("id")]
 
 
 class _listening:
