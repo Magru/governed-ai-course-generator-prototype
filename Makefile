@@ -15,7 +15,7 @@ export BEDROCK_ACCOUNT_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.15
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix live aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -64,7 +64,10 @@ walkthrough:               ## walkthrough.html, step by step, through the machin
 test:                      ## unit tests; no network, no AWS account reachable
 	$(PY) -m pytest tests -q -m "not live"
 
-live:                      ## the few tests that need the real provider
+test-matrix:               ## docs/test-matrix.md, regenerated from a test run
+	$(PY) tools_test_matrix.py
+
+live:                      ## the tests marked live, which need the real provider
 	LIVE=1 $(PY) -m pytest tests -q -m live
 
 aws:                       ## the only sanctioned way to run the CLI: make aws ARGS="bedrock list-guardrails"

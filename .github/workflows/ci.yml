@@ -38,8 +38,10 @@ jobs:
           opa check engines/opa/policy.rego
           python -c "import z3, pyDatalog"
 
-      - name: tests
-        run: python -m pytest tests -q -m "not live"
+      # One run of the tests, which also regenerates the matrix and fails if
+      # the copy in the repository is not what this run produced.
+      - name: tests, and the matrix they produce
+        run: python tools_test_matrix.py --check
 
       # The five refusals, each from the engine that owns it. If a layer stops
       # refusing, this fails here rather than at a defence.
