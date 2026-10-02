@@ -15,7 +15,7 @@ export BEDROCK_ACCOUNT_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.15
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix examples live aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -66,6 +66,9 @@ test:                      ## unit tests; no network, no AWS account reachable
 
 test-matrix:               ## docs/test-matrix.md, regenerated from a test run
 	$(PY) tools_test_matrix.py
+
+examples:                  ## examples/, regenerated from the runs: the course and the five refusals
+	$(PY) tools_examples.py
 
 live:                      ## the tests marked live, which need the real provider
 	LIVE=1 $(PY) -m pytest tests -q -m live

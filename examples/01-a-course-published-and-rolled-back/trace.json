@@ -1,0 +1,3821 @@
+[
+ {
+  "event": "(initial)",
+  "revision": 1,
+  "course_state": "AwaitingBrief",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "AwaitingBrief"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0000",
+  "event_time": "step-0000",
+  "producer": "store",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0000",
+  "schema_version": "1"
+ },
+ {
+  "event": "BriefSubmitted",
+  "revision": 1,
+  "course_state": "BriefValidation",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "BriefValidation"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0001",
+  "event_time": "step-0001",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0000",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "BriefFeasibility",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "BriefFeasibility"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "brief",
+  "event_id": "e0002",
+  "event_time": "step-0002",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0001",
+  "schema_version": "1",
+  "idempotency_key": "315cefc38d7223cc7de76d448eacf1dbad152fc522061581714794ab6a979dde"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "OutlineDrafting",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineDrafting"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0003",
+  "event_time": "step-0003",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0002",
+  "schema_version": "1"
+ },
+ {
+  "event": "OutlineGenerated",
+  "revision": 1,
+  "course_state": "OutlineGuardrail",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineGuardrail"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0004",
+  "event_time": "step-0004",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0003",
+  "schema_version": "1",
+  "idempotency_key": "bf244b6e97c1b821f1fe2bd5209be7e0f389c9c0b689a834924b0dffb0a7749e"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "OutlineChecks",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineChecks"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "outline",
+  "event_id": "e0005",
+  "event_time": "step-0005",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0004",
+  "schema_version": "1",
+  "idempotency_key": "2fe26b40e42f80dcfa0cd84bf8289ddd068508e82494aae9ed23e5af16908247"
+ },
+ {
+  "event": "CheckFailed",
+  "revision": 1,
+  "course_state": "OutlineRepair",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineRepair"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0006",
+  "event_time": "step-0006",
+  "producer": "checks",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0005",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "OutlineDrafting",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineDrafting"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0007",
+  "event_time": "step-0007",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0006",
+  "schema_version": "1"
+ },
+ {
+  "event": "OutlineGenerated",
+  "revision": 1,
+  "course_state": "OutlineGuardrail",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineGuardrail"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0008",
+  "event_time": "step-0008",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0007",
+  "schema_version": "1",
+  "idempotency_key": "c1ff5cca30f9d169c7d01301f680b267121bfaa1edf769dfb0b2a10a937bb990"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "OutlineChecks",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineChecks"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "outline",
+  "event_id": "e0009",
+  "event_time": "step-0009",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0008",
+  "schema_version": "1",
+  "idempotency_key": "cfb6a6ed65ac12c80a9e5f99c97a98a4b6979127381ca18185567ba2dcea60ea"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "OutlineReview",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "OutlineReview"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0010",
+  "event_time": "step-0010",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0009",
+  "schema_version": "1"
+ },
+ {
+  "event": "OutlineApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "Planned",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0011",
+  "event_time": "step-0011",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0010",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "ContentDrafting",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-201",
+  "event_id": "e0012",
+  "event_time": "step-0012",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0011",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "Generated",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-201",
+  "event_id": "e0013",
+  "event_time": "step-0013",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0012",
+  "schema_version": "1",
+  "node_type": "topic",
+  "idempotency_key": "43b8f42bd009f14cb5da13d38b615fe10f5661344925fa5795ace75ae0e27a96"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "OutputGuardrail",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-201",
+  "event_id": "e0014",
+  "event_time": "step-0014",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0013",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeChecks",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-201",
+  "node": "mt-node-201",
+  "event_id": "e0015",
+  "event_time": "step-0015",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0014",
+  "schema_version": "1",
+  "idempotency_key": "9cf8c0f06c71152c107a5d21b7185322080232cb913455aebdd88f4566e9296e"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "Validated",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-201",
+  "event_id": "e0016",
+  "event_time": "step-0016",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0015",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "Planned",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-201",
+  "event_id": "e0017",
+  "event_time": "step-0017",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0016",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "ContentDrafting",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0018",
+  "event_time": "step-0018",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0017",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "Generated",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0019",
+  "event_time": "step-0019",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0018",
+  "schema_version": "1",
+  "node_type": "topic",
+  "idempotency_key": "77ee2c343a521f3dbf7a7ec29571150e36e0104bcb4fee76dc111a7be9989f57"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "OutputGuardrail",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0020",
+  "event_time": "step-0020",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0019",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeChecks",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-202",
+  "node": "mt-node-202",
+  "event_id": "e0021",
+  "event_time": "step-0021",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0020",
+  "schema_version": "1",
+  "idempotency_key": "c03548b2761790d70c49d1506c91e7ee61bd17b92806d14e4668ed68dd2f5608"
+ },
+ {
+  "event": "CheckFailed",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeRepair",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0022",
+  "event_time": "step-0022",
+  "producer": "checks",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0021",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "ContentDrafting",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0023",
+  "event_time": "step-0023",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0022",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "Generated",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0024",
+  "event_time": "step-0024",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0023",
+  "schema_version": "1",
+  "node_type": "topic",
+  "idempotency_key": "9b7941a457818ccf2e57453965978d285bf696de7ade92f1fd50fb6bc2b702b9"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "OutputGuardrail",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0025",
+  "event_time": "step-0025",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0024",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeChecks",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-202",
+  "node": "mt-node-202",
+  "event_id": "e0026",
+  "event_time": "step-0026",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0025",
+  "schema_version": "1",
+  "idempotency_key": "f17847891c07dfa79a8fda01ee99b0a44dedeb590612f2ef0162d44a5714fb5a"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "Validated",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0027",
+  "event_time": "step-0027",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0026",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "Planned",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0028",
+  "event_time": "step-0028",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0027",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "ContentDrafting",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0029",
+  "event_time": "step-0029",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0028",
+  "schema_version": "1"
+ },
+ {
+  "event": "Timeout",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeRecovery",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0030",
+  "event_time": "step-0030",
+  "producer": "gateway",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0029",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "ContentDrafting",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0031",
+  "event_time": "step-0031",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0030",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "Generated",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0032",
+  "event_time": "step-0032",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0031",
+  "schema_version": "1",
+  "node_type": "topic",
+  "idempotency_key": "d59c2e84940fe7f60a373d0b5f80c01ebf39f28f85404367db1d71796c0640b3"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "OutputGuardrail",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0033",
+  "event_time": "step-0033",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0032",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeChecks",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-203",
+  "node": "mt-node-203",
+  "event_id": "e0034",
+  "event_time": "step-0034",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0033",
+  "schema_version": "1",
+  "idempotency_key": "852c88db3030b2493143e0b21782771cce349f7a613b2c8147c656da7aa6bf48"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "Validated",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0035",
+  "event_time": "step-0035",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0034",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-203",
+  "event_id": "e0036",
+  "event_time": "step-0036",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0035",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "ContentDrafting"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0037",
+  "event_time": "step-0037",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0036",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Generated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0038",
+  "event_time": "step-0038",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0037",
+  "schema_version": "1",
+  "node_type": "exam",
+  "topics": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "idempotency_key": "3ebc5d47a28f6d4990e5286199e86ada212e6c28f3567806182221eec1363811"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "OutputGuardrail"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0039",
+  "event_time": "step-0039",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0038",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeChecks"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-204",
+  "node": "mt-node-204",
+  "event_id": "e0040",
+  "event_time": "step-0040",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0039",
+  "schema_version": "1",
+  "idempotency_key": "7ee1265ec02dfec95a63046a7f383b5aa17cc193a13d444fcbe4130ed27ae0c4"
+ },
+ {
+  "event": "CheckFailed",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeRepair"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0041",
+  "event_time": "step-0041",
+  "producer": "checks",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0040",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "ContentDrafting"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0042",
+  "event_time": "step-0042",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0041",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Generated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0043",
+  "event_time": "step-0043",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0042",
+  "schema_version": "1",
+  "node_type": "exam",
+  "topics": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "idempotency_key": "3e610a1890dada41a870782fb0614a6755f32988d2c0af3ae17b762749dae806"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "OutputGuardrail"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0044",
+  "event_time": "step-0044",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0043",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeChecks"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-204",
+  "node": "mt-node-204",
+  "event_id": "e0045",
+  "event_time": "step-0045",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0044",
+  "schema_version": "1",
+  "idempotency_key": "38be643d5480feec9c3dd58da4e6aecabd01a81edcfed9aaf088bae94dc7e50d"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0046",
+  "event_time": "step-0046",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0045",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ReadyForReview",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ReadyForReview"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0047",
+  "event_time": "step-0047",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0046",
+  "schema_version": "1"
+ },
+ {
+  "event": "CourseChecksRequested",
+  "revision": 1,
+  "course_state": "WholeCourseChecks",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "WholeCourseChecks"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0048",
+  "event_time": "step-0048",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0047",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "PendingApproval",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "PendingApproval"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0049",
+  "event_time": "step-0049",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0048",
+  "schema_version": "1"
+ },
+ {
+  "event": "ApprovalGranted",
+  "revision": 1,
+  "course_state": "Approved",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "Approved"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0050",
+  "event_time": "step-0050",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0049",
+  "schema_version": "1"
+ },
+ {
+  "event": "PublishRequested",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0051",
+  "event_time": "step-0051",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0050",
+  "schema_version": "1"
+ },
+ {
+  "event": "LivePointerMoved",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e0052",
+  "event_time": "step-0052",
+  "producer": "system",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0051",
+  "schema_version": "1",
+  "idempotency_key": "LivePointerMoved:52"
+ },
+ {
+  "event": "LearnersNotified",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "notice": "Hand tool safety is available: complete it before your next workshop shift.",
+  "recipients": 40,
+  "event_id": "e0053",
+  "event_time": "step-0053",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0052",
+  "schema_version": "1",
+  "idempotency_key": "2e09c52681dd2d7225318f15ed5d3ce52d0bb3a3a512eacd177c96ebfd0120fb"
+ },
+ {
+  "event": "ReviseRequested",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0054",
+  "event_time": "step-0054",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0053",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeEdited",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NeedsRevalidation",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NeedsRevalidation"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0055",
+  "event_time": "step-0055",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0054",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "OutputGuardrail",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NeedsRevalidation"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0056",
+  "event_time": "step-0056",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0055",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "OutputGuardrail",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeChecks"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0057",
+  "event_time": "step-0057",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0056",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "OutputGuardrail",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0058",
+  "event_time": "step-0058",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0057",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeChecks",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "artifact": "mt-node-202",
+  "node": "mt-node-202",
+  "event_id": "e0059",
+  "event_time": "step-0059",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0058",
+  "schema_version": "1",
+  "idempotency_key": "29b1bd10d15fdc0a99af8112f3e068478db0945d69b70d24ecfbfcbd667f7fb4"
+ },
+ {
+  "event": "(auto)",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "Validated",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-202",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0060",
+  "event_time": "step-0060",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0059",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 2,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203"
+  ],
+  "permission_checked": [
+   "mt-node-202",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ContentInProgress"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-202",
+  "event_id": "e0061",
+  "event_time": "step-0061",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0060",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 2,
+  "course_state": "ReadyForReview",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-202",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "ReadyForReview"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "node": "mt-node-204",
+  "event_id": "e0062",
+  "event_time": "step-0062",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0061",
+  "schema_version": "1"
+ },
+ {
+  "event": "CourseChecksRequested",
+  "revision": 2,
+  "course_state": "WholeCourseChecks",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-202",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "WholeCourseChecks"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0063",
+  "event_time": "step-0063",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0062",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 2,
+  "course_state": "PendingApproval",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "PendingApproval"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0064",
+  "event_time": "step-0064",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0063",
+  "schema_version": "1"
+ },
+ {
+  "event": "ApprovalGranted",
+  "revision": 2,
+  "course_state": "Approved",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "Approved"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0065",
+  "event_time": "step-0065",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0064",
+  "schema_version": "1"
+ },
+ {
+  "event": "PublishRequested",
+  "revision": 2,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "Published"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0066",
+  "event_time": "step-0066",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0065",
+  "schema_version": "1"
+ },
+ {
+  "event": "LivePointerMoved",
+  "revision": 1,
+  "course_state": "Superseded",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 2,
+  "revision_states": {
+   "1": "Superseded",
+   "2": "Published"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0067",
+  "event_time": "step-0067",
+  "producer": "system",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0066",
+  "schema_version": "1",
+  "idempotency_key": "LivePointerMoved:67"
+ },
+ {
+  "event": "RollbackRequested",
+  "revision": 1,
+  "course_state": "StaleReview",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 2,
+  "revision_states": {
+   "1": "StaleReview",
+   "2": "Published"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0068",
+  "event_time": "step-0068",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0067",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 2,
+  "revision_states": {
+   "1": "Published",
+   "2": "Published"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [
+   1
+  ],
+  "event_id": "e0069",
+  "event_time": "step-0069",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0068",
+  "schema_version": "1"
+ },
+ {
+  "event": "LivePointerMoved",
+  "revision": 2,
+  "course_state": "Superseded",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-1",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "Superseded"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [
+   1
+  ],
+  "rolled_back_to": 1,
+  "event_id": "e0070",
+  "event_time": "step-0070",
+  "producer": "system",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0069",
+  "schema_version": "1",
+  "idempotency_key": "LivePointerMoved:70"
+ },
+ {
+  "event": "PolicyChanged",
+  "revision": 1,
+  "course_state": "StaleReview",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "policy_version": "pol-1",
+  "current_policy_version": "pol-2",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": true,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "StaleReview",
+   "2": "Superseded"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0071",
+  "event_time": "step-0071",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0070",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-2",
+  "current_policy_version": "pol-2",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-1",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "Superseded"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [
+   1
+  ],
+  "event_id": "e0072",
+  "event_time": "step-0072",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0071",
+  "schema_version": "1"
+ },
+ {
+  "event": "GuardrailChanged",
+  "revision": 1,
+  "course_state": "StaleReview",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "policy_version": "pol-2",
+  "current_policy_version": "pol-2",
+  "guardrail_version": "guard-1",
+  "current_guardrail_version": "guard-2",
+  "affected": true,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "StaleReview",
+   "2": "Superseded"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [],
+  "event_id": "e0073",
+  "event_time": "step-0073",
+  "producer": "orchestrator",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0072",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-201": "NodeApproved",
+   "mt-node-202": "NodeApproved",
+   "mt-node-203": "NodeApproved",
+   "mt-node-204": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-201": true,
+   "mt-node-202": true,
+   "mt-node-203": true,
+   "mt-node-204": true
+  },
+  "committed_outline": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "approved_nodes": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "permission_checked": [
+   "mt-node-201",
+   "mt-node-202",
+   "mt-node-203",
+   "mt-node-204"
+  ],
+  "used_restricted": [
+   "mt-node-202"
+  ],
+  "stale_nodes": [],
+  "policy_version": "pol-2",
+  "current_policy_version": "pol-2",
+  "guardrail_version": "guard-2",
+  "current_guardrail_version": "guard-2",
+  "affected": false,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published",
+   "2": "Superseded"
+  },
+  "forked_from": {
+   "2": 1
+  },
+  "re_verified": [
+   1
+  ],
+  "event_id": "e0074",
+  "event_time": "step-0074",
+  "producer": "machine",
+  "correlation_id": "lineage-1",
+  "causation_id": "e0073",
+  "schema_version": "1"
+ }
+]

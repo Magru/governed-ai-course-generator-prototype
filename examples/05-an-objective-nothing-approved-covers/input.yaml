@@ -1,0 +1,16 @@
+course: mt-course-001
+objectives:
+- bench-safety
+- tool-inspection
+nodes:
+- id: mt-node-001
+  skill: bench-safety
+  state: NodeApproved
+- id: mt-node-002
+  skill: tool-inspection
+  state: Validated
+develops:
+  bench-safety:
+  - bench-safety
+  tool-inspection:
+  - tool-inspection

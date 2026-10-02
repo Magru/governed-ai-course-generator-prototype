@@ -1,0 +1,8 @@
+engine: datalog
+kind: leak-path
+summary: mt-node-103 cites mt-kb-008 from mt-art-incident-records, which apprentices cannot see
+detail:
+- node: mt-node-103
+  chunk: mt-kb-008
+  article: mt-art-incident-records
+  audience: apprentices

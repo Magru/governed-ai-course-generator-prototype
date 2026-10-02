@@ -1,0 +1,30 @@
+action: submit_brief
+actor:
+  id: author-1
+  role: course-author
+brief:
+  audience:
+  - supervisors
+  node_count: 3
+  minutes_per_lesson: 20
+state: AwaitingBrief
+policy_data:
+  grants:
+    author-1:
+      may_author_for:
+      - all-staff
+      - workshop-floor
+      - apprentices
+    admin-1:
+      may_author_for:
+      - all-staff
+      - workshop-floor
+      - apprentices
+      - supervisors
+    compliance-1:
+      may_author_for: []
+  thresholds:
+    repair_budget: 2
+    max_nodes_per_course: 12
+    max_minutes_per_lesson: 25
+    max_audience_breadth: 4

@@ -1,0 +1,30 @@
+brief:
+  id: mt-course-200
+  title: Workshop hygiene for apprentices
+  audience:
+  - apprentices
+  objectives:
+  - bench-safety
+  - tool-inspection
+  - dust-extraction
+  minutes_per_lesson: 20
+  nodes:
+  - id: mt-node-201
+    type: topic
+    skill: bench-safety
+  - id: mt-node-202
+    type: topic
+    skill: tool-inspection
+  - id: mt-node-203
+    type: topic
+    skill: dust-extraction
+  - id: mt-node-204
+    type: exam
+    topics:
+    - mt-node-201
+    - mt-node-202
+    - mt-node-203
+actor:
+  id: author-1
+  kind: person
+  role: course-author

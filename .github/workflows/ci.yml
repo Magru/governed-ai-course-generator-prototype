@@ -49,6 +49,11 @@ jobs:
       - name: the five refusals
         run: python scenarios/refusals.py
 
+      # The examples are the runs' own output; a change that alters what a run
+      # does must regenerate them, or this fails.
+      - name: the examples are what the runs produce
+        run: python tools_examples.py --check
+
       # One course through the gateway from brief to rollback, then the seven
       # twins, each stopping where the specification says.
       - name: the course end to end

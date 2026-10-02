@@ -45,6 +45,7 @@ Everything belongs to an invented organisation under `fixtures/`.
 | `make walkthrough` | the specification's `walkthrough.html`, step by step, reproduced by the machine |
 | `make cascade` | what one edit costs at course scale — in re-checks, compute, and hours of human review — and a proof that the cascade settles |
 | `make test-matrix` | regenerates [`docs/test-matrix.md`](docs/test-matrix.md) from a test run |
+| `make examples` | regenerates [`examples/`](examples/): the course and the five refusals, each with what went in and what came back |
 
 ## How a request travels
 
@@ -85,12 +86,18 @@ join them.
   it, what it expects and what happened. It opens with the eight tests the
   specification says must exist, each mapped to the tests that discharge it.
   Two are honest gaps and one is partial, and the matrix says which and why.
+- [`examples/`](examples/) — six input/output pairs: the course from brief to
+  rollback with its full trace, and the five refusals with exactly what each
+  engine was given and the artifact it returned.
+- [`docs/risks.md`](docs/risks.md) — the specification's failure modes and
+  assumptions, each with what this repository shows about it, and the
+  prototype's own open risks.
 - `fixtures/evil-twins/` — each fixture names the guard that must refuse it and
   the layer that owns that guard, and a test checks both against
   `model/guards.yaml`. Five of the seven were wrong when first written.
 - CI runs the leak scan, the model check against the published tag, every test,
-  the five refusals and the course end to end, and fails if the test matrix in
-  the repository is not the one the run produces.
+  the five refusals and the course end to end, and fails if the test matrix or
+  the examples in the repository are not the ones the runs produce.
 
 ## The live provider
 

@@ -58,7 +58,7 @@ def test_no_account_id_means_refusal():
 def test_ambient_keys_are_refused(monkeypatch):
     from gateway.provider.bedrock import WrongAccount, session
     session.cache_clear()
-    monkeypatch.setenv("BEDROCK_ACCOUNT_ID", "631412641947")
+    monkeypatch.setenv("BEDROCK_ACCOUNT_ID", "111122223333")   # an invented account
     monkeypatch.setenv("AWS_BEARER_TOKEN_BEDROCK", "anything")
     with pytest.raises(WrongAccount, match="outranks the profile"):
         session()

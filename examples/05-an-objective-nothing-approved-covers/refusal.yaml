@@ -1,0 +1,8 @@
+engine: prolog
+kind: proof-tree
+summary: 'tool-inspection is not covered: a node teaches it, and nobody has approved that node'
+detail:
+- objective: tool-inspection
+  reason: taught_but_not_approved
+  has_partial_match: true
+  raw: explanation('tool-inspection',['tool-inspection'],['mt-node-002'-'tool-inspection'],taught_but_not_approved)

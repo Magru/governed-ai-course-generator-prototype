@@ -1,0 +1,25 @@
+brief:
+  id: mt-course-102
+  title: everything about the workshop in one course
+  audience:
+  - apprentices
+  objectives:
+  - bench-safety
+  - tool-inspection
+  - hand-plane-setup
+  - chisel-sharpening
+  - dust-extraction
+  - noise-exposure
+  - first-aid-basics
+  - lifting-technique
+  - machine-guarding
+  - waste-disposal
+  - ppe-selection
+  - incident-reporting
+  requested_nodes: 14
+  minutes_per_lesson: 40
+thresholds:
+  repair_budget: 2
+  max_nodes_per_course: 12
+  max_minutes_per_lesson: 25
+  max_audience_breadth: 4

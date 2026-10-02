@@ -1,0 +1,65 @@
+nodes:
+- id: mt-node-103
+  type: topic
+  skill: incident-reporting
+  cites:
+  - mt-kb-008
+articles:
+- id: mt-art-bench-and-lifting
+  chunks:
+  - mt-kb-001
+  - mt-kb-009
+- id: mt-art-tool-inspection
+  chunks:
+  - mt-kb-002
+- id: mt-art-plane-setup
+  chunks:
+  - mt-kb-003
+- id: mt-art-sharpening
+  chunks:
+  - mt-kb-004
+- id: mt-art-dust-extraction
+  chunks:
+  - mt-kb-005
+- id: mt-art-noise-exposure
+  chunks:
+  - mt-kb-006
+- id: mt-art-injury-reporting
+  chunks:
+  - mt-kb-007
+- id: mt-art-incident-records
+  chunks:
+  - mt-kb-008
+- id: mt-art-machine-guarding
+  chunks:
+  - mt-kb-010
+audience:
+- apprentices
+visibility:
+  all-staff:
+  - mt-art-bench-and-lifting
+  - mt-art-tool-inspection
+  - mt-art-dust-extraction
+  - mt-art-injury-reporting
+  workshop-floor:
+  - mt-art-bench-and-lifting
+  - mt-art-tool-inspection
+  - mt-art-plane-setup
+  - mt-art-sharpening
+  - mt-art-dust-extraction
+  - mt-art-noise-exposure
+  - mt-art-injury-reporting
+  - mt-art-machine-guarding
+  apprentices:
+  - mt-art-bench-and-lifting
+  - mt-art-tool-inspection
+  - mt-art-plane-setup
+  - mt-art-dust-extraction
+  - mt-art-injury-reporting
+  supervisors:
+  - mt-art-bench-and-lifting
+  - mt-art-tool-inspection
+  - mt-art-dust-extraction
+  - mt-art-noise-exposure
+  - mt-art-injury-reporting
+  - mt-art-incident-records

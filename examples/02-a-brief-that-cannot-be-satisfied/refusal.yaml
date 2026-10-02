@@ -1,0 +1,9 @@
+engine: z3
+kind: unsat-core
+summary: 'these requirements cannot hold together: max_nodes_per_course, requested_nodes; max_minutes_per_lesson,
+  minutes_per_lesson'
+detail:
+- max_minutes_per_lesson
+- max_nodes_per_course
+- minutes_per_lesson
+- requested_nodes

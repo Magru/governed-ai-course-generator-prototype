@@ -1,0 +1,6 @@
+engine: opa
+kind: named-rule
+summary: 'audience_permitted: author-1 may not author for ["supervisors"]'
+detail:
+- message: author-1 may not author for ["supervisors"]
+  rule: audience_permitted

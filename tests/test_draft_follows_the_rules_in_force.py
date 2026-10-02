@@ -164,3 +164,15 @@ def test_a_discarded_draft_does_not_move_when_a_rule_changes():
     before = {n: s.state for n, s in m.store.revisions[1].nodes.items()}
     m.fire("PolicyChanged", {"to": "pol-2", "reaches": {}})
     assert {n: s.state for n, s in m.store.revisions[1].nodes.items()} == before
+
+
+def test_a_catalog_change_sends_checked_nodes_back_through_the_checks_and_to_a_person():
+    p = _ready(nodes=(w.T1, w.T2, w.T3), approved=(w.T1,))
+    m = p.machine
+    m.fire("CatalogChanged", {"to": "cat-8", "reaches": {}})
+    topics = (w.T1, w.T2, w.T3)
+    assert {m.current.nodes[n].state for n in topics} == {"OutputGuardrail"}   # revalidating
+    p.screen_waiting()
+    assert {m.current.nodes[n].state for n in topics} == {"Validated"}         # approval is not kept
+    assert m.current.nodes[w.T1].checked_stamps["catalog"] == "cat-8"
+    assert temporal.check(m.trace()).ok

@@ -1,0 +1,10 @@
+engine: temporal
+kind: violated-formula
+summary: 'I3 violated at step 23 (PublishRequested): published with [''mt-node-001''] stale'
+detail:
+- invariant: I3
+  formula: G(published(C) → all_nodes_approved(C) ∧ ¬∃ stale(C))
+  step: 23
+  event: PublishRequested
+  kind: violated
+  why: published with ['mt-node-001'] stale

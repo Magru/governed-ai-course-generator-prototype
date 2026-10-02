@@ -1,0 +1,1056 @@
+[
+ {
+  "event": "(initial)",
+  "revision": 1,
+  "course_state": "AwaitingBrief",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "AwaitingBrief"
+  },
+  "forked_from": {},
+  "re_verified": []
+ },
+ {
+  "event": "BriefSubmitted",
+  "revision": 1,
+  "course_state": "BriefValidation",
+  "node_states": {},
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "AwaitingBrief"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e001",
+  "event_time": "2026-09-01T10:01:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e000",
+  "schema_version": "1"
+ },
+ {
+  "event": "OutlineGenerated",
+  "revision": 1,
+  "course_state": "OutlineDrafting",
+  "node_states": {
+   "mt-node-001": "Planned",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "AwaitingBrief"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e002",
+  "event_time": "2026-09-01T10:02:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e001",
+  "schema_version": "1",
+  "idempotency_key": "OutlineGenerated:2"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "OutlineDrafting",
+  "node_states": {
+   "mt-node-001": "Planned",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {},
+  "committed_outline": null,
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "AwaitingBrief"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "outline",
+  "event_id": "e003",
+  "event_time": "2026-09-01T10:03:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e002",
+  "schema_version": "1",
+  "idempotency_key": "GuardrailVerdict:3"
+ },
+ {
+  "event": "OutlineApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "Planned",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {},
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e004",
+  "event_time": "2026-09-01T10:04:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e003",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "ContentDrafting",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-001": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e005",
+  "event_time": "2026-09-01T10:05:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e004",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "Generated",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-001": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-001",
+  "event_id": "e006",
+  "event_time": "2026-09-01T10:06:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e005",
+  "schema_version": "1",
+  "idempotency_key": "NodeGenerated:6"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeChecks",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-001": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-001",
+  "event_id": "e007",
+  "event_time": "2026-09-01T10:07:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e006",
+  "schema_version": "1",
+  "idempotency_key": "GuardrailVerdict:7"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "Validated",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-001": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e008",
+  "event_time": "2026-09-01T10:08:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e007",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "Planned",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-001": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-001",
+  "event_id": "e009",
+  "event_time": "2026-09-01T10:09:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e008",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "ContentDrafting",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-002": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e010",
+  "event_time": "2026-09-01T10:10:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e009",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "Generated",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-002": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-002",
+  "event_id": "e011",
+  "event_time": "2026-09-01T10:11:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e010",
+  "schema_version": "1",
+  "idempotency_key": "NodeGenerated:11"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeChecks",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-002": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-002",
+  "event_id": "e012",
+  "event_time": "2026-09-01T10:12:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e011",
+  "schema_version": "1",
+  "idempotency_key": "GuardrailVerdict:12"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "Validated",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-002": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e013",
+  "event_time": "2026-09-01T10:13:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e012",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "Planned"
+  },
+  "retry_budget_left": {
+   "mt-node-002": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-002",
+  "event_id": "e014",
+  "event_time": "2026-09-01T10:14:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e013",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerationRequested",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "ContentDrafting"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e015",
+  "event_time": "2026-09-01T10:15:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e014",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeGenerated",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "Generated"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-003",
+  "node_type": "exam",
+  "topics": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "event_id": "e016",
+  "event_time": "2026-09-01T10:16:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e015",
+  "schema_version": "1",
+  "idempotency_key": "NodeGenerated:16"
+ },
+ {
+  "event": "GuardrailVerdict",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeChecks"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "artifact": "mt-node-003",
+  "event_id": "e017",
+  "event_time": "2026-09-01T10:17:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e016",
+  "schema_version": "1",
+  "idempotency_key": "GuardrailVerdict:17"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "Validated"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e018",
+  "event_time": "2026-09-01T10:18:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e017",
+  "schema_version": "1"
+ },
+ {
+  "event": "NodeApproved",
+  "revision": 1,
+  "course_state": "ContentInProgress",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "ContentInProgress"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "node": "mt-node-003",
+  "event_id": "e019",
+  "event_time": "2026-09-01T10:19:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e018",
+  "schema_version": "1"
+ },
+ {
+  "event": "CourseChecksRequested",
+  "revision": 1,
+  "course_state": "WholeCourseChecks",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "WholeCourseChecks"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e020",
+  "event_time": "2026-09-01T10:20:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e019",
+  "schema_version": "1"
+ },
+ {
+  "event": "(auto)",
+  "revision": 1,
+  "course_state": "PendingApproval",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "PendingApproval"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e021",
+  "event_time": "2026-09-01T10:21:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e020",
+  "schema_version": "1"
+ },
+ {
+  "event": "ApprovalGranted",
+  "revision": 1,
+  "course_state": "Approved",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "Approved"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e022",
+  "event_time": "2026-09-01T10:22:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e021",
+  "schema_version": "1"
+ },
+ {
+  "event": "PublishRequested",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [
+   "mt-node-001"
+  ],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": null,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e023",
+  "event_time": "2026-09-01T10:23:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e022",
+  "schema_version": "1"
+ },
+ {
+  "event": "LivePointerMoved",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e024",
+  "event_time": "2026-09-01T10:24:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e023",
+  "schema_version": "1",
+  "idempotency_key": "LivePointerMoved:24"
+ },
+ {
+  "event": "LearnersNotified",
+  "revision": 1,
+  "course_state": "Published",
+  "node_states": {
+   "mt-node-001": "NodeApproved",
+   "mt-node-002": "NodeApproved",
+   "mt-node-003": "NodeApproved"
+  },
+  "retry_budget_left": {
+   "mt-node-003": true
+  },
+  "committed_outline": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "approved_nodes": [
+   "mt-node-001",
+   "mt-node-002",
+   "mt-node-003"
+  ],
+  "permission_checked": [],
+  "used_restricted": [],
+  "stale_nodes": [],
+  "policy_version": "p12",
+  "current_policy_version": "p12",
+  "guardrail_version": "g4",
+  "current_guardrail_version": "g4",
+  "affected": true,
+  "live_pointer": 1,
+  "revision_states": {
+   "1": "Published"
+  },
+  "forked_from": {},
+  "re_verified": [],
+  "event_id": "e025",
+  "event_time": "2026-09-01T10:25:00Z",
+  "producer": "orchestrator",
+  "correlation_id": "rev-1",
+  "causation_id": "e024",
+  "schema_version": "1",
+  "idempotency_key": "LearnersNotified:25"
+ }
+]
