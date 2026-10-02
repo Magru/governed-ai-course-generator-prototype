@@ -57,8 +57,8 @@ behave the way the specification says it should?
 
 | risk | what it means | state |
 |---|---|---|
-| The evidence rests on a recording | every model and guardrail answer comes from `scenarios/cassette.py` | by design: the run is repeatable and needs no account. It also means no live model has been through these gates |
-| No live run yet | the Bedrock Guardrails screener is built and tested against a stand-in; the guardrail is not yet created in the account, and the three `live` tests have not run. Images cannot be screened live: the prototype has no image provider, so a node naming an image is never admitted | open: `make guardrail-create`, then `make live` and `make live-run` |
+| The evidence rests on a recording | every model and guardrail answer in the tests comes from `scenarios/cassette.py` | by design: the run is repeatable and needs no account. The live guardrail gave the recording's answers on every known case (`make live`) |
+| The live run reached one node | three runs of `make live-run` ([`live-run.md`](live-run.md)): the third wrote, screened and checked the first topic; no live run has yet reached publication. Images cannot be screened live: the prototype has no image provider, so a node naming an image is never admitted | open: a full live course needs a person to approve each node |
 | A source's injection attempt is not recorded | none of the five screening points reads a retrieved source | open; inert by position, so the attempt fails, but nothing knows it was tried (`fixtures/evil-twins/07`) |
 | No PII redaction | the invented organisation's sources hold no personal data | open; the step does not exist |
 | A guardrail rollout spends the retry budget | while the service still answers as the version being replaced, each answer is no answer | accepted: the budget ends it and a person releases the course once the rollout lands |
