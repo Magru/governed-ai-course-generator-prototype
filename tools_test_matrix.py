@@ -42,7 +42,7 @@ LAYER = {
     "test_gateway_screened_text": "Guardrail", "test_bedrock_screener": "Guardrail",
     "test_live_guardrail": "Guardrail", "test_prompt_positions": "Prompt architecture",
     "test_injection_surfaces": "Prompt architecture",
-    "test_end_to_end": "End to end", "test_walkthrough": "End to end",
+    "test_end_to_end": "End to end", "test_walkthrough": "End to end", "test_ui_session": "End to end",
     "test_twins_match_the_specification": "Specification", "test_guard_coverage": "Specification",
     "test_isolation": "Repository", "test_leak_scan": "Repository",
 }

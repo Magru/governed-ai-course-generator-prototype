@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Builder</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128737;</text></svg>">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<!-- Icons drawn here once, in the outline style the builder uses. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.9 4.6 11 8l3.4 1.1L11 10.2 9.9 13.6 8.8 10.2 5.4 9.1 8.8 8z"/><path d="M17.5 13.5l.6 1.9 1.9.6-1.9.6-.6 1.9-.6-1.9-1.9-.6 1.9-.6z"/><path d="M17 3.5v3M15.5 5h3"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5V5a2 2 0 0 1 2-2h14v15H6.5A2.5 2.5 0 0 0 4 20.5 2.5 2.5 0 0 0 6.5 23H20v-5"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 3 7.5l9 4.5 9-4.5z"/><path d="m3 12.5 9 4.5 9-4.5"/><path d="m3 17 9 4.5 9-4.5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-quiz" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5 10 17 19 7"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v6c0 4.5-3.1 8.2-7.5 9.5C7.6 20.2 4.5 16.5 4.5 12V6z"/><path d="m8.8 12.3 2.3 2.3 4.1-4.7"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5M6.5 9.6V20h11V9.6"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <div class="wordmark">Meridian Academy</div>
+  <div class="topbar-end">
+    <div class="seg" role="group" aria-label="Where the answers come from">
+      <button type="button" data-mode="recorded" class="on">Recorded</button>
+      <button type="button" data-mode="live">Live · Gemini + Bedrock</button>
+    </div>
+    <span class="divider"></span>
+    <svg class="ico muted-ico"><use href="#i-mail"></use></svg>
+    <span class="avatar" title="author-1 · course author">A1</span>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="sidebar" aria-label="Navigation">
+    <div class="org"><span class="org-dot">M</span><div><b>Meridian Tools</b><span>Training</span></div></div>
+    <div class="group">Content</div>
+    <a class="item"><svg class="ico"><use href="#i-home"></use></svg>Home</a>
+    <a class="item active"><svg class="ico"><use href="#i-pencil"></use></svg>Course builder</a>
+    <a class="item"><svg class="ico"><use href="#i-book"></use></svg>Content library</a>
+    <div class="group">Knowledge</div>
+    <a class="item"><svg class="ico"><use href="#i-db"></use></svg>Knowledge base</a>
+    <a class="item"><svg class="ico"><use href="#i-layers"></use></svg>Skills catalog</a>
+    <div class="group">Administration</div>
+    <a class="item"><svg class="ico"><use href="#i-scale"></use></svg>Policies</a>
+    <a class="item"><svg class="ico"><use href="#i-shield"></use></svg>Guardrail <span class="count" id="side-guard">v1</span></a>
+    <a class="item"><svg class="ico"><use href="#i-users"></use></svg>Users &amp; roles</a>
+  </aside>
+
+  <main class="page">
+    <section class="builder-head">
+      <div class="head-start">
+        <a class="back"><svg class="ico"><use href="#i-back"></use></svg>All courses</a>
+        <div class="title-row">
+          <h1 id="course-title">New course</h1>
+          <span id="status" class="status draft">Draft</span>
+        </div>
+        <div class="save" id="save">revision 1 · AwaitingBrief</div>
+      </div>
+      <div class="head-end">
+        <button type="button" class="btn ghost" id="reset">Start over</button>
+        <button type="button" class="btn outline" data-act="approve-outline">Approve outline</button>
+        <button type="button" class="btn outline" data-act="checks">Send to review</button>
+        <button type="button" class="btn person" data-act="sign">Sign approval</button>
+        <button type="button" class="btn primary" data-act="publish">Publish</button>
+      </div>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab on" data-tab="structure">Structure <span class="chip-count" id="count-nodes">0</span></button>
+      <button type="button" class="tab" data-tab="gateway">Gateway log <span class="chip-count" id="count-stages">0</span></button>
+      <button type="button" class="tab" data-tab="brief">Brief</button>
+    </nav>
+
+    <div class="lifecycle" id="lifecycle" aria-label="Where the revision is"></div>
+
+    <div class="tab-body">
+      <div id="banner" class="banner" hidden>
+        <div class="thinking"><svg class="ico"><use href="#i-sparkles"></use></svg></div>
+        <div class="banner-text"><b class="shimmer" id="banner-title">Writing…</b><span id="banner-sub">the gateway is asking the model, then the guardrail, then the checks</span></div>
+        <div class="eta"><span></span></div>
+      </div>
+
+      <section data-panel="structure" class="panel-structure">
+        <div class="card tree-card">
+          <div class="card-head"><h2>Course structure</h2><span class="muted" id="tree-sub">The model proposes. A person approves.</span></div>
+          <div id="why" class="why" hidden></div>
+          <div id="tree"></div>
+        </div>
+        <aside class="card gov">
+          <div class="card-head"><h2>Governance</h2><span id="ltl" class="pill ok">LTL holds</span></div>
+          <p class="muted small">Every step below was decided outside the model.</p>
+          <div class="gov-section">
+            <div class="acc-head"><svg class="ico c-amber"><use href="#i-scale"></use></svg>Refused by the engines</div>
+            <ul id="engines" class="engines"></ul>
+          </div>
+          <div class="gov-section">
+            <div class="acc-head"><svg class="ico c-sky"><use href="#i-shield"></use></svg>Latest gateway stages</div>
+            <ol id="recent" class="stages compact"></ol>
+          </div>
+          <div class="gov-section">
+            <div class="acc-head"><svg class="ico c-violet"><use href="#i-layers"></use></svg>Trace</div>
+            <div id="events" class="events"></div>
+          </div>
+        </aside>
+      </section>
+
+      <section data-panel="gateway" hidden>
+        <div class="card"><div class="card-head"><h2>The gateway, stage by stage</h2><span class="muted" id="provider"></span></div>
+          <ol id="stages" class="stages"></ol></div>
+      </section>
+
+      <section data-panel="brief" hidden>
+        <div class="card"><div class="card-head"><h2>The brief</h2><span class="muted">what the author submitted</span></div>
+          <pre id="brief" class="code"></pre></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Create with AI: the drawer an author starts from. -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-label="Create a course with AI" hidden>
+  <div class="drawer-head">
+    <span class="ctx">Course builder · new course</span>
+    <h2>Create a course with AI</h2>
+    <div class="stepper"><span class="step on">1</span><span class="step-label">Brief</span><span class="line"></span><span class="step">2</span><span class="step-label">Outline</span></div>
+  </div>
+  <div class="drawer-body">
+    <label class="eyebrow">Choose a brief</label>
+    <div id="presets" class="radios"></div>
+    <label class="eyebrow">What the author asks for</label>
+    <pre id="drawer-brief" class="code tall"></pre>
+    <div class="knows"><b>What the AI already knows</b><span>the organisation's knowledge base, filtered to what this audience may read; the skills catalog; the block types the catalog defines.</span></div>
+  </div>
+  <div class="drawer-foot">
+    <button type="button" class="btn ghost" id="drawer-cancel">Cancel</button>
+    <button type="button" class="btn primary" id="create"><svg class="ico"><use href="#i-sparkles"></use></svg>Create</button>
+  </div>
+</aside>
+
+<!-- A node opened in the lesson editor, for review. -->
+<dialog id="editor">
+  <div class="ed">
+    <nav class="ed-outline"><div class="ed-eyebrow">Blocks</div><div id="ed-outline"></div></nav>
+    <div class="ed-main">
+      <div class="ed-top"><span class="crumb" id="ed-crumb"></span><button type="button" class="btn ghost sm" id="ed-close"><svg class="ico"><use href="#i-x"></use></svg>Close</button></div>
+      <div class="proposal" id="ed-proposal">
+        <svg class="ico"><use href="#i-sparkles"></use></svg>
+        <span><b>AI draft</b> — screened and checked. Review it before approving.</span>
+        <span class="grow"></span>
+        <button type="button" class="btn ghost sm" id="ed-reject"><svg class="ico"><use href="#i-x"></use></svg>Reject</button>
+        <button type="button" class="btn primary sm" id="ed-approve"><svg class="ico"><use href="#i-check"></use></svg>Approve</button>
+      </div>
+      <div class="canvas" id="ed-canvas"></div>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/app.js"></script>
+</body>
+</html>

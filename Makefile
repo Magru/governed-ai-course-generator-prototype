@@ -17,7 +17,7 @@ export BEDROCK_GUARDRAIL_ID BEDROCK_GUARDRAIL_VERSION BEDROCK_MODEL_ID
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.15
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix examples live live-run demo guardrail guardrail-create aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix examples live live-run demo ui guardrail guardrail-create aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -74,6 +74,9 @@ examples:                  ## examples/, regenerated from the runs: the course a
 
 live:                      ## the tests marked live, which need the real provider
 	LIVE=1 $(PY) -m pytest tests -q -m live
+
+ui:                        ## the course on a page, at http://localhost:8800: recorded, or live with Gemini and Bedrock
+	$(PY) ui/server.py
 
 demo:                      ## record demo/demo.mp4 from demo/demo.tape (needs vhs: brew install vhs)
 	@command -v vhs >/dev/null || { echo "vhs is missing: brew install vhs"; exit 1; }

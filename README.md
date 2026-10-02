@@ -44,6 +44,7 @@ Everything belongs to an invented organisation under `fixtures/`.
 | `make refusals` | the five refusals, each from the engine that owns it, each with its artifact: an unsat core, a named policy rule, a leak path, a proof tree, a violated formula |
 | `make walkthrough` | the specification's `walkthrough.html`, step by step, reproduced by the machine |
 | `make cascade` | what one edit costs at course scale — in re-checks, compute, and hours of human review — and a proof that the cascade settles |
+| `make ui` | the same course in a course builder at http://localhost:8800: an author creates it with AI, reviews each lesson and approves it, and the governance panel shows every gateway stage and every refusal with its artifact. **Recorded** needs nothing; **Live** asks Gemini and Bedrock |
 | `make test-matrix` | regenerates [`docs/test-matrix.md`](docs/test-matrix.md) from a test run |
 | `make examples` | regenerates [`examples/`](examples/): the course and the five refusals, each with what went in and what came back |
 
@@ -76,6 +77,7 @@ join them.
 | `gateway/` | the membrane, the eleven-stage pipeline, and what the guardrail is shown |
 | `gateway/provider/` | the ports: a generator and a screener; the recorded adapters, a Gemini generator, a Bedrock Guardrails screener, and the one module that builds an AWS client |
 | `scenarios/` | the runs behind the `make` targets above |
+| `ui/` | `make ui`: a page over the real machine and gateway, for showing the system to people rather than terminals |
 | `fixtures/` | an invented organisation; `namespace.yaml` is the only vocabulary allowed |
 | `fixtures/evil-twins/` | seven inputs, one per way the architecture must refuse |
 | `tests/` | every test, listed with what it expects in [`docs/test-matrix.md`](docs/test-matrix.md) |
