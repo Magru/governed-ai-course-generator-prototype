@@ -10,7 +10,7 @@
   const BAD = new Set(["OutlineRepair", "ErrorRecovery", "BlockedRecoverable", "BlockedFinal", "StaleReview", "Withdrawn"]);
   const PERSON = new Set(["OutlineReview", "PendingApproval"]);
   const COURSE_ACTS = { "approve-outline": "OutlineReview", "checks": "ReadyForReview", "sign": "PendingApproval",
-    "publish": "Approved" };
+    "publish": "Approved", "release": "BlockedRecoverable" };
   const NODE_PILL = {
     Planned: ["", "Planned"], ContentDrafting: ["work", "Drafting"], Generated: ["work", "Drafting"],
     OutputGuardrail: ["work", "Screening"], NodeChecks: ["work", "Checking"], Validated: ["review", "Awaiting review"],
@@ -22,7 +22,7 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const icon = (id, cls = "ico") => { const ns = "http://www.w3.org/2000/svg"; const s = document.createElementNS(ns, "svg"); s.setAttribute("class", cls); const u = document.createElementNS(ns, "use"); u.setAttribute("href", `#i-${id}`); s.append(u); return s; };
   const words = s => (s || "").replace(/[-_]/g, " ").replace(/^./, c => c.toUpperCase());
-  let state = null, presets = {}, chosen = "course", seenStages = 0, busy = false;
+  let state = null, presets = {}, chosen = "course", seenStages = 0;
 
   async function api(path, body) {
     const r = await fetch(`/api/${path}`, body === undefined ? {} :
@@ -36,7 +36,6 @@
   }
 
   function working(on, title) {
-    busy = on;
     $("#banner").hidden = !on;
     if (title) $("#banner-title").textContent = title;
     $("#banner-sub").textContent = state?.mode === "live"
@@ -166,7 +165,10 @@
   }
 
   function draw(s) { state = s; drawHead(s); drawLifecycle(s); drawTree(s); drawGovernance(s); }
-  async function refresh() { draw(await api("state")); }
+  async function refresh() {
+    try { draw(await api("state")); }
+    catch (e) { toast(`The page lost the server: ${e.message}. Is make ui still running?`, true); }
+  }
 
   // ── create with AI ──────────────────────────────────────────────────
   function drawPresets() {
@@ -227,16 +229,27 @@
 
   // ── wiring ──────────────────────────────────────────────────────────
   document.querySelectorAll("[data-act]").forEach(b => b.addEventListener("click", () => act(b.dataset.act, {},
-    { "approve-outline": "Committing the outline…", checks: "Running the whole-course checks…", sign: "Checking the approval chain…", publish: "Publishing…" }[b.dataset.act])));
-  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", async () => {
-    const out = await api("reset", { mode: b.dataset.mode, preset: state.preset }); if (!out.ok) toast(out.error, true);
-    seenStages = 0; await refresh();
+    { "approve-outline": "Committing the outline…", checks: "Running the whole-course checks…", sign: "Checking the approval chain…",
+      publish: "Publishing…", release: "Releasing the course…" }[b.dataset.act])));
+
+  // Starting over discards the course on screen, so it asks first once there is one.
+  async function startOver(mode) {
+    if (state.revision.state !== "AwaitingBrief" && !confirm("Start over? The course on screen is discarded.")) return;
+    working(true, "Starting over…");
+    try {
+      const out = await api("reset", { mode, preset: state.preset });
+      if (!out.ok) toast(out.error, true);
+      seenStages = 0;
+    } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
+  }
+  document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.mode !== state.mode) startOver(b.dataset.mode);
   }));
   document.querySelectorAll("[data-tab]").forEach(t => t.addEventListener("click", () => {
     document.querySelectorAll("[data-tab]").forEach(x => x.classList.toggle("on", x === t));
     document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== t.dataset.tab; });
   }));
-  $("#reset").addEventListener("click", async () => { await api("reset", { mode: state.mode, preset: state.preset }); seenStages = 0; await refresh(); });
+  $("#reset").addEventListener("click", () => startOver(state.mode));
   $("#drawer-cancel").addEventListener("click", closeDrawer);
   $("#scrim").addEventListener("click", closeDrawer);
   $("#create").addEventListener("click", create);

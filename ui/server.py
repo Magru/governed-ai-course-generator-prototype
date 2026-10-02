@@ -27,7 +27,7 @@ STATE = {"session": Session()}
 ACTIONS = {"submit": ("submit", ["brief"]), "approve-outline": ("approve_outline", []),
            "generate": ("generate", ["node"]), "approve": ("approve", ["node"]),
            "reject": ("reject", ["node", "reason"]), "checks": ("course_checks", []),
-           "sign": ("sign", []), "publish": ("publish", [])}
+           "sign": ("sign", []), "publish": ("publish", []), "release": ("release", [])}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -55,12 +55,27 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({k: {"title": v[0], "brief": v[1]} for k, v in PRESETS.items()})
         self._send(404, b"{}")
 
+    def _ours(self) -> bool:
+        """Only this page may press the buttons. Another page open in the same
+        browser could otherwise post here — a plain-text POST needs no
+        preflight — and reset the demo, or switch it to live and spend calls."""
+        port = self.server.server_address[1]
+        local = {f"localhost:{port}", f"127.0.0.1:{port}"}
+        origin = self.headers.get("Origin")
+        return (self.headers.get("Host") in local
+                and (origin is None or origin.removeprefix("http://") in local)
+                and (self.headers.get("Content-Type") or "").startswith("application/json"))
+
     def do_POST(self):
-        length = int(self.headers.get("Content-Length") or 0)
+        if not self._ours():
+            return self._json({"ok": False, "error": "only this page may call this server"}, 403)
         try:
+            length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
             return self._json({"ok": False, "error": "the request is not JSON"}, 400)
+        if not isinstance(body, dict):
+            return self._json({"ok": False, "error": "the request must be a JSON object"}, 400)
         name = self.path.removeprefix("/api/")
         with LOCK:
             if name == "reset":

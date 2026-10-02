@@ -82,7 +82,10 @@ def client(service: str):
     account we expected. Fixing the signature version at construction closes it.
     """
     from botocore.config import Config
-    return session().client(service, config=Config(signature_version="v4"))
+    # Bounded, so a service that does not answer becomes the Timeout row's
+    # business in seconds rather than botocore's default minute and retries.
+    return session().client(service, config=Config(signature_version="v4", connect_timeout=5, read_timeout=20,
+                                                   retries={"max_attempts": 2, "mode": "standard"}))
 
 
 class BedrockGenerator(Generator):

@@ -39,9 +39,25 @@ PRESETS = {
 }
 
 
+def _revised(node: str) -> dict:
+    """What the recorded model writes after a person rejects a lesson: the same
+    lesson, told it was revised, so a Reject on the page is followed by a new
+    draft rather than by a recording that has run out."""
+    content = copy.deepcopy(w.CONTENT[node])
+    first = content["blocks"][0]
+    key = "question" if "question" in first else "text"
+    first[key] = f"{first[key]} (revised after review)"
+    return content
+
+
 def _recorded(preset: str):
     if preset == "course":
-        return cassette.course_generator(), cassette.course_screener()
+        generator, screener = cassette.course_generator(), cassette.course_screener()
+        for node in (w.T1, w.T2, w.T3, w.E1):
+            generator.answers[f"node:{node}"].append(_revised(node))
+            screener.verdicts.setdefault(("node-out", node), []).append("allow")
+        screener.verdicts.setdefault(("image-out", f"{w.T1}.blocks[1]"), []).append("allow")
+        return generator, screener
     # The refusal presets never reach a model: the brief is refused first.
     return RecordedGenerator({}), RecordedScreener({("brief-in", "brief"): [PRESETS[preset][2]]})
 
@@ -56,6 +72,9 @@ class Session:
     def __init__(self, mode: str = "recorded", preset: str = "course"):
         self.mode, self.preset = mode, preset
         generator, screener = _live() if mode == "live" else _recorded(preset)
+        if mode == "live" and not screener.version:
+            raise RuntimeError("live mode needs BEDROCK_GUARDRAIL_ID and BEDROCK_GUARDRAIL_VERSION in .env "
+                               "(make guardrail-create writes them)")
         self.p = run.pipeline(generator=generator, screener=screener)
         if mode == "live":
             # The guardrail in force is the one deployed, by its published version.
@@ -91,6 +110,10 @@ class Session:
 
     def reject(self, node: str, reason: str) -> None:
         self.p.machine.fire("NodeRejected", {"node": node, "reason": reason, "actor": run.AUTHOR["id"]})
+
+    def release(self) -> None:
+        """A person has looked at what blocked the course and lets it go on."""
+        self.p.machine.fire("BlockedInputFixed", {"actor": run.AUTHOR["id"]})
 
     def course_checks(self) -> None:
         self.p.machine.fire("CourseChecksRequested")

@@ -53,7 +53,10 @@ class GeminiGenerator(Generator):
 
     def __init__(self) -> None:
         from google import genai
-        self._client = genai.Client(api_key=_key())
+        from google.genai import types
+        # A call that hangs holds the course; a minute is long enough for a
+        # node and short enough that the table's Timeout row takes over.
+        self._client = genai.Client(api_key=_key(), http_options=types.HttpOptions(timeout=60_000))
 
     def generate(self, prompt: Prompt, schema: dict) -> Generated:
         """The three positions are handed to the API in the places it keeps
