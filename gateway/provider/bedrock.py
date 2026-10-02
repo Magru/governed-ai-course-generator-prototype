@@ -90,7 +90,7 @@ class BedrockGenerator(Generator):
         self._model = _required("BEDROCK_MODEL_ID")
 
     def generate(self, prompt: Prompt, schema: dict) -> Generated:
-        raise NotImplementedError("generation lands with the gateway, phase 03")
+        raise NotImplementedError("Bedrock generation is not built; development generates with Gemini")
 
 
 class BedrockScreener(Screener):
@@ -107,4 +107,4 @@ class BedrockScreener(Screener):
                 "no guardrail is configured. A deployment error rather than a "
                 "runtime one — but still not a reason to proceed, because the "
                 "absence of a verdict is not a permissive verdict.")
-        raise NotImplementedError("screening lands with the gateway, phase 03")
+        raise NotImplementedError("Bedrock screening is not built; the recorded screener stands in")

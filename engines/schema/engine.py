@@ -44,7 +44,8 @@ def _expected(error) -> str:
     return error.validator or "a different shape"
 
 
-def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None = None) -> Verdict:
+def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None = None,
+                 stray: list[str] = ()) -> Verdict:
     """Does every content block in this node have a shape the catalog defines?
 
     A separate guard from `schema_valid`, with a separate owner: the catalog
@@ -52,7 +53,16 @@ def check_blocks(node: dict, block_types: list[str], block_schemas: dict | None 
     organisation publishes rather than one written here. Kept apart because the
     glossary keeps them apart, and a package that answers a question the guard
     registry does not list is a map with a road missing from it.
+
+    The node is closed the way its blocks are: `stray` names the fields its
+    content carried that no check reads, and each is refused by its path.
     """
+    if stray:
+        failures = [{"path": f"{node.get('id')}.{key}", "expected": "a field the node schema defines",
+                     "found": key} for key in stray]
+        return refused(kind="failing-path",
+                       summary=f"{failures[0]['path']}: expected {failures[0]['expected']}",
+                       detail=failures, engine=ENGINE)
     blocks = node.get("blocks")
     if not isinstance(blocks, list) or not blocks:
         # A node with no blocks has no shape to be wrong about, so the loop

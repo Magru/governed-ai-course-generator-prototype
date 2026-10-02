@@ -40,6 +40,16 @@ class Context:
 
 #: Fields only the committed outline may set.
 OUTLINE_OWNED = {"type", "skill", "topics", "requires"}
+#: What a node's generated content may carry: its blocks, their citations, and
+#: the numbers the arithmetic check reads. Anything else is a field no check
+#: reads and no renderer names, riding along to the approver and to learners.
+CONTENT_FIELDS = {"blocks", "cites", "minutes", "points_total", "questions"}
+
+
+def stray_fields(node) -> list[str]:
+    """Fields of a node's content that are neither its own nor the outline's."""
+    content = node.content if isinstance(node.content, dict) else {}
+    return sorted(str(k) for k in content if k not in CONTENT_FIELDS | OUTLINE_OWNED)
 
 
 def engine_node(node) -> dict:
@@ -119,11 +129,14 @@ def _coverage(lit: Literal, ctx: Context) -> Verdict:
 
 def _every_node(ctx: Context, check) -> Verdict:
     """A node guard asked of a whole revision — re-verification after a catalog
-    change — holds when it holds for every node, and refuses with the first."""
+    change — holds when it holds for every node, and refuses with the first.
+    The check gets the node as engines take it and the fields its content
+    carried beyond that, which the merged view can no longer tell apart."""
     if ctx.node is not None:
-        return check(engine_node(ctx.node))
-    verdicts = [check(node) for node in course_nodes(ctx.rev)]
-    return next((v for v in verdicts if not v.ok), verdicts[0] if verdicts else check({"blocks": None}))
+        return check(engine_node(ctx.node), stray_fields(ctx.node))
+    verdicts = [check(engine_node(n), stray_fields(n))
+                for n in ctx.rev.nodes.values() if n.state != "Removed"]
+    return next((v for v in verdicts if not v.ok), verdicts[0] if verdicts else check({"blocks": None}, []))
 
 
 ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
@@ -149,8 +162,8 @@ ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
     "trace_satisfies_ltl(course)": lambda lit, ctx: IMPLEMENTED["trace_satisfies_ltl(course)"](
         ctx.machine.trace()),
     "block_schemas_valid(node)": lambda lit, ctx: _every_node(
-        ctx, lambda node: IMPLEMENTED["block_schemas_valid(node)"](
-            node, ctx.world.block_types, ctx.world.block_schemas)),
+        ctx, lambda node, stray: IMPLEMENTED["block_schemas_valid(node)"](
+            node, ctx.world.block_types, ctx.world.block_schemas, stray=stray)),
     "arithmetic_consistent(node)": lambda lit, ctx: IMPLEMENTED["arithmetic_consistent(node)"](
         engine_node(ctx.node), ctx.world.thresholds),
     "approval_chain_satisfied(revision)": lambda lit, ctx: IMPLEMENTED["approval_chain_satisfied(revision)"](

@@ -129,3 +129,12 @@ def test_a_node_may_not_be_named_after_an_artifact_the_record_screens(name):
     outline = _copy.deepcopy(w.OUTLINE)
     outline["nodes"][0]["id"] = name
     assert not engine.check(outline, "outline").ok
+
+
+def test_a_node_carries_only_the_fields_its_content_is_read_for():
+    from machine.world import load
+    world = load()
+    node = {"id": "n", "blocks": [{"type": "heading", "text": "x"}]}
+    v = engine.check_blocks(node, world.block_types, world.block_schemas, stray=["action"])
+    assert not v.ok and v.refusal.detail[0]["path"] == "n.action"
+    assert engine.check_blocks(node, world.block_types, world.block_schemas).ok

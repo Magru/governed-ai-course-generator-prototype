@@ -53,15 +53,13 @@ ORDER = ["State machine", "OPA", "Z3", "Datalog", "Prolog", "Temporal logic", "J
 # discharge the promise, or says why nothing does.
 PROMISED = [
     ("test_author_param_widening_refused", "refused at gate, model not called",
-     ["test_engine_opa::test_an_audience_they_were_not_granted_is_refused_by_name",
-      "test_machine_runs::test_an_audience_the_author_was_not_granted_ends_the_revision",
-      "test_gateway_membrane::test_the_policy_is_asked_before_the_state_is"], ""),
+     ["test_injection_surfaces::test_an_audience_beyond_the_authors_grant_is_refused_before_any_model_is_called",
+      "test_engine_opa::test_an_audience_they_were_not_granted_is_refused_by_name"], ""),
     ("test_author_text_cannot_skip_a_check", "generation proceeds, every layer still runs",
      ["test_injection_surfaces::test_an_authors_sentence_asking_to_skip_the_checks_switches_none_of_them_off"], ""),
     ("test_source_instruction_is_inert", "content generated normally",
-     ["test_end_to_end::test_each_twin_stops_where_the_specification_says",
-      "test_prompt_positions::test_a_prompt_carries_its_positions_separately",
-      "test_prompt_positions::test_a_prompt_cannot_be_flattened_by_accident"], ""),
+     ["test_injection_surfaces::test_an_instruction_in_a_source_reaches_the_model_only_as_a_source_and_generation_goes_on"],
+     ""),
     ("test_source_instruction_is_recorded", "admission screen fires, trace entry", [],
      "gap: none of the five screening points reads a retrieved source, so the attempt "
      "is inert but not recorded (fixtures/evil-twins/07)"),
@@ -70,22 +68,26 @@ PROMISED = [
      "partial: the catalog is a reviewed, versioned fixture and block schemas are closed; "
      "there is no import path, so no refusal of one to test"),
     ("test_output_cannot_request_an_action", "model output naming an action does not cause one",
-     ["test_injection_surfaces::test_a_model_answer_that_names_an_action_causes_none",
+     ["test_injection_surfaces::test_a_model_answer_that_names_an_action_causes_none_and_its_extra_field_is_refused",
       "test_gateway_membrane::test_an_action_the_registry_gives_a_person_is_refused_to_the_system"], ""),
     ("test_pii_redacted_before_admission", "redaction precedes context entry", [],
      "gap: the invented organisation's sources carry no personal data, and no redaction step exists"),
     ("test_secret_never_enters_prompt", "credential never assembled in",
-     ["test_injection_surfaces::test_no_credential_reaches_any_position_of_any_prompt_or_screening",
-      "test_isolation::test_only_one_module_imports_the_aws_sdk"], ""),
+     ["test_injection_surfaces::test_no_credential_reaches_what_the_live_adapter_sends_or_what_is_screened"],
+     "the Gemini adapter, holding a key, against a stand-in for its API; the Bedrock adapters are not built"),
 ]
+
+
+RANK = {"passed": 0, "xpassed": 1, "xfailed": 1, "skipped": 1, "failed": 2, "error": 2}
 
 
 class Collector:
     def __init__(self):
         self.items, self.outcomes, self.live = {}, {}, []
 
-    def pytest_collection_modifyitems(self, items):
-        for item in items:
+    def pytest_collection_finish(self, session):
+        # After deselection: a test `-m` left out is not a row of this run.
+        for item in session.items:
             path, line, _ = item.location
             self.items[item.nodeid] = (pathlib.Path(path).stem, item.originalname, path, line + 1)
 
@@ -93,8 +95,19 @@ class Collector:
         self.live += [(pathlib.Path(i.location[0]).stem, i.originalname) for i in items]
 
     def pytest_runtest_logreport(self, report):
-        if report.when == "call" or report.outcome != "passed":
-            self.outcomes.setdefault(report.nodeid, report.outcome)
+        # The worst of setup, call and teardown: a teardown that errors after a
+        # passing call is not a pass.
+        if report.failed:
+            outcome = "failed" if report.when == "call" else "error"
+        elif report.skipped:
+            outcome = "xfailed" if hasattr(report, "wasxfail") else "skipped"
+        elif report.when == "call":
+            outcome = "xpassed" if hasattr(report, "wasxfail") else "passed"
+        else:
+            return
+        held = self.outcomes.get(report.nodeid)
+        if held is None or RANK[outcome] > RANK[held]:
+            self.outcomes[report.nodeid] = outcome
 
 
 def _intro(path: pathlib.Path) -> str:
@@ -106,7 +119,7 @@ def _sentence(name: str) -> str:
     return name.removeprefix("test_").replace("_", " ")
 
 
-def render(c: Collector) -> tuple[str, bool]:
+def render(c: Collector) -> str:
     functions = defaultdict(Counter)
     where = {}
     for nodeid, (module, name, path, line) in c.items.items():
@@ -159,14 +172,13 @@ def render(c: Collector) -> tuple[str, bool]:
             for key in sorted((k for k in functions if k[0] == module), key=lambda k: where[k][1]):
                 lines.append(f"| {ref(key)} | {_sentence(key[1])} | {fact(key)} |")
             lines.append("")
-    failed = any(o != "passed" for o in c.outcomes.values())
-    return "\n".join(lines).rstrip() + "\n", failed
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def main(argv: list[str]) -> int:
     c = Collector()
     code = pytest.main(["tests", "-q", "-m", "not live", "-p", "no:cacheprovider"], plugins=[c])
-    text, failed = render(c)
+    text = render(c)
     if "--check" in argv:
         if not OUT.exists() or OUT.read_text(encoding="utf-8") != text:
             print(f"{OUT.relative_to(ROOT)} is stale: run make test-matrix and commit it")
@@ -176,7 +188,7 @@ def main(argv: list[str]) -> int:
         OUT.parent.mkdir(exist_ok=True)
         OUT.write_text(text, encoding="utf-8")
         print(f"wrote {OUT.relative_to(ROOT)}")
-    return 1 if failed or code != 0 else 0
+    return 0 if code == 0 else 1
 
 
 if __name__ == "__main__":

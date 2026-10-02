@@ -30,7 +30,7 @@ Then:
 ```bash
 make setup     # a virtualenv and the Python dependencies; the one step that needs the network
 make test      # every test; no AWS account, no API key, no network
-make run       # one course through the gateway, brief to rollback, then the seven refusals
+make run       # one course through the gateway, brief to rollback, then the seven refusal fixtures
 ```
 
 Nothing above reaches outward. The model and the guardrail are replaced by
@@ -55,7 +55,7 @@ author ──► membrane ──────────────────
            under the rate limit?                (Z3 · Datalog · Prolog · JSON Schema)
                 │
                 ├──► Generator port   (recorded · Gemini)            the model writes
-                └──► Screener port    (recorded · Bedrock Guardrails) the guardrail reads
+                └──► Screener port    (recorded · Bedrock, not built)  the guardrail reads
 ```
 
 The membrane runs before anything is paid for: an action that is not registered,
@@ -73,11 +73,11 @@ join them.
 | `machine/` | the state machine: built from the transition table, guards answered by the engines, every step written to the trace |
 | `engines/` | the six layers that can refuse — `opa/`, `z3/`, `datalog/`, `prolog/`, `schema/`, `temporal/` — behind one contract |
 | `gateway/` | the membrane, the eleven-stage pipeline, and what the guardrail is shown |
-| `gateway/provider/` | the ports: a generator and a screener; recorded, Gemini and Bedrock adapters; the one module that builds an AWS client |
+| `gateway/provider/` | the ports: a generator and a screener; the recorded adapters, a Gemini generator, Bedrock stubs, and the one module that builds an AWS client |
 | `scenarios/` | the runs behind the `make` targets above |
 | `fixtures/` | an invented organisation; `namespace.yaml` is the only vocabulary allowed |
 | `fixtures/evil-twins/` | seven inputs, one per way the architecture must refuse |
-| `tests/` | 395 tests, listed with what each expects in [`docs/test-matrix.md`](docs/test-matrix.md) |
+| `tests/` | every test, listed with what it expects in [`docs/test-matrix.md`](docs/test-matrix.md) |
 
 ## What the evidence is
 
@@ -94,9 +94,12 @@ join them.
 
 ## The live provider
 
-The adapters for Gemini (generation) and Amazon Bedrock Guardrails (screening)
-are written and sit behind the same ports as the recordings. They are reached
-only through separate targets, so a live call cannot happen by accident:
+Not yet run. The Gemini generator is written and sits behind the same port as
+the recording; a test drives it, holding a key, against a stand-in for Google's
+API. The Bedrock generator and the Bedrock Guardrails screener are stubs that
+refuse to run, so the screening a live run needs does not exist yet. What does
+exist is the fence around the account those adapters will use, reached only
+through separate targets so a live call cannot happen by accident:
 
 ```bash
 make whoami                             # which AWS account a live run would use
@@ -104,8 +107,8 @@ make aws ARGS="bedrock list-guardrails" # the only sanctioned way to run the CLI
 make model-verify-remote                # also re-fetch the tag, to see if it has moved
 ```
 
-`make live` runs the tests marked `live`; none are written yet, and the
-recorded run is what this repository's evidence rests on.
+`make live` runs the tests marked `live`; none are written yet. The recorded
+run is what this repository's evidence rests on.
 
 ## Two guarantees this repository keeps about itself
 
