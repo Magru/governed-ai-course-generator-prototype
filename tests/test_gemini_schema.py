@@ -60,7 +60,30 @@ def test_the_model_is_told_the_catalogs_skills_and_blocks_and_held_to_them():
     assert schema["properties"]["nodes"]["items"]["properties"]["skill"]["enum"] == world.skills
     rules, schema = node_request(world, "mt-node-201")
     assert rules.split("\n", 1)[0] == "node:mt-node-201" and "quiz (question, options, answer, points)" in rules
-    assert schema["properties"]["blocks"]["items"]["properties"]["type"]["enum"] == world.block_types
+    shapes = schema["properties"]["blocks"]["items"]["anyOf"]
+    assert [s["properties"]["type"]["enum"] for s in shapes] == [[kind] for kind in world.block_types]
+    assert "minutes" in schema["required"]
+
+
+def test_each_block_shape_offers_exactly_what_its_catalog_row_allows():
+    from engines.schema.engine import closed
+    from gateway.asking import node_request
+    from machine.world import load
+    world = load()
+    _, schema = node_request(world, "n")
+    for shape in schema["properties"]["blocks"]["items"]["anyOf"]:
+        kind = shape["properties"]["type"]["enum"][0]
+        assert set(shape["properties"]) == set(closed(world.block_schemas[kind])["properties"]), kind
+
+
+def test_the_sdk_accepts_the_shape_a_node_is_asked_for():
+    from google.genai import _transformers
+    from gateway.asking import node_request, outline_request
+    from gateway.provider.gemini import for_gemini
+    from machine.world import load
+    world = load()
+    for _, schema in (outline_request(world), node_request(world, "n")):
+        assert _transformers.t_schema(None, for_gemini(schema)) is not None
 
 
 class _Unreadable:

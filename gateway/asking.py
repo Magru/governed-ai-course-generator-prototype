@@ -55,8 +55,24 @@ def outline_request(world) -> tuple[str, dict]:
 def node_request(world, node_id: str) -> tuple[str, dict]:
     carries = "; ".join(f"{kind} ({', '.join(world.block_schemas[kind].get('required') or [])})"
                         for kind in world.block_types)
-    rules = f"{NODE_RULES.format(node=node_id)}\nBlock types, and what each must carry: {carries}."
+    limit = world.thresholds.get("max_minutes_per_lesson")
+    rules = (f"{NODE_RULES.format(node=node_id)}\nBlock types, and what each must carry, and nothing "
+             f"else: {carries}.\nState the node's minutes{f', at most {limit}' if limit else ''}. "
+             f"An exam is made of quiz blocks, and its points_total is the sum of their points.")
     schema = copy.deepcopy(NODE_SCHEMA)
-    schema["properties"]["blocks"]["items"]["properties"]["type"] = {"type": "string",
-                                                                    "enum": list(world.block_types)}
+    schema["required"] = [*schema["required"], "minutes"]
+    if limit:
+        schema["properties"]["minutes"]["maximum"] = limit
+    # One shape per block type, each exactly the catalog's row: a block offered
+    # every field of every type fills fields its own type refuses.
+    schema["properties"]["blocks"]["items"] = {"anyOf": [_block(world, kind) for kind in world.block_types]}
     return rules, schema
+
+
+def _block(world, kind: str) -> dict:
+    row = world.block_schemas[kind]
+    return {"type": "object", "required": ["type", *(row.get("required") or [])],
+            "properties": {"type": {"type": "string", "enum": [kind]},
+                           **{name: BLOCK_FIELDS.get(name, sub)
+                              for name, sub in (row.get("properties") or {}).items()},
+                           "cites": BLOCK_FIELDS["cites"]}}

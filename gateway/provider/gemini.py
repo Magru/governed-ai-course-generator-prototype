@@ -71,6 +71,8 @@ class GeminiGenerator(Generator):
                     system_instruction=prompt.instructions,
                     response_mime_type="application/json",
                     response_schema=for_gemini(schema),
+                    # Generation only; nothing here may become a call.
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
                 ),
             )
         except ValueError as exc:
