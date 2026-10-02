@@ -35,7 +35,9 @@ class GuardrailUnavailable(RuntimeError):
 
 
 Modality = Literal["text", "image"]
-Point = Literal["brief-in", "outline-out", "node-out", "image-prompt-out", "image-out", "notice-out"]
+# "revision" is the whole revision, screened again when the guardrail changes under it.
+Point = Literal["brief-in", "outline-out", "node-out", "image-prompt-out", "image-out", "notice-out",
+                "revision"]
 
 
 @dataclass(frozen=True)

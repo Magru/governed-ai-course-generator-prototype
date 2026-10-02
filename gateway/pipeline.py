@@ -31,10 +31,23 @@ OUTLINE_RULES = ("outline\nPropose modules as topics and exams: titles and learn
                  "only. Every skill must be one the catalog lists. Return the outline schema.")
 NODE_RULES = ("node:{node}\nWrite this node from the sources only. Cite every claim by chunk "
               "id; cite nothing you were not given. Blocks must be catalog block types.")
+# What the model is asked to return. The catalog's block schemas judge each
+# block afterwards; this only has to name every field a block may carry, since a
+# provider that is told nothing about an array's items may refuse to fill it.
+BLOCK_FIELDS = {"type": {"type": "string"}, "text": {"type": "string"},
+                "cites": {"type": "array", "items": {"type": "string"}},
+                "src": {"type": "string"}, "alt": {"type": "string"}, "caption": {"type": "string"},
+                "items": {"type": "array", "items": {"type": "string"}},
+                "question": {"type": "string"},
+                "options": {"type": "array", "items": {"type": "string"}},
+                "answer": {"type": "integer"}, "points": {"type": "integer"}}
 NODE_SCHEMA = {"type": "object", "required": ["blocks", "cites"],
-               "properties": {"blocks": {"type": "array"},
+               "properties": {"blocks": {"type": "array", "items": {"type": "object", "required": ["type"],
+                                                                    "properties": BLOCK_FIELDS}},
                               "cites": {"type": "array", "items": {"type": "string"}},
-                              "minutes": {"type": "integer"}, "points_total": {"type": "integer"}}}
+                              "minutes": {"type": "integer"}, "points_total": {"type": "integer"},
+                              "questions": {"type": "array", "items": {
+                                  "type": "object", "properties": {"points": {"type": "integer"}}}}}}
 
 
 def digest(prompt: Prompt) -> str:

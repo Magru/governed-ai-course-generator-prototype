@@ -11,11 +11,13 @@ export AWS_EC2_METADATA_DISABLED   ?= true
 # account number. Put it in .env, which is not tracked.
 -include .env
 export BEDROCK_ACCOUNT_ID
+# Written to .env by make guardrail-create; read by the screener, not by make.
+export BEDROCK_GUARDRAIL_ID BEDROCK_GUARDRAIL_VERSION BEDROCK_MODEL_ID
 
 PY := .venv/bin/python
 SPEC_TAG ?= spec-v2.15
 
-.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix examples live aws whoami clean
+.PHONY: setup model-sync model-verify model-verify-remote leak-scan fixtures engines-smoke refusals run walkthrough cascade test test-matrix examples live live-run demo guardrail guardrail-create aws whoami clean
 
 setup:                     ## venv, dependencies, and the tools that are not pip
 	python3 -m venv .venv
@@ -72,6 +74,21 @@ examples:                  ## examples/, regenerated from the runs: the course a
 
 live:                      ## the tests marked live, which need the real provider
 	LIVE=1 $(PY) -m pytest tests -q -m live
+
+demo:                      ## record demo/demo.mp4 from demo/demo.tape (needs vhs: brew install vhs)
+	@command -v vhs >/dev/null || { echo "vhs is missing: brew install vhs"; exit 1; }
+	vhs demo/demo.tape
+
+live-run:                  ## Gemini writes, Bedrock screens: three known answers, then brief to first node
+	@$(MAKE) --no-print-directory whoami
+	$(PY) scenarios/live.py
+
+guardrail:                 ## print the CreateGuardrail request built from fixtures/guardrail-policy.yaml
+	$(PY) tools_guardrail.py
+
+guardrail-create:          ## create that guardrail in the prototype's account and publish version 1
+	@$(MAKE) --no-print-directory whoami
+	$(PY) tools_guardrail.py --create
 
 aws:                       ## the only sanctioned way to run the CLI: make aws ARGS="bedrock list-guardrails"
 	@test -n "$(ARGS)" || { echo 'usage: make aws ARGS="bedrock list-guardrails"'; exit 1; }

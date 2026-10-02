@@ -56,7 +56,7 @@ author ──► membrane ──────────────────
            under the rate limit?                (Z3 · Datalog · Prolog · JSON Schema)
                 │
                 ├──► Generator port   (recorded · Gemini)            the model writes
-                └──► Screener port    (recorded · Bedrock, not built)  the guardrail reads
+                └──► Screener port    (recorded · Bedrock Guardrails) the guardrail reads
 ```
 
 The membrane runs before anything is paid for: an action that is not registered,
@@ -74,7 +74,7 @@ join them.
 | `machine/` | the state machine: built from the transition table, guards answered by the engines, every step written to the trace |
 | `engines/` | the six layers that can refuse — `opa/`, `z3/`, `datalog/`, `prolog/`, `schema/`, `temporal/` — behind one contract |
 | `gateway/` | the membrane, the eleven-stage pipeline, and what the guardrail is shown |
-| `gateway/provider/` | the ports: a generator and a screener; the recorded adapters, a Gemini generator, Bedrock stubs, and the one module that builds an AWS client |
+| `gateway/provider/` | the ports: a generator and a screener; the recorded adapters, a Gemini generator, a Bedrock Guardrails screener, and the one module that builds an AWS client |
 | `scenarios/` | the runs behind the `make` targets above |
 | `fixtures/` | an invented organisation; `namespace.yaml` is the only vocabulary allowed |
 | `fixtures/evil-twins/` | seven inputs, one per way the architecture must refuse |
@@ -101,21 +101,29 @@ join them.
 
 ## The live provider
 
-Not yet run. The Gemini generator is written and sits behind the same port as
-the recording; a test drives it, holding a key, against a stand-in for Google's
-API. The Bedrock generator and the Bedrock Guardrails screener are stubs that
-refuse to run, so the screening a live run needs does not exist yet. What does
-exist is the fence around the account those adapters will use, reached only
-through separate targets so a live call cannot happen by accident:
+Not yet run. Gemini generates and Amazon Bedrock Guardrails screens, behind the
+same two ports as the recordings. Both adapters are written and tested against
+stand-ins for their services; the Bedrock generator is not built, because
+development generates with Gemini. The guardrail itself is built from the
+compliance officer's policy in `fixtures/guardrail-policy.yaml`, not clicked
+together in a console, and every target below checks which AWS account it is in
+before it sends anything:
 
 ```bash
-make whoami                             # which AWS account a live run would use
-make aws ARGS="bedrock list-guardrails" # the only sanctioned way to run the CLI
-make model-verify-remote                # also re-fetch the tag, to see if it has moved
+make whoami             # which AWS account a live run would use
+make guardrail          # print the CreateGuardrail request; nothing is sent
+make guardrail-create   # create it and publish version 1; prints two lines for .env
+make live               # the tests marked live: the guardrail gives the answers the recording assumes
+make live-run           # three known answers, then the course from brief to first node, live
+make aws ARGS="bedrock list-guardrails"   # the only sanctioned way to run the CLI
 ```
 
-`make live` runs the tests marked `live`; none are written yet. The recorded
-run is what this repository's evidence rests on.
+A published version is required: a `DRAFT` guardrail can change after a verdict
+has been recorded as screened by it, so the screener refuses one. An image is
+screened by its bytes, by the guardrail's content filters, and only from
+`assets/`. The prototype has no image provider, so a block naming an image that
+is not there cannot be screened: it is never admitted, and the node goes to
+recovery until the course stops for a person.
 
 ## Two guarantees this repository keeps about itself
 

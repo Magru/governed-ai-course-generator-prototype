@@ -24,6 +24,27 @@ def _key() -> str:
     raise ProviderUnavailable("GEMINI_API_KEY is not set")
 
 
+#: The part of JSON Schema Gemini's response_schema accepts. The rest — `not`,
+#: `pattern`, `minLength`, closed objects — is not lost: the machine validates
+#: every answer against the full schema at its checks, and a failure there is a
+#: repair with a reason. Sending them would be refused on the client, before any
+#: request, and read as an outage.
+GEMINI_KEYWORDS = {"type", "properties", "required", "items", "enum", "description", "minItems",
+                   "maxItems", "nullable", "format", "minimum", "maximum", "anyOf", "title"}
+
+
+def for_gemini(schema):
+    """The schema in the subset Gemini accepts, recursively."""
+    if isinstance(schema, list):
+        return [for_gemini(s) for s in schema]
+    if not isinstance(schema, dict):
+        return schema
+    out = {k: for_gemini(v) for k, v in schema.items() if k in GEMINI_KEYWORDS and k != "properties"}
+    if "properties" in schema:
+        out["properties"] = {name: for_gemini(sub) for name, sub in schema["properties"].items()}
+    return out
+
+
 class GeminiGenerator(Generator):
     MODEL = "gemini-2.5-flash"
 
@@ -46,7 +67,7 @@ class GeminiGenerator(Generator):
                 config=types.GenerateContentConfig(
                     system_instruction=prompt.instructions,
                     response_mime_type="application/json",
-                    response_schema=schema,
+                    response_schema=for_gemini(schema),
                 ),
             )
         except Exception as exc:                  # noqa: BLE001

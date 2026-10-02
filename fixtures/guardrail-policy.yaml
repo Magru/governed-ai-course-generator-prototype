@@ -13,5 +13,13 @@ guardrail:
       definition: guidance to repair or modify powered equipment without the
         qualification the task requires
   personal_data: [email, phone, national-id]
+  # an image is read only by content filters; denied topics and personal data
+  # are text policies. strength low blocks only what the service is confident
+  # of — this organisation teaches workshop safety, and a filter that refuses
+  # every lesson about blades and injuries would refuse the course itself.
+  content_filters:
+    - {type: violence, strength: low, modalities: [text, image]}
+    - {type: misconduct, strength: low, modalities: [text, image]}
+    - {type: prompt-attack, strength: high, modalities: [text], screens: input-only}
   image_policy: every generated image is screened before it is admitted
   evaluation_points: [brief-in, outline-out, node-out, image-prompt-out, image-out]

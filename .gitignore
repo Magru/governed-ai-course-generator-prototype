@@ -6,3 +6,4 @@ model.lock.local
 demo/*.mov
 demo/*.mp4
 .DS_Store
+.claude/

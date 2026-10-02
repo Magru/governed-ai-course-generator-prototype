@@ -58,9 +58,9 @@ behave the way the specification says it should?
 | risk | what it means | state |
 |---|---|---|
 | The evidence rests on a recording | every model and guardrail answer comes from `scenarios/cassette.py` | by design: the run is repeatable and needs no account. It also means no live model has been through these gates |
-| The Bedrock adapters are stubs | `BedrockGenerator` and `BedrockScreener` raise `NotImplementedError`, and no test is marked `live` | open: a live run needs the screener built and a guardrail configured |
+| No live run yet | the Bedrock Guardrails screener is built and tested against a stand-in; the guardrail is not yet created in the account, and the three `live` tests have not run. Images cannot be screened live: the prototype has no image provider, so a node naming an image is never admitted | open: `make guardrail-create`, then `make live` and `make live-run` |
 | A source's injection attempt is not recorded | none of the five screening points reads a retrieved source | open; inert by position, so the attempt fails, but nothing knows it was tried (`fixtures/evil-twins/07`) |
 | No PII redaction | the invented organisation's sources hold no personal data | open; the step does not exist |
 | A guardrail rollout spends the retry budget | while the service still answers as the version being replaced, each answer is no answer | accepted: the budget ends it and a person releases the course once the rollout lands |
 | Each edit to a topic during exam generation costs one paid call | the exam goes back to wait, and the call already made does not land | accepted: the waiting costs no retry, and `make cascade` shows the cascade settles |
-| Six modules are longer than 200 lines | `engines/temporal/invariants.py`, `machine/machine.py`, `machine/bookkeeping.py`, `gateway/pipeline.py`, `machine/store_guards.py`, `gateway/membrane.py` | deferred: splitting them before the defence risks more than it buys |
+| Ten modules are longer than 200 lines | the longest: `engines/temporal/invariants.py`, `machine/machine.py`, `gateway/pipeline.py`, `machine/bookkeeping.py`, `machine/store_guards.py` | deferred: splitting them before the defence risks more than it buys |

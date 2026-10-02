@@ -51,6 +51,9 @@ denied_topic_ids: [defeating-a-guard, unqualified-repair]
 personal_data_kinds: [email, phone, national-id]
 evaluation_point_ids: [brief-in, outline-out, node-out, image-prompt-out, image-out, notice-out]
 modalities: [text, image]
+# the content filters the guardrail applies, and the words that configure them.
+content_filter_types: [violence, misconduct, prompt-attack]
+content_filter_terms: [content_filters, strength, low, high, screens, input-only]
 block_categories: [text, image, assessment]
 
 # the vocabulary the evil twins use to say what must happen to them. the guard

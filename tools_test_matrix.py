@@ -38,8 +38,9 @@ LAYER = {
     "test_draft_follows_the_rules_in_force": "State machine",
     "test_cascade_simulation": "State machine",
     "test_gateway_membrane": "Gateway", "test_gateway_forgery": "Gateway",
-    "test_gateway_idempotency": "Gateway", "test_gateway_answers_it_can_vouch_for": "Gateway",
-    "test_gateway_screened_text": "Guardrail", "test_prompt_positions": "Prompt architecture",
+    "test_gateway_idempotency": "Gateway", "test_gemini_schema": "Gateway", "test_gateway_answers_it_can_vouch_for": "Gateway",
+    "test_gateway_screened_text": "Guardrail", "test_bedrock_screener": "Guardrail",
+    "test_live_guardrail": "Guardrail", "test_prompt_positions": "Prompt architecture",
     "test_injection_surfaces": "Prompt architecture",
     "test_end_to_end": "End to end", "test_walkthrough": "End to end",
     "test_twins_match_the_specification": "Specification", "test_guard_coverage": "Specification",
@@ -74,7 +75,7 @@ PROMISED = [
      "gap: the invented organisation's sources carry no personal data, and no redaction step exists"),
     ("test_secret_never_enters_prompt", "credential never assembled in",
      ["test_injection_surfaces::test_no_credential_reaches_what_the_live_adapter_sends_or_what_is_screened"],
-     "the Gemini adapter, holding a key, against a stand-in for its API; the Bedrock adapters are not built"),
+     "the Gemini adapter, holding a key, against a stand-in for its API"),
 ]
 
 

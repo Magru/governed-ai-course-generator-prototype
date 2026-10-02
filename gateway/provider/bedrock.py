@@ -13,8 +13,8 @@ from __future__ import annotations
 import os, pathlib
 from functools import lru_cache
 
-from .port import (Generated, Generator, GuardrailNotConfigured, Modality,
-                   Point, Prompt, ProviderUnavailable, Screener, Verdict)
+from .port import (Generated, Generator, GuardrailNotConfigured, GuardrailUnavailable,
+                   Modality, Point, Prompt, ProviderUnavailable, Screener, Verdict)
 
 
 class WrongAccount(RuntimeError):
@@ -94,12 +94,22 @@ class BedrockGenerator(Generator):
 
 
 class BedrockScreener(Screener):
-    """Separate from the generator so the pair that development actually runs —
-    Gemini generating, Bedrock screening — can be expressed at all."""
+    """Amazon Bedrock Guardrails, through ApplyGuardrail: the managed service
+    the specification names, screening content the pipeline hands it.
 
-    def __init__(self) -> None:
+    Separate from the generator so the pair that development actually runs —
+    Gemini generating, Bedrock screening — can be expressed at all.
+
+    The version is the one the request names. Bedrock evaluates exactly the
+    version it is asked for, so the stamp on the verdict is the version that
+    answered — which is why a DRAFT is refused: it can change under a verdict
+    already recorded as screened by it."""
+
+    def __init__(self, runtime=None) -> None:
         self._guardrail = os.environ.get("BEDROCK_GUARDRAIL_ID", "").strip()
         self._version = os.environ.get("BEDROCK_GUARDRAIL_VERSION", "").strip()
+        self._runtime = runtime
+        self.version = self._version or None
 
     def screen(self, content: str, modality: Modality, point: Point, subject: str = "") -> Verdict:
         if not self._guardrail:
@@ -107,4 +117,65 @@ class BedrockScreener(Screener):
                 "no guardrail is configured. A deployment error rather than a "
                 "runtime one — but still not a reason to proceed, because the "
                 "absence of a verdict is not a permissive verdict.")
-        raise NotImplementedError("Bedrock screening is not built; the recorded screener stands in")
+        if not self._version.isdigit():
+            raise GuardrailNotConfigured(
+                f"guardrail version {self._version or '(none)'!r} is not a published version; "
+                f"a DRAFT can change after a verdict is recorded as screened by it")
+        try:
+            response = (self._runtime or client("bedrock-runtime")).apply_guardrail(
+                guardrailIdentifier=self._guardrail, guardrailVersion=self._version,
+                # What a model is about to be asked is input; what one said is output.
+                source="INPUT" if point in ("brief-in", "image-prompt-out") else "OUTPUT",
+                content=[_content(content, modality)])
+        except (GuardrailNotConfigured, GuardrailUnavailable):
+            raise
+        except Exception as exc:                  # noqa: BLE001 — no answer is not an answer
+            raise GuardrailUnavailable(f"the guardrail did not answer at {point}: {exc}") from exc
+        action = response.get("action") if isinstance(response, dict) else None
+        if action not in ("NONE", "GUARDRAIL_INTERVENED"):
+            raise GuardrailUnavailable(f"the guardrail answered at {point} with no action: {action!r}")
+        if action == "NONE":
+            return Verdict(True, None, self._version, point)
+        return Verdict(False, _category(response.get("assessments") or []), self._version, point)
+
+
+#: Where an image a node names must be. The name is model output, so it is
+#: resolved inside this folder and nowhere else: a node naming any other file on
+#: the machine must not get that file sent to a third party.
+ASSETS = pathlib.Path(__file__).resolve().parents[2] / "assets"
+
+
+def _content(content: str, modality: Modality) -> dict:
+    """Text goes as text. An image goes as its bytes, and only when there are
+    bytes to send: screening the name of an image is not screening the image."""
+    if modality == "text":
+        return {"text": {"text": content}}
+    path = (ASSETS / content).resolve()
+    kind = {".png": "png", ".jpg": "jpeg", ".jpeg": "jpeg"}.get(path.suffix.lower())
+    if kind is None or not path.is_relative_to(ASSETS) or not path.is_file():
+        raise GuardrailUnavailable(f"no image in assets/ to screen at {content!r}")
+    return {"image": {"format": kind, "source": {"bytes": path.read_bytes()}}}
+
+
+def _blocked(entries) -> list:
+    """Entries that acted. A response may also list what was detected and let
+    through, and that is not why the guardrail intervened."""
+    return [e for e in entries or [] if e.get("action", "BLOCKED") == "BLOCKED"]
+
+
+def _category(assessments: list) -> str:
+    """The policy that intervened, by name — never the text it matched."""
+    for a in assessments:
+        for topic in _blocked((a.get("topicPolicy") or {}).get("topics")):
+            return topic.get("name", "denied-topic")
+        sensitive = a.get("sensitiveInformationPolicy") or {}
+        for entity in _blocked(sensitive.get("piiEntities")):
+            return entity.get("type", "personal-data").lower().replace("_", "-")
+        for regex in _blocked(sensitive.get("regexes")):
+            return regex.get("name", "personal-data")
+        for f in _blocked((a.get("contentPolicy") or {}).get("filters")):
+            return f.get("type", "content").lower().replace("_", "-")
+        words = a.get("wordPolicy") or {}
+        if words.get("customWords") or words.get("managedWordLists"):
+            return "word-policy"
+    return "intervened"
