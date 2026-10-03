@@ -88,9 +88,10 @@ def _lesson(world, spec: dict, brief: dict) -> str:
     """What this lesson is and how much of it there must be. Told nothing, a
     model writes a paragraph for a twenty-minute lesson, and the arithmetic
     check refuses it; told the floor, it writes to it — from the sources only,
-    which are now this lesson's own. Only what is ours goes here: the skill's
-    catalog label and the organisation's numbers. The course title is the
-    author's words and travels in the author's position, below these rules."""
+    which are now this lesson's own. Only what cannot carry an instruction goes
+    here: the skill's catalog label and numbers — the organisation's floor and
+    the brief's minutes, an integer the brief's schema has checked. The course
+    title is the author's words and travels in the author's position."""
     if spec.get("type") != "topic" or not spec.get("skill"):
         return ""
     label = next((k["label"] for k in world.catalog["skills"] if k["id"] == spec["skill"]), spec["skill"])

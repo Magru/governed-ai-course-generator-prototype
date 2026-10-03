@@ -157,18 +157,22 @@ class Pipeline:
     def _sources(self, skills=None) -> tuple:
         audiences = (self.machine.current.brief or {}).get("audience") or []
         self._stage(3, "retrieval · rights filter", "sources",
-                    audiences if skills is None else f"{audiences} · {', '.join(skills) or 'no skill'}")
+                    audiences if skills is None else f"{audiences} · {', '.join(skills)}")
         return tuple(f"{c['id']}: {c['text']}" for c in
                      retrieve(self.machine.world, audiences, self.kb_chunks, skills))
 
-    def _skills_of(self, spec: dict) -> list[str]:
+    def _skills_of(self, spec: dict):
         """What a lesson is about: its skill; an exam's, the skills of the
-        topics it tests."""
+        topics it tests that the outline still has. When nothing resolves —
+        an exam whose topics name no node — it is given every open chunk, as
+        before scoping, rather than nothing to write from."""
         if spec.get("type") == "exam":
-            nodes = self.machine.current.nodes
-            return sorted({nodes[t].spec.get("skill") for t in spec.get("topics") or []
-                           if t in nodes and nodes[t].spec.get("skill")})
-        return [spec["skill"]] if spec.get("skill") else []
+            rev = self.machine.current
+            kept = set(rev.committed_outline or [])
+            skills = sorted({rev.nodes[t].spec.get("skill") for t in spec.get("topics") or []
+                             if t in rev.nodes and t in kept and rev.nodes[t].spec.get("skill")})
+            return skills or None
+        return [spec["skill"]] if spec.get("skill") else None
 
     def _with_feedback(self, rules: str, obj) -> str:
         # A repair is a retry that changed the request: the machine-produced

@@ -222,7 +222,10 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
             # whether the words are any good is the person's review.
             words = z3.Int("words")
             tracked["words_are_as_written"] = words == _words(blocks)
-            tracked["enough_words_for_the_minutes"] = words >= per_minute * minutes
+            # Counted against the brief's minutes as well as the lesson's own,
+            # so stating fewer minutes cannot lower the floor.
+            floor = max(int(stated_minutes), int(thresholds.get("lesson_minutes") or 0))
+            tracked["enough_words_for_the_minutes"] = words >= per_minute * floor
 
     if not tracked:
         return allowed(engine=ENGINE, node=node.get("id"), sums=0)
@@ -238,8 +241,9 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
     if "enough_words_for_the_minutes" in core:
         # The numbers are what the next draft needs: told only the names of
         # two claims, a model cannot tell how far short it fell.
-        detail.update(words=_words(blocks), needed=int(thresholds["min_words_per_minute"]) * int(stated_minutes))
-        summary += f" ({detail['words']} words for {stated_minutes} minutes; at least {detail['needed']})"
+        floor = max(int(stated_minutes), int(thresholds.get("lesson_minutes") or 0))
+        detail.update(words=_words(blocks), needed=int(thresholds["min_words_per_minute"]) * floor)
+        summary += f" ({detail['words']} words for {floor} minutes; at least {detail['needed']})"
     return refused(kind="failing-sum", summary=summary, detail=detail, engine=ENGINE)
 
 

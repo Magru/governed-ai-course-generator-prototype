@@ -127,6 +127,14 @@ def _coverage(lit: Literal, ctx: Context) -> Verdict:
         f"rev-{ctx.rev.id}", [skill], _nodes_in_scope(ctx), in_brief, scope="node")
 
 
+def _with_lesson_minutes(ctx: Context) -> dict:
+    """The thresholds, and the minutes the brief gives a lesson. A lesson
+    states its own minutes, so a floor counted only against them is one a
+    model could lower by stating fewer; the brief's number holds it up."""
+    minutes = (ctx.rev.brief or {}).get("minutes_per_lesson")
+    return {**ctx.world.thresholds, **({"lesson_minutes": minutes} if type(minutes) is int else {})}
+
+
 def _every_node(ctx: Context, check) -> Verdict:
     """A node guard asked of a whole revision — re-verification after a catalog
     change — holds when it holds for every node, and refuses with the first.
@@ -165,7 +173,7 @@ ADAPTERS: dict[str, Callable[[Literal, Context], Verdict]] = {
         ctx, lambda node, stray: IMPLEMENTED["block_schemas_valid(node)"](
             node, ctx.world.block_types, ctx.world.block_schemas, stray=stray)),
     "arithmetic_consistent(node)": lambda lit, ctx: IMPLEMENTED["arithmetic_consistent(node)"](
-        engine_node(ctx.node), ctx.world.thresholds),
+        engine_node(ctx.node), _with_lesson_minutes(ctx)),
     "approval_chain_satisfied(revision)": lambda lit, ctx: IMPLEMENTED["approval_chain_satisfied(revision)"](
         ctx.rev.id, [a for a in ctx.rev.approvals
                      if a.get("scope") == ("notice" if ctx.rev.ever_published else "publication")],

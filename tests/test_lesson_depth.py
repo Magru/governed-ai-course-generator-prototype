@@ -132,3 +132,25 @@ def test_a_lesson_is_not_offered_an_exams_fields_and_an_exam_must_state_its_tota
     _, exam = node_request(world, w.E1, {"id": w.E1, "type": "exam", "topics": [w.T1]}, w.BRIEF)
     assert not {"points_total", "questions"} & set(topic["properties"])
     assert "points_total" in exam["required"] and "questions" in exam["properties"]
+
+
+def test_stating_fewer_minutes_does_not_lower_the_floor():
+    dodge = {"id": "n1", "type": "topic", "minutes": 1,
+             "blocks": [{"type": "paragraph", "text": " ".join(["word"] * 15), "cites": ["c"]}]}
+    assert check_arithmetic(dodge, TH).ok                                   # its own minutes alone
+    v = check_arithmetic(dodge, TH | {"lesson_minutes": 20})                # held to the brief's
+    assert not v.ok and v.refusal.detail["needed"] == 200
+    longer = {**dodge, "minutes": 25, "blocks": [{"type": "paragraph", "text": " ".join(["w"] * 240),
+                                                  "cites": ["c"]}]}
+    assert not check_arithmetic(longer, TH | {"lesson_minutes": 20}).ok   # 25 minutes it says, 250 words
+
+
+def test_an_exam_whose_topics_name_no_node_is_given_every_open_chunk_not_none():
+    exam = {"id": "e1", "type": "exam", "topics": ["learn to keep the bench clear"]}
+    outline = {"nodes": [*copy.deepcopy(w.OUTLINE["nodes"][:3]), exam]}
+    p = run.pipeline(generator=RecordedGenerator({"outline": [outline], "node:e1": [copy.deepcopy(w.CONTENT[w.E1])]}),
+                     screener=Allowing())
+    p.submit_brief(copy.deepcopy(w.BRIEF), run.AUTHOR)
+    p.draft_outline(run.AUTHOR)
+    p.machine.fire("OutlineApproved", {"actor": run.AUTHOR["id"]})
+    assert p._skills_of(exam) is None
