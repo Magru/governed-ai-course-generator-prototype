@@ -27,16 +27,35 @@ from machine.refusal import MachineRefused  # noqa: E402
 from scenarios import cassette, run, twins, walkthrough as w  # noqa: E402
 from scenarios.machine_runs import NOTICE, signatures  # noqa: E402
 
+# What an author fills in. The walkthrough's brief also lists a skeleton of
+# nodes; an author does not draw the outline — the model proposes it — so the
+# page asks for the count instead, which is what Z3 judges. Z3 never guesses a
+# count the brief leaves out, so the field is the author's to fill.
+_COURSE = {**{k: v for k, v in w.BRIEF.items() if k != "nodes"}, "requested_nodes": len(w.BRIEF["nodes"])}
+FIELDS = ("title", "audience", "objectives", "minutes_per_lesson", "requested_nodes")
+
 PRESETS = {
-    "course": ("A course that is published", w.BRIEF, "allow"),
+    "course": ("A course that is published", _COURSE, "allow"),
     # The fixture's brief, with the size Z3 needs to judge it, so the refusal
     # on screen is the guardrail's and not a question the brief left open.
     "forbidden": ("A forbidden topic", {**twins._twin("01-forbidden-topic.yaml")["brief"], "requested_nodes": 3},
                   "defeating-a-guard"),
     "infeasible": ("A brief that cannot hold", twins._twin("02-contradictory-brief.yaml")["brief"], "allow"),
-    "audience": ("An audience not granted", {**w.BRIEF, "id": "mt-course-210", "audience": ["supervisors"]},
+    "audience": ("An audience not granted", {**_COURSE, "id": "mt-course-210", "audience": ["supervisors"]},
                  "allow"),
 }
+
+
+def form_options() -> dict:
+    """What the form offers: the organisation's audiences and the catalog's
+    skills, by their labels, and the limits the organisation sets — shown so a
+    person knows them, and checked by Z3 whatever the page lets them type."""
+    world = run.pipeline().machine.world
+    return {"audiences": [{"id": a["slug"], "label": a["label"]} for a in world.org["organisation"]["audiences"]],
+            "skills": [{"id": k["id"], "label": k["label"]} for k in world.catalog["skills"]],
+            "limits": {"minutes_per_lesson": world.thresholds["max_minutes_per_lesson"],
+                       "requested_nodes": world.thresholds["max_nodes_per_course"],
+                       "audience": world.thresholds["max_audience_breadth"]}}
 
 
 # How many times a person may reject one lesson before the recording runs out.
@@ -90,8 +109,20 @@ class Session:
         self.mark = (0, 0)          # where the stage list and the engine log stood before the last button
 
     # ── what a person does ──────────────────────────────────────────────
-    def submit(self, brief: dict | None = None) -> None:
-        self.brief = copy.deepcopy(brief or self.brief)
+    def submit(self, fields: dict | None = None) -> None:
+        """The brief is what the person filled in, under the example's id. In
+        Recorded mode the title stays the example's: the recorded guardrail
+        answered for that text and no other, so passing a new one would be a
+        verdict nobody gave. Everything else is judged by the real engines."""
+        example = PRESETS[self.preset][1]
+        if fields is not None and not isinstance(fields, dict):
+            raise GatewayRefused("the brief must be an object of fields")
+        if fields:
+            if self.mode == "recorded" and fields.get("title", example["title"]) != example["title"]:
+                raise GatewayRefused("in Recorded mode the title is the example's — the recorded guardrail "
+                                     "answered for that text only. Switch to Live to write your own.")
+            picked = {k: fields[k] for k in FIELDS if fields.get(k) not in (None, "")}
+            self.brief = {"id": example["id"], **picked}
         self.p.submit_brief(copy.deepcopy(self.brief), run.AUTHOR)
         for _ in range(self.p.machine.store.budget() + 1):
             if self.p.machine.current.state != "OutlineDrafting":

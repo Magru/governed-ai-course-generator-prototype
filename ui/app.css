@@ -173,7 +173,7 @@ h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
 
 /* drawer */
 .scrim { position: fixed; inset: 0; background: rgba(10,10,10,.25); z-index: 8; }
-.drawer { position: fixed; top: 0; bottom: 0; right: 0; width: min(580px, 100vw); background: #fff; z-index: 9; display: flex; flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,.12); }
+.drawer { position: fixed; top: 0; bottom: 0; right: 0; width: min(1040px, 100vw); background: #fff; z-index: 9; display: flex; flex-direction: column; box-shadow: -8px 0 30px rgba(0,0,0,.12); }
 .drawer[hidden], .scrim[hidden] { display: none; }
 .drawer-head { padding: 18px 24px; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
 .drawer-head h2 { font-size: 1.35rem; font-weight: 900; }
@@ -191,6 +191,30 @@ h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
 .radio .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); margin-top: 2px; flex: none; }
 .radio.on .dot { border: 5px solid var(--brand); }
 .radio small { display: block; color: var(--muted); }
+/* the brief, as a person fills it in, next to the JSON the system receives */
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.example { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.example.on { border-color: var(--brand); background: var(--brand-tint); color: var(--brand-600); font-weight: 600; }
+.brief-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: start; margin-top: 6px; }
+.brief-form { display: grid; gap: 16px; }
+.fld { display: grid; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+legend.fld-head { width: 100%; }
+.fld-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 0.9rem; padding: 0; }
+.reads { font-family: var(--mono); font-size: 0.7rem; color: var(--indigo); background: var(--indigo-bg); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+.fld input { font: inherit; font-size: 0.95rem; border: 1px solid var(--line-strong); border-radius: 10px; padding: 9px 12px; background: #fff; width: 100%; box-sizing: border-box; }
+.fld input:focus { outline: 2px solid var(--brand-line); border-color: var(--brand); }
+.fld input[readonly] { background: var(--canvas); color: var(--muted); }
+.fld-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line-strong); background: #fff; border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.note { color: var(--muted); font-size: 0.75rem; }
+.brief-json { display: grid; gap: 10px; position: sticky; top: 0; }
+.code.json { max-height: 46vh; }
+.code.json .k { display: inline; border-radius: 4px; }
+.code.json .k.hl { animation: lit 1.6s ease-out; }
+@keyframes lit { from { background: #fde68a; } to { background: transparent; } }
+@media (max-width: 900px) { .brief-grid { grid-template-columns: 1fr; } .brief-json { position: static; } }
 .knows { background: var(--canvas); border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; font-size: 0.8rem; }
 .drawer-foot { border-top: 1px solid var(--line); padding: 14px 24px; display: flex; justify-content: space-between; }
 

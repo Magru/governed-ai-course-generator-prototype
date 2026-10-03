@@ -142,11 +142,44 @@
     <div class="stepper"><span class="step on">1</span><span class="step-label">Brief</span><span class="line"></span><span class="step">2</span><span class="step-label">Outline</span></div>
   </div>
   <div class="drawer-body">
-    <label class="eyebrow">Choose a brief</label>
-    <div id="presets" class="radios"></div>
-    <label class="eyebrow">What the author asks for</label>
-    <pre id="drawer-brief" class="code tall"></pre>
-    <div class="knows"><b>What the AI already knows</b><span>the organisation's knowledge base, filtered to what this audience may read; the skills catalog; the block types the catalog defines.</span></div>
+    <div class="eyebrow">Start from an example</div>
+    <div id="presets" class="examples" role="group" aria-label="Examples"></div>
+    <div class="brief-grid">
+      <form id="brief-form" class="brief-form" autocomplete="off" novalidate>
+        <label class="fld">
+          <span class="fld-head"><b>Course title</b><span class="reads">guardrail · model</span></span>
+          <input id="f-title" type="text">
+          <small id="f-title-note" class="note" hidden>Recorded mode: the recorded guardrail answered for this title only. Switch to Live to write your own.</small>
+        </label>
+        <fieldset class="fld">
+          <legend class="fld-head"><b>Who is it for</b><span class="reads">OPA · Z3 · retrieval</span></legend>
+          <div id="f-audience" class="chips"></div>
+          <small id="f-audience-note" class="note"></small>
+        </fieldset>
+        <fieldset class="fld">
+          <legend class="fld-head"><b>Skills to teach</b><span class="reads">model · Datalog</span></legend>
+          <div id="f-skills" class="chips"></div>
+          <small id="f-skills-note" class="note recorded" hidden></small>
+        </fieldset>
+        <div class="fld-row">
+          <label class="fld">
+            <span class="fld-head"><b>Minutes per lesson</b><span class="reads">Z3</span></span>
+            <input id="f-minutes" type="number" min="1" inputmode="numeric">
+            <small id="f-minutes-note" class="note"></small>
+          </label>
+          <label class="fld">
+            <span class="fld-head"><b>Nodes in the course</b><span class="reads">Z3</span></span>
+            <input id="f-nodes" type="number" min="1" inputmode="numeric">
+            <small id="f-nodes-note" class="note"></small>
+          </label>
+        </div>
+      </form>
+      <div class="brief-json">
+        <div class="eyebrow">What the system receives</div>
+        <pre id="drawer-brief" class="code json" aria-live="polite"></pre>
+        <div class="knows"><b>The model is sent the title and the skills — nothing else.</b><span>Every other field is judged before it is asked: the audience against the author's grants, the numbers against the organisation's limits. What the AI already knows is the knowledge base filtered to what this audience may read, the skills catalog, and the catalog's block types.</span></div>
+      </div>
+    </div>
   </div>
   <div class="drawer-foot">
     <button type="button" class="btn ghost" id="drawer-cancel">Cancel</button>

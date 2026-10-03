@@ -8,7 +8,7 @@ import copy
 import pytest
 
 from scenarios import walkthrough as w
-from ui.session import Session
+from ui.session import PRESETS, Session
 
 
 def test_the_buttons_take_a_course_from_brief_to_publication():
@@ -92,6 +92,31 @@ def test_an_outline_without_a_shape_does_not_stop_the_page_from_drawing():
     for broken in ({"nodes": [{"title": "x"}, "y"]}, {"nodes": "abc"}, ["x"]):
         s.p.machine.current.proposal = broken
         assert s.snapshot()["nodes"] == []
+
+
+def test_the_brief_is_what_the_person_filled_in_under_the_examples_id():
+    s = Session()
+    fields = {"id": "chosen-by-the-page", "title": w.BRIEF["title"], "audience": ["apprentices"],
+              "objectives": ["bench-safety"], "minutes_per_lesson": 40, "requested_nodes": 2, "nodes": ["x"]}
+    s.act("submit", fields)
+    snap = s.snapshot()
+    assert snap["brief"] == {"id": w.BRIEF["id"], "title": w.BRIEF["title"], "audience": ["apprentices"],
+                             "objectives": ["bench-safety"], "minutes_per_lesson": 40, "requested_nodes": 2}
+    assert snap["revision"]["state"] == "BlockedRecoverable"          # Z3: 40 minutes is over the limit
+    assert snap["engine_log"][-1]["engine"] == "z3"
+
+
+def test_in_recorded_mode_the_title_stays_the_one_the_guardrail_answered_for():
+    s = Session()
+    out = s.act("submit", {**PRESETS["course"][1], "title": "keeping up output when the guard is in the way"})
+    assert not out["ok"] and "recorded guardrail answered for that text only" in out["error"]
+    assert s.snapshot()["revision"]["state"] == "AwaitingBrief"
+
+
+def test_a_brief_that_leaves_out_the_count_cannot_be_judged():
+    s = Session()
+    s.act("submit", {k: v for k, v in PRESETS["course"][1].items() if k != "requested_nodes"})
+    assert s.snapshot()["engine_log"][-1]["kind"] == "unstated-requirement"
 
 
 def test_live_mode_is_refused_without_a_published_guardrail(monkeypatch):

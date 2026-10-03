@@ -37,7 +37,7 @@ the engines* list in the Governance panel.
 
 | ID | Given | Do | Expect |
 |---|---|---|---|
-| R1.1 | R0 | **Create with AI** | a drawer opens from the right: four briefs, the first chosen; the brief's JSON below |
+| R1.1 | R0 | **Create with AI** | a drawer opens from the right: four examples, the first chosen; the form filled from it — title, audience, three skills, 20 minutes, 4 nodes; beside it the JSON the system receives |
 | R1.2 | drawer open | press **Esc** | the drawer closes |
 | R1.3 | drawer reopened | **Create** | banner *Reading the brief…* while it works; then status *Awaiting approval*, state `OutlineReview`; tree: the course row and the outline offered for approval — four nodes `mt-node-201`…`204` (three topics, one exam), each *Proposed* |
 | R1.4 | R1.3 | look at engines | one entry: `datalog · invented-skill` — the first outline named a skill the catalog does not have; the gateway asked again, and the second outline is the one on screen |
@@ -55,6 +55,28 @@ the engines* list in the Governance panel.
 | R1.16 | R1.15 | **Publish** | status *Published* (green), no course button but *Start over*; nodes show only **View**; LTL pill still *every invariant holds* |
 | R1.17 | R1.16 | open **Gateway log**, then **Brief** | Gateway log: every stage numbered, its count in the tab; Brief: the JSON that was submitted |
 | R1.18 | R1.16 | reload the page | the same course, in the same state |
+
+## R1b · The brief, as a person fills it
+
+Each field is labelled with who reads it. Only the title and the skills reach
+the model; the rest is judged before it is asked. In Recorded mode the title
+is the example's and cannot be edited — the recorded guardrail answered for
+that text only; everything else can be changed and is judged by the real
+engines. Only the published course has a recorded model behind it, and its
+outline is fixed: changing its skills or count changes what the checks judge,
+not what the model proposes; a count other than 4 is not held against the
+outline (see `risks.md`). A refusal example fixed in Recorded stops at
+*nothing recorded*, and the why line says Live carries it on.
+
+| ID | Given | Do | Expect |
+|---|---|---|---|
+| R1b.1 | drawer open, Recorded | look at the title | read-only, with the note why |
+| R1b.2 | same | press the *Noise exposure* skill | it turns blue; `"noise-exposure"` is added to `objectives` in the JSON, and that field lights up |
+| R1b.3 | same | type `40` in *Minutes per lesson*, **Create** | `BlockedRecoverable`; why: `z3 — these requirements cannot hold together: max_minutes_per_lesson, minutes_per_lesson` |
+| R1b.4 | Start over, drawer open | empty *Nodes in the course*, **Create** | `requested_nodes` gone from the JSON; why: `z3 — this brief cannot be judged: how many nodes the course should have` — Z3 never guesses a number the author left out |
+| R1b.5 | Start over, drawer open | swap *Apprentices* for *Supervisors*, **Create** | `BlockedFinal`; why: `opa — audience_permitted: author-1 may not author for ["supervisors"]` |
+| R1b.6 | drawer open | press the example *A brief that cannot hold* | the form refills: twelve skills, 40 minutes, 14 nodes |
+| R1b.7 | any | change a field, then look at the JSON | `id` is the system's and never changes; an empty field leaves its key out |
 
 ## R2 · Three briefs the system must refuse
 
@@ -130,3 +152,4 @@ hold is checked, not what it writes.
 |---|---|---|---|---|---|---|---|---|---|---|
 | 2026-10-02 | `ui/server.py 8801`, recorded; system Chrome 154 driven by Playwright 1.60 | pass | pass | pass | pass | pass | pass | pass | not run | the outline is shown before it is approved; Esc closes the drawer; Release only where a person can act on it, and a brief or outline that cannot hold says to start over; a refused outline is shown as refused; a stop names its own cause, not an earlier refusal; a lesson can be rejected until the repair budget hands it to a person; a stale red toast is cleared by the next button; a lost server no longer throws in the console; the lessons keep their room at 1280; Live needs both the guardrail and its version |
 | 2026-10-02 | `make ui` on 8800, Live: Gemini 2.5 Flash + guardrail `mt-guard` v1 | — | — | — | — | — | — | — | first: sent back at the course checks; second: pass, Published in 49 s of calls | the model is told what an exam's topics are; the page says why the course checks sent a course back |
+| 2026-10-03 | `ui/server.py 8801`, recorded; Chrome 154 via Playwright 1.60 | pass | pass (+R1b) | pass | pass | pass | pass | pass | — | the brief is a form a person fills in, with the JSON beside it; the title stays the example's in Recorded mode, on the page and on the server |

@@ -15,13 +15,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
-from ui.session import PRESETS, Session  # noqa: E402
+from ui.session import PRESETS, Session, form_options  # noqa: E402
 
 HERE = pathlib.Path(__file__).parent
 STATIC = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"),
           "/app.css": ("app.css", "text/css")}
 LOCK = threading.Lock()
 STATE = {"session": Session()}
+FORM = form_options()
 
 # A button, the session method it presses, and the fields it reads.
 ACTIONS = {"submit": ("submit", ["brief"]), "approve-outline": ("approve_outline", []),
@@ -53,6 +54,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(STATE["session"].snapshot())
         if self.path == "/api/presets":
             return self._json({k: {"title": v[0], "brief": v[1]} for k, v in PRESETS.items()})
+        if self.path == "/api/form":
+            return self._json(FORM)
         self._send(404, b"{}")
 
     def _ours(self) -> bool:

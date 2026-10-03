@@ -22,11 +22,12 @@
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const icon = (id, cls = "ico") => { const ns = "http://www.w3.org/2000/svg"; const s = document.createElementNS(ns, "svg"); s.setAttribute("class", cls); const u = document.createElementNS(ns, "use"); u.setAttribute("href", `#i-${id}`); s.append(u); return s; };
   const words = s => (s || "").replace(/[-_]/g, " ").replace(/^./, c => c.toUpperCase());
-  let state = null, presets = {}, chosen = "course", seenStages = 0;
+  let state = null, presets = {}, form = null, chosen = "course", seenStages = 0, shown = {};
 
   async function api(path, body) {
     const r = await fetch(`/api/${path}`, body === undefined ? {} :
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok && body === undefined) throw new Error(`${path}: ${r.status}`);   // a read the server does not know
     return r.json();
   }
 
@@ -100,7 +101,7 @@
     const stuck = s.nodes.find(n => ["NodeRepair", "NodeRecovery", "BlockedFinal"].includes(n.state));
     const heard = s.last_act.engines[s.last_act.engines.length - 1];
     const refused = !BAD.has(st) ? null
-      : lastStage(s.last_act.stages, /^(deny|unreachable|effect)/)
+      : recordedOut(lastStage(s.last_act.stages, /^(deny|unreachable|effect)/))
       || (stuck && `${stuck.type === "exam" ? "Exam" : words(stuck.skill)} — ${stuck.last_refusal || NODE_PILL[stuck.state][1].toLowerCase()}`)
       || (heard && `${heard.engine} — ${heard.summary}`) || s.revision.last_refusal || "see the Gateway log";
     // The course checks can also send a course back rather than block it: the
@@ -152,6 +153,11 @@
     });
   }
 
+  // The cassette has answers for the examples as they are; a brief changed
+  // past them reaches a question nobody recorded, and the page says so.
+  const recordedOut = why => why && /nothing recorded/.test(why)
+    ? `${why} — Recorded mode has no model answer for this brief; switch to Live to carry it on` : why;
+
   function lastStage(stages, re) { const hit = [...stages].reverse().find(x => re.test(String(x[3]))); return hit ? `${hit[1]} — ${hit[3]}` : ""; }
 
   // ── governance ──────────────────────────────────────────────────────
@@ -189,28 +195,91 @@
   }
 
   // ── create with AI ──────────────────────────────────────────────────
+  // The author fills a form; the page turns each choice into the brief's
+  // fields and shows the JSON as it changes. The id is the system's, not the
+  // author's, and nothing here checks a value: the engines do, after Create.
   function drawPresets() {
     const box = $("#presets"); box.replaceChildren();
     Object.entries(presets).forEach(([k, v]) => {
-      const r = el("div", `radio${k === chosen ? " on" : ""}`); r.tabIndex = 0;
-      const text = el("div"); text.append(el("b", "", v.title), el("small", "", v.brief.title));
-      r.append(el("span", "dot"), text);
-      r.onclick = () => { chosen = k; drawPresets(); };
-      box.append(r);
+      const b = el("button", `example${k === chosen ? " on" : ""}`, v.title); b.type = "button";
+      b.setAttribute("aria-pressed", k === chosen);
+      b.onclick = () => { chosen = k; drawPresets(); fillForm(presets[k].brief); };
+      box.append(b);
     });
-    $("#drawer-brief").textContent = JSON.stringify(presets[chosen].brief, null, 2);
   }
-  function openDrawer() { chosen = state?.preset || "course"; drawPresets(); $("#drawer").hidden = false; $("#scrim").hidden = false; }
+
+  function chips(box, items, picked) {
+    box.replaceChildren();
+    items.forEach(it => {
+      const b = el("button", `chip${picked.includes(it.id) ? " on" : ""}`, it.label); b.type = "button";
+      b.dataset.id = it.id; b.setAttribute("aria-pressed", picked.includes(it.id));
+      b.onclick = () => { const on = b.classList.toggle("on"); b.setAttribute("aria-pressed", on); drawBrief(); };
+      box.append(b);
+    });
+  }
+
+  function fillForm(brief) {
+    const recorded = state?.mode !== "live";
+    $("#f-title").value = brief.title || ""; $("#f-title").readOnly = recorded;
+    $("#f-title-note").hidden = !recorded; $("#f-skills-note").hidden = !recorded;
+    // What Recorded can answer depends on the example: only the published
+    // course has a recorded model behind it, and its outline is fixed.
+    $("#f-skills-note").textContent = chosen === "course"
+      ? "Recorded mode: the model always proposes this example's outline — three lessons and an exam. Change the skills or the count and the checks judge that outline against your choice; they do not change what it proposes. Live writes a new one."
+      : "Recorded mode: this example is recorded only as far as its refusal. Fix what is refused and the run stops with nothing recorded for the outline — Live carries it on.";
+    chips($("#f-audience"), form.audiences, brief.audience || []);
+    chips($("#f-skills"), form.skills, brief.objectives || []);
+    $("#f-minutes").value = brief.minutes_per_lesson ?? "";
+    $("#f-nodes").value = brief.requested_nodes ?? "";
+    drawBrief();
+  }
+
+  const picked = box => [...box.querySelectorAll(".chip.on")].map(b => b.dataset.id);
+  const whole = v => (/^-?\d+$/.test(v.trim()) ? Number(v) : v.trim() || undefined);
+  const text = v => v.trim() || undefined;            // an empty field is left out, as the server leaves it out
+
+  function readForm() {
+    const brief = { id: presets[chosen].brief.id, title: text($("#f-title").value), audience: picked($("#f-audience")),
+      objectives: picked($("#f-skills")), minutes_per_lesson: whole($("#f-minutes").value),
+      requested_nodes: whole($("#f-nodes").value) };
+    Object.keys(brief).forEach(k => brief[k] === undefined && delete brief[k]);
+    return brief;
+  }
+
+  // The JSON, one top-level field at a time, so the field a person just
+  // changed can be lit up in the text the system receives.
+  function drawBrief() {
+    const brief = readForm(), pre = $("#drawer-brief"), keys = Object.keys(brief), was = shown;
+    pre.replaceChildren(document.createTextNode("{\n"));
+    shown = {};
+    keys.forEach((k, i) => {
+      const text = `  "${k}": ${JSON.stringify(brief[k], null, 2).replace(/\n/g, "\n  ")}`;
+      shown[k] = text;
+      pre.append(el("span", was[k] !== undefined && was[k] !== text ? "k hl" : "k", text), document.createTextNode(i < keys.length - 1 ? ",\n" : "\n"));
+    });
+    pre.append(document.createTextNode("}"));
+    const lim = form.limits;
+    $("#f-minutes-note").textContent = `the organisation allows up to ${lim.minutes_per_lesson}`;
+    $("#f-nodes-note").textContent = `lessons and exam together; up to ${lim.requested_nodes}`;
+    $("#f-audience-note").textContent = `checked against what you may author for; up to ${lim.audience} audiences`;
+  }
+
+  function openDrawer() {
+    chosen = state?.preset || "course"; shown = {};
+    drawPresets(); fillForm(presets[chosen].brief);
+    $("#drawer").hidden = false; $("#scrim").hidden = false;
+  }
   function closeDrawer() { $("#drawer").hidden = true; $("#scrim").hidden = true; }
 
   async function create() {
+    const brief = readForm();
     closeDrawer(); quiet();
     working(true, "Reading the brief…");
     try {
       const reset = await api("reset", { mode: state.mode, preset: chosen });
       if (!reset.ok) { toast(reset.error, true); return; }
       seenStages = 0;
-      const out = await api("submit", { brief: presets[chosen].brief });
+      const out = await api("submit", { brief });
       if (!out.ok) toast(out.error, true);
     } catch { /* refresh() below says the server is gone */ } finally { working(false); document.querySelectorAll("button").forEach(b => { b.dataset.was = ""; }); await refresh(); }
   }
@@ -271,7 +340,10 @@
   $("#scrim").addEventListener("click", closeDrawer);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });
   $("#create").addEventListener("click", create);
+  ["#f-title", "#f-minutes", "#f-nodes"].forEach(id => $(id).addEventListener("input", drawBrief));
+  $("#brief-form").addEventListener("submit", e => e.preventDefault());
   $("#ed-close").addEventListener("click", () => $("#editor").close());
 
-  api("presets").then(p => { presets = p; refresh(); });
+  Promise.all([api("presets"), api("form")]).then(([p, f]) => { presets = p; form = f; refresh(); })
+    .catch(() => toast("The page could not load the brief form. Restart make ui: the server is older than the page.", true));
 })();
