@@ -69,6 +69,13 @@ def node_request(world, node_id: str, spec: dict | None = None, brief: dict | No
              f"{_lesson(world, spec or {}, brief or {})}")
     schema = copy.deepcopy(NODE_SCHEMA)
     schema["required"] = [*schema["required"], "minutes"]
+    if (spec or {}).get("type") == "topic":
+        # A lesson offered an exam's fields fills them, and the arithmetic
+        # check then refuses a lesson that states a total and no questions.
+        for field in ("points_total", "questions"):
+            schema["properties"].pop(field, None)
+    elif (spec or {}).get("type") == "exam":
+        schema["required"] = [*schema["required"], "points_total"]
     if limit:
         schema["properties"]["minutes"]["maximum"] = limit
     # One shape per block type, each exactly the catalog's row: a block offered

@@ -107,6 +107,34 @@ checked on the first attempt; a person approved each, the course checks
 passed, the approval was signed and the revision published, in 49 seconds of
 calls. Every invariant held.
 
+## Run 6 — lessons that fill their minutes, and a course the outline should have lost
+
+Every lesson came back as a paragraph or two, from every chunk the audience
+could read: the model was given everything and told nothing about length.
+Retrieval now scopes a lesson to the chunks about its own skill, the knowledge
+base holds a paragraph or more per skill, the model is told the floor — ten
+words a minute, so two hundred for twenty minutes — and Z3 refuses a lesson
+below it, naming how many words it had.
+
+The lessons came back at 270 to 430 words, each citing only its own skill's
+chunks. The course did not publish, for three reasons the log names:
+
+| what happened | what refused it | what changed |
+|---|---|---|
+| lessons stated an exam's `points_total` | Z3: *the exam states a total and lists no questions* | a lesson is no longer offered an exam's fields |
+| the outline added three skills the brief did not ask for, and the run approved it without looking | Prolog, at each of those lessons: the skill is not one the brief asked for | nothing: that is the outline review's job, and the page tags them *not in the brief* |
+| a tool-inspection lesson about taking damaged tools out of use | the guardrail's denied topic `unqualified-repair` | the knowledge base's own wording, which said *repair* where it meant *take out of use* |
+
+## Run 7 — published, with the outline reviewed
+
+The same brief; at the outline review, every node tagged *not in the brief*
+would have been removed (this time there were none). Each lesson was written
+at 320 to 430 words from its own sources; the exam was written over the three
+topics. The tool-inspection lesson was denied once more as `unqualified-repair`
+— three drafts in a row — waited for a person, was released, and passed on the
+next draft. The course was approved, signed and published in 106 seconds of
+calls, and every invariant held.
+
 ## What the runs show
 
 - Nothing the model wrote reached the record unchecked. Five answers were

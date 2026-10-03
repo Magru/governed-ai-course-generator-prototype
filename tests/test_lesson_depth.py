@@ -124,3 +124,11 @@ def test_the_model_is_told_the_skill_and_the_floor_and_the_course_title_stays_th
     p.generate_node(w.T1, run.AUTHOR)
     prompt = [prompt for asked, prompt in p.generator.asked if asked == f"node:{w.T1}"][0]
     assert w.BRIEF["title"] in prompt.author
+
+
+def test_a_lesson_is_not_offered_an_exams_fields_and_an_exam_must_state_its_total():
+    world = load()
+    _, topic = node_request(world, w.T1, {"id": w.T1, "type": "topic", "skill": "bench-safety"}, w.BRIEF)
+    _, exam = node_request(world, w.E1, {"id": w.E1, "type": "exam", "topics": [w.T1]}, w.BRIEF)
+    assert not {"points_total", "questions"} & set(topic["properties"])
+    assert "points_total" in exam["required"] and "questions" in exam["properties"]

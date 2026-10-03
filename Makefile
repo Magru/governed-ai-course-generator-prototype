@@ -75,8 +75,9 @@ examples:                  ## examples/, regenerated from the runs: the course a
 live:                      ## the tests marked live, which need the real provider
 	LIVE=1 $(PY) -m pytest tests -q -m live
 
-ui:                        ## the course on a page, at http://localhost:8800: recorded, or live with Gemini and Bedrock
-	$(PY) ui/server.py
+UI_PORT ?= 8800
+ui:                        ## the course on a page, at http://localhost:8800 (UI_PORT=…): recorded, or live with Gemini and Bedrock
+	$(PY) ui/server.py $(UI_PORT)
 
 demo:                      ## record demo/demo.mp4 from demo/demo.tape (needs vhs: brew install vhs)
 	@command -v vhs >/dev/null || { echo "vhs is missing: brew install vhs"; exit 1; }

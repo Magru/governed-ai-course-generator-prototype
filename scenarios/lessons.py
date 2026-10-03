@@ -39,15 +39,15 @@ TOOLS = (
        "less than a minute and is done before the tool touches the work.", "mt-kb-015"),
     _p("Hold the handle and twist it against the blade: any movement means it is loose. Run a thumb along the "
        "handle to feel for cracks, and look at the striking end for burrs or splinters. A tool that fails any "
-       "of these checks goes in the red tray for repair and is not used again until it is signed off.",
+       "of these checks is taken out of use at once and put in the red tray for the workshop lead.",
        "mt-kb-016"),
-    _p("A damaged tool is never mended at the bench with tape or glue. Tag it with the fault and the date and "
-       "hand it to the workshop lead, who decides whether it is repaired or replaced. A shared tool left damaged "
+    _p("A damaged tool is never patched at the bench with tape or glue. Tag it with the fault and the date and "
+       "hand it to the workshop lead, and nobody else decides what happens to it. A shared tool left damaged "
        "on the rack puts the next person at risk without their knowing.", "mt-kb-017"),
     {"type": "checklist", "items": ["handle twisted against the blade: no movement",
                                     "handle felt along its length: no cracks or splits",
                                     "striking end looked at: no burrs, splinters or mushrooming",
-                                    "anything that fails goes in the red tray, tagged with the fault and the date"]},
+                                    "anything that fails is taken out of use, tagged and put in the red tray"]},
     {"type": "callout", "text": "A tool you are unsure about is a tool that fails the check."},
 )
 DUST = (
