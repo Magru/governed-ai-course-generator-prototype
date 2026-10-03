@@ -124,6 +124,7 @@ h2 { font-size: 1.15rem; font-weight: 800; margin: 0; }
 .pill.review { background: var(--person-bg); border-color: #e9d8a6; color: var(--person); }
 .pill.ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
 .pill.bad { background: var(--bad-bg); border-color: var(--bad-line); color: var(--bad); }
+.pill.warn { background: #fff7ed; border-color: #fdba74; color: #c2410c; }
 .pill.work { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
 .empty { border: 2px dashed rgba(0,0,0,.12); border-radius: 14px; padding: 40px 24px; text-align: center; display: grid; justify-items: center; gap: 10px; }
 .empty .tile { width: 64px; height: 64px; border-radius: 14px; background: #eff6ff; color: var(--brand); }

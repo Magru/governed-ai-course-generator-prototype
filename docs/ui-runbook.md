@@ -78,6 +78,21 @@ outline (see `risks.md`). A refusal example fixed in Recorded stops at
 | R1b.6 | drawer open | press the example *A brief that cannot hold* | the form refills: twelve skills, 40 minutes, 14 nodes |
 | R1b.7 | any | change a field, then look at the JSON | `id` is the system's and never changes; an empty field leaves its key out |
 
+## R1c · The outline, reviewed by a person
+
+The outline is a proposal: nothing is written yet, so its nodes open nothing.
+A person may approve it, remove what does not belong, or reject it with a
+reason — the three events the specification gives this state.
+
+| ID | Given | Do | Expect |
+|---|---|---|---|
+| R1c.1 | R1.3 | look at the header and the tree | **Reject outline** beside **Approve outline**; each node *Proposed*, with **Remove**; above the tree: *nothing is written yet* |
+| R1c.2 | R1c.1 | **Reject outline**, reason `only the skills in the brief` | an outline again, in `OutlineReview`; the trace has `OutlineRejected`. Live: the model is sent that reason and drafts a new one. Recorded: the recording answers with the same outline |
+| R1c.3 | R1c.1 | **Remove** on *Tool inspection*, Cancel | a warning that the brief asks for this skill; nothing changes |
+| R1c.4 | R1c.3 | **Remove** again, OK | three nodes; the exam is now over `mt-node-201, mt-node-203`; the trace has `OutlineRevised`, and the edited outline went through the outline's checks |
+| R1c.5 | R1c.4 | approve, generate and approve each node, **Send to review** | sent back: `tool-inspection is not covered: no node in this course teaches it`; LTL still holds |
+| R1c.6 | a brief without *Dust extraction*, Recorded | Create | *Dust extraction* is tagged **not in the brief**: the catalog allows it, the brief did not ask for it, and the person decides |
+
 ## R2 · Three briefs the system must refuse
 
 | ID | Given | Do | Expect |
@@ -153,3 +168,4 @@ hold is checked, not what it writes.
 | 2026-10-02 | `ui/server.py 8801`, recorded; system Chrome 154 driven by Playwright 1.60 | pass | pass | pass | pass | pass | pass | pass | not run | the outline is shown before it is approved; Esc closes the drawer; Release only where a person can act on it, and a brief or outline that cannot hold says to start over; a refused outline is shown as refused; a stop names its own cause, not an earlier refusal; a lesson can be rejected until the repair budget hands it to a person; a stale red toast is cleared by the next button; a lost server no longer throws in the console; the lessons keep their room at 1280; Live needs both the guardrail and its version |
 | 2026-10-02 | `make ui` on 8800, Live: Gemini 2.5 Flash + guardrail `mt-guard` v1 | — | — | — | — | — | — | — | first: sent back at the course checks; second: pass, Published in 49 s of calls | the model is told what an exam's topics are; the page says why the course checks sent a course back |
 | 2026-10-03 | `ui/server.py 8801`, recorded; Chrome 154 via Playwright 1.60 | pass | pass (+R1b) | pass | pass | pass | pass | pass | — | the brief is a form a person fills in, with the JSON beside it; the title stays the example's in Recorded mode, on the page and on the server |
+| 2026-10-03 | `ui/server.py 8801`, recorded; Chrome 154 via Playwright 1.60 | pass | pass (+R1b, R1c) | pass | pass | pass | pass | pass | — | the outline can be rejected with a reason and edited node by node; a removed node leaves the exam too; a skill the brief did not ask for is tagged |

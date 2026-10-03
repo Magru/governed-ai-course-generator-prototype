@@ -66,6 +66,7 @@
     $("#save").textContent = `revision ${s.revision.id} · ${st} · ${s.generator} · guardrail ${s.guardrail}`;
     $("#side-guard").textContent = `v${s.guardrail}`.replace("vguard-", "v");
     Object.entries(COURSE_ACTS).forEach(([name, at]) => { $(`[data-act="${name}"]`).hidden = st !== at; });
+    $("#reject-outline").hidden = st !== "OutlineReview";
     // A person can release what blocked a lesson. A brief or an outline that
     // cannot hold is not released but drafted again from a new brief, and the
     // page has no button that would draft it, so there is nothing to press.
@@ -131,7 +132,11 @@
     section.append(icon("grip", "grip"), tile, main);
     tree.append(section);
 
-    const working = st === "ContentInProgress";
+    const working = st === "ContentInProgress", reviewing = st === "OutlineReview";
+    $("#tree-sub").textContent = reviewing
+      ? "Proposed: nothing is written yet. Approve the outline, remove what does not belong, or reject it with a reason."
+      : "The model proposes. A person approves.";
+    const asked = new Set(s.brief.objectives || []);
     s.nodes.forEach(n => {
       const row = el("div", "row child");
       const t = el("div", `tile ${n.type === "exam" ? "t-exam" : "t-topic"}`); t.append(icon(n.type === "exam" ? "quiz" : "file"));
@@ -140,6 +145,9 @@
       const [pc, pl] = NODE_PILL[n.state] || ["", n.state];
       title.append(el("span", `pill ${pc}`, pl));
       if (n.repairs) title.append(el("span", "pill bad", `${n.repairs} repair${n.repairs > 1 ? "s" : ""}`));
+      // Shown, not decided: the catalog allows the skill, the brief did not ask
+      // for it, and whether it belongs is the person's call.
+      if (n.state === "Proposed" && n.skill && !asked.has(n.skill)) title.append(el("span", "pill warn", "not in the brief"));
       m.append(title, el("div", "row-sub", n.type === "exam" ? `${n.id} · over ${(n.topics || []).join(", ")}` : n.id));
       if (n.last_refusal && !["NodeApproved", "Validated"].includes(n.state)) m.append(el("div", "row-why", `refused: ${n.last_refusal}`));
       const actions = el("div", "row-actions");
@@ -148,6 +156,11 @@
         btn("primary", "sparkles", "Generate", () => act("generate", { node: n.id }, `Writing ${n.type === "exam" ? "the exam" : words(n.skill)}…`));
       if (n.content) btn("ghost", "eye", n.state === "Validated" ? "Review" : "View", () => openEditor(n));
       if (working && n.state === "Validated") btn("outline", "check", "Approve", () => act("approve", { node: n.id }, "Recording the approval…"));
+      if (reviewing) btn("ghost", "x", "Remove", () => {
+        const name = n.type === "exam" ? "The exam" : words(n.skill);
+        if (n.skill && asked.has(n.skill) && !confirm(`${name} is one of the skills the brief asks for. The outline's checks will accept the edit, but the course checks will refuse a course that does not teach it. Remove it anyway?`)) return;
+        act("remove-node", { node: n.id }, "Checking the edited outline…");
+      });
       row.append(icon("grip", "grip"), t, m, actions);
       tree.append(row);
     });
@@ -336,6 +349,10 @@
     document.querySelectorAll("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== t.dataset.tab; });
   }));
   $("#reset").addEventListener("click", () => startOver(state.mode));
+  $("#reject-outline").addEventListener("click", () => {
+    const reason = prompt("Why is this outline rejected? The model is told exactly this when it drafts again.");
+    if (reason) act("reject-outline", { reason }, state.mode === "live" ? "Drafting a new outline…" : "Asking the recorded model again…");
+  });
   $("#drawer-cancel").addEventListener("click", closeDrawer);
   $("#scrim").addEventListener("click", closeDrawer);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#drawer").hidden) closeDrawer(); });

@@ -28,7 +28,8 @@ FORM = form_options()
 ACTIONS = {"submit": ("submit", ["brief"]), "approve-outline": ("approve_outline", []),
            "generate": ("generate", ["node"]), "approve": ("approve", ["node"]),
            "reject": ("reject", ["node", "reason"]), "checks": ("course_checks", []),
-           "sign": ("sign", []), "publish": ("publish", []), "release": ("release", [])}
+           "sign": ("sign", []), "publish": ("publish", []), "release": ("release", []),
+           "reject-outline": ("reject_outline", ["reason"]), "remove-node": ("remove_node", ["node"])}
 
 
 class Handler(BaseHTTPRequestHandler):

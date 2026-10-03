@@ -119,6 +119,27 @@ def test_a_brief_that_leaves_out_the_count_cannot_be_judged():
     assert s.snapshot()["engine_log"][-1]["kind"] == "unstated-requirement"
 
 
+def test_a_rejected_outline_is_drafted_again_and_the_model_is_told_why():
+    s = Session()
+    s.act("submit", None)
+    assert s.act("reject_outline", "only the skills in the brief")["ok"]
+    assert s.snapshot()["revision"]["state"] == "OutlineReview"
+    prompt = s.p.generator.asked[-1][1]
+    assert "only the skills in the brief" in prompt.instructions
+
+
+def test_a_removed_node_leaves_the_outline_and_the_exam_and_the_outline_is_checked_again():
+    s = Session()
+    s.act("submit", None)
+    assert s.act("remove_node", w.T2)["ok"]
+    snap = s.snapshot()
+    assert snap["revision"]["state"] == "OutlineReview"
+    assert [n["id"] for n in snap["nodes"]] == [w.T1, w.T3, w.E1]
+    assert snap["nodes"][-1]["topics"] == [w.T1, w.T3]   # the exam no longer claims to test it
+    assert "OutlineRevised" in [e["event"] for e in snap["events"]]
+    assert not s.act("remove_node", "nowhere")["ok"]
+
+
 def test_live_mode_is_refused_without_a_published_guardrail(monkeypatch):
     pytest.importorskip("google.genai")
     monkeypatch.setenv("GEMINI_API_KEY", "canary-gemini-0000")

@@ -81,6 +81,10 @@ def _recorded(preset: str):
                 generator.answers[f"node:{node}"].append(_revised(node, round_))
                 screener.verdicts.setdefault(("node-out", node), []).append("allow")
         screener.verdicts.setdefault(("image-out", f"{w.T1}.blocks[1]"), []).extend(["allow"] * REVISIONS)
+        # A person may reject the outline too; the recorded model answers with
+        # the same outline, which is what a recording can honestly do.
+        generator.answers["outline"].extend(copy.deepcopy(w.OUTLINE) for _ in range(REVISIONS))
+        screener.verdicts[("outline-out", "outline")].extend(["allow"] * REVISIONS)
         return generator, screener
     # The refusal presets never reach a model: the brief is refused first.
     return RecordedGenerator({}), RecordedScreener({("brief-in", "brief"): [PRESETS[preset][2]]})
@@ -124,10 +128,33 @@ class Session:
             picked = {k: fields[k] for k in FIELDS if fields.get(k) not in (None, "")}
             self.brief = {"id": example["id"], **picked}
         self.p.submit_brief(copy.deepcopy(self.brief), run.AUTHOR)
+        self._draft()
+
+    def _draft(self) -> None:
         for _ in range(self.p.machine.store.budget() + 1):
             if self.p.machine.current.state != "OutlineDrafting":
                 break
             self.p.draft_outline(run.AUTHOR)
+
+    def reject_outline(self, reason: str) -> None:
+        """The person sends the outline back; the model is asked again and
+        told exactly this reason, as it is told a check's."""
+        self.p.machine.fire("OutlineRejected", {"reason": reason, "actor": run.AUTHOR["id"]})
+        self._draft()
+
+    def remove_node(self, node: str) -> None:
+        """The person edits the outline: the node goes, and so does every
+        exam's claim to test it — an exam that names a node the outline does
+        not have is what the trace refuses at the end. The edited outline goes
+        through the outline's checks again, never straight to approval."""
+        nodes = copy.deepcopy((self.p.machine.current.proposal or {}).get("nodes") or [])
+        if node not in {n.get("id") for n in nodes}:
+            raise GatewayRefused(f"{node} is not in the outline")
+        kept = [n for n in nodes if n.get("id") != node]
+        for n in kept:
+            if isinstance(n.get("topics"), list):
+                n["topics"] = [t for t in n["topics"] if t != node]
+        self.p.machine.fire("OutlineRevised", {"outline": {"nodes": kept}, "actor": run.AUTHOR["id"]})
 
     def approve_outline(self) -> None:
         self.p.machine.fire("OutlineApproved", {"actor": run.AUTHOR["id"]})
