@@ -59,13 +59,14 @@ def outline_request(world) -> tuple[str, dict]:
     return rules, schema
 
 
-def node_request(world, node_id: str) -> tuple[str, dict]:
+def node_request(world, node_id: str, spec: dict | None = None, brief: dict | None = None) -> tuple[str, dict]:
     carries = "; ".join(f"{kind} ({', '.join(world.block_schemas[kind].get('required') or [])})"
                         for kind in world.block_types)
     limit = world.thresholds.get("max_minutes_per_lesson")
     rules = (f"{NODE_RULES.format(node=node_id)}\nBlock types, and what each must carry, and nothing "
              f"else: {carries}.\nState the node's minutes{f', at most {limit}' if limit else ''}. "
-             f"An exam is made of quiz blocks, and its points_total is the sum of their points.")
+             f"An exam is made of quiz blocks, and its points_total is the sum of their points."
+             f"{_lesson(world, spec or {}, brief or {})}")
     schema = copy.deepcopy(NODE_SCHEMA)
     schema["required"] = [*schema["required"], "minutes"]
     if limit:
@@ -74,6 +75,25 @@ def node_request(world, node_id: str) -> tuple[str, dict]:
     # every field of every type fills fields its own type refuses.
     schema["properties"]["blocks"]["items"] = {"anyOf": [_block(world, kind) for kind in world.block_types]}
     return rules, schema
+
+
+def _lesson(world, spec: dict, brief: dict) -> str:
+    """What this lesson is and how much of it there must be. Told nothing, a
+    model writes a paragraph for a twenty-minute lesson, and the arithmetic
+    check refuses it; told the floor, it writes to it — from the sources only,
+    which are now this lesson's own. Only what is ours goes here: the skill's
+    catalog label and the organisation's numbers. The course title is the
+    author's words and travels in the author's position, below these rules."""
+    if spec.get("type") != "topic" or not spec.get("skill"):
+        return ""
+    label = next((k["label"] for k in world.catalog["skills"] if k["id"] == spec["skill"]), spec["skill"])
+    minutes, per_minute = brief.get("minutes_per_lesson"), world.thresholds.get("min_words_per_minute")
+    told = f"\nThis lesson teaches {label}; the course's other lessons teach the rest, so stay on it."
+    if isinstance(minutes, int) and per_minute:
+        told += (f" It runs {minutes} minutes: write at least {minutes * per_minute} words across its blocks — "
+                 f"a heading, paragraphs that explain each step and why it matters, a worked example taken "
+                 f"from the sources, and a checklist the learner can follow.")
+    return told
 
 
 def _block(world, kind: str) -> dict:

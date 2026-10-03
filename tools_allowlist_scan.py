@@ -42,6 +42,7 @@ STRUCTURAL = {
     "generic", "kb_namespace", "course_namespace", "knowledge_base", "catalog",
     "chunks", "articles", "thresholds", "approval", "required_roles",
     "minimum_signatures", "signatures", "slug", "name", "domain", "about", "role", "label",
+    "min_words_per_minute", "skill",
     "id", "title", "objectives", "audience", "state", "type", "version",
     "chunk", "text", "source", "visible", "settings", "brief", "nodes", "node",
     "may_author_for", "visible_to", "requires_visual_review", "repair_budget",

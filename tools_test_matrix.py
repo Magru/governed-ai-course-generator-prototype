@@ -39,6 +39,7 @@ LAYER = {
     "test_cascade_simulation": "State machine",
     "test_gateway_membrane": "Gateway", "test_gateway_forgery": "Gateway",
     "test_gateway_idempotency": "Gateway", "test_gemini_schema": "Gateway", "test_gateway_answers_it_can_vouch_for": "Gateway",
+    "test_lesson_depth": "Gateway",
     "test_gateway_screened_text": "Guardrail", "test_bedrock_screener": "Guardrail",
     "test_live_guardrail": "Guardrail", "test_prompt_positions": "Prompt architecture",
     "test_injection_surfaces": "Prompt architecture",

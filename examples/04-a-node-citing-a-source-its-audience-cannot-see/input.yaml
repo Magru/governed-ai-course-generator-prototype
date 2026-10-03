@@ -9,30 +9,43 @@ articles:
   chunks:
   - mt-kb-001
   - mt-kb-009
+  - mt-kb-012
+  - mt-kb-013
+  - mt-kb-014
+  - mt-kb-021
 - id: mt-art-tool-inspection
   chunks:
   - mt-kb-002
+  - mt-kb-015
+  - mt-kb-016
+  - mt-kb-017
 - id: mt-art-plane-setup
   chunks:
   - mt-kb-003
+  - mt-kb-023
 - id: mt-art-sharpening
   chunks:
   - mt-kb-004
 - id: mt-art-dust-extraction
   chunks:
   - mt-kb-005
+  - mt-kb-018
+  - mt-kb-019
+  - mt-kb-020
 - id: mt-art-noise-exposure
   chunks:
   - mt-kb-006
 - id: mt-art-injury-reporting
   chunks:
   - mt-kb-007
+  - mt-kb-022
 - id: mt-art-incident-records
   chunks:
   - mt-kb-008
 - id: mt-art-machine-guarding
   chunks:
   - mt-kb-010
+  - mt-kb-024
 audience:
 - apprentices
 visibility:

@@ -11,36 +11,36 @@ stage  4 routing                    outline                RecordedGenerator
 stage  5 generation                 outline                recorded-model
 stage  6 guardrail outline-out      outline                allow
 stage 10 checks 7–9 · admission     outline                OutlineReview
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · bench-safety
 stage  4 routing                    mt-node-201            RecordedGenerator
 stage  5 generation                 mt-node-201            recorded-model
 stage  6 guardrail node-out         mt-node-201            allow
 stage  6 guardrail image-out        mt-node-201.blocks[1]  allow
 stage 10 checks 7–9 · admission     mt-node-201            Validated
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · tool-inspection
 stage  4 routing                    mt-node-202            RecordedGenerator
 stage  5 generation                 mt-node-202            recorded-model
 stage  6 guardrail node-out         mt-node-202            allow
 stage 10 checks 7–9 · admission     mt-node-202            ContentDrafting — repaired: mt-node-202 cites mt-kb-008 from mt-art-incident-records, which apprentices cannot see
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · tool-inspection
 stage  4 routing                    mt-node-202            RecordedGenerator
 stage  5 generation                 mt-node-202            recorded-model
 stage  6 guardrail node-out         mt-node-202            allow
 stage 10 checks 7–9 · admission     mt-node-202            Validated
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · dust-extraction
 stage  4 routing                    mt-node-203            RecordedGenerator
 stage  5 generation                 mt-node-203            effect: node:mt-node-203: the recorded call timed out
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · dust-extraction
 stage  4 routing                    mt-node-203            RecordedGenerator
 stage  5 generation                 mt-node-203            recorded-model
 stage  6 guardrail node-out         mt-node-203            allow
 stage 10 checks 7–9 · admission     mt-node-203            Validated
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · bench-safety, dust-extraction, tool-inspection
 stage  4 routing                    mt-node-204            RecordedGenerator
 stage  5 generation                 mt-node-204            recorded-model
 stage  6 guardrail node-out         mt-node-204            allow
 stage 10 checks 7–9 · admission     mt-node-204            ContentDrafting — repaired: mt-node-204.blocks: expected at least one content block
-stage  3 retrieval · rights filter  sources                ['apprentices']
+stage  3 retrieval · rights filter  sources                ['apprentices'] · bench-safety, dust-extraction, tool-inspection
 stage  4 routing                    mt-node-204            RecordedGenerator
 stage  5 generation                 mt-node-204            recorded-model
 stage  6 guardrail node-out         mt-node-204            allow

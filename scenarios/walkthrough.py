@@ -19,6 +19,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from scenarios.machine_runs import SIGNATURES, brief, machine   # noqa: E402
+from scenarios.lessons import BENCH, DUST, TOOLS                   # noqa: E402
 from scenarios.replay import Beat, play                          # noqa: E402
 
 T1, T2, T3, E1 = "mt-node-201", "mt-node-202", "mt-node-203", "mt-node-204"
@@ -34,18 +35,24 @@ INVENTED = copy.deepcopy(OUTLINE)
 INVENTED["nodes"][2]["skill"] = "post-mortem-facilitation"
 
 
-def _topic(chunk: str, text: str, image: bool = False) -> dict:
+def _topic(chunk: str, text: str, image: bool = False, body: tuple = ()) -> dict:
+    """A recorded lesson. The opening paragraph and, for the first topic, the
+    image keep their places — runs and tests edit the first block and screen
+    the second — and the body after them is enough on its own for the twenty
+    minutes it states, so an edit to the opening cannot leave it short."""
     blocks = [{"type": "paragraph", "text": text, "cites": [chunk]}]
     if image:
         blocks.append({"type": "image", "src": "bench.png", "alt": "a clear bench",
                        "caption": "a bench ready for work", "cites": [chunk]})
-    return {"blocks": blocks, "cites": [chunk], "minutes": 20}
+    blocks += [dict(b) for b in body]
+    cites = sorted({chunk, *(c for b in blocks for c in b.get("cites", []))})
+    return {"blocks": blocks, "cites": cites, "minutes": 20}
 
 
 CONTENT = {
-    T1: _topic("mt-kb-001", "keep the bench clear of offcuts", image=True),
-    T2: _topic("mt-kb-002", "check a tool for splits before every use"),
-    T3: _topic("mt-kb-005", "connect extraction before cutting"),
+    T1: _topic("mt-kb-001", "keep the bench clear of offcuts", image=True, body=BENCH),
+    T2: _topic("mt-kb-002", "check a tool for splits before every use", body=TOOLS),
+    T3: _topic("mt-kb-005", "connect extraction before cutting", body=DUST),
     E1: {"blocks": [{"type": "quiz", "question": "when is extraction connected",
                      "options": ["before cutting", "after cutting"], "answer": 0, "points": 5},
                     {"type": "quiz", "question": "when is a tool checked",

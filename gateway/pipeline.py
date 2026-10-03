@@ -97,9 +97,11 @@ class Pipeline:
             m.fire("NodeGenerationRequested", {"node": node_id, "actor": actor["id"]})
         while m.current.nodes[node_id].state == "ContentDrafting":
             node = m.current.nodes[node_id]
-            rules, schema = node_request(m.world, node_id)
+            rules, schema = node_request(m.world, node_id, node.spec, m.current.brief)
             prompt = Prompt(self._with_feedback(rules, node),
-                            author=json.dumps(node.spec, sort_keys=True), sources=self._sources())
+                            author=json.dumps({**node.spec, "course": (m.current.brief or {}).get("title")},
+                                              sort_keys=True),
+                            sources=self._sources(self._skills_of(node.spec)))
             self._stage(4, "routing", node_id, type(self.generator).__name__)
             out = self.membrane.request(
                 "generate_node_content", {"node": node_id, "prompt": digest(prompt)}, actor,
@@ -152,11 +154,21 @@ class Pipeline:
                 self._verdict("notice-out", subject, notice, "text"))})
 
     # ── internals ─────────────────────────────────────────────────────────
-    def _sources(self) -> tuple:
+    def _sources(self, skills=None) -> tuple:
         audiences = (self.machine.current.brief or {}).get("audience") or []
-        self._stage(3, "retrieval · rights filter", "sources", audiences)
+        self._stage(3, "retrieval · rights filter", "sources",
+                    audiences if skills is None else f"{audiences} · {', '.join(skills) or 'no skill'}")
         return tuple(f"{c['id']}: {c['text']}" for c in
-                     retrieve(self.machine.world, audiences, self.kb_chunks))
+                     retrieve(self.machine.world, audiences, self.kb_chunks, skills))
+
+    def _skills_of(self, spec: dict) -> list[str]:
+        """What a lesson is about: its skill; an exam's, the skills of the
+        topics it tests."""
+        if spec.get("type") == "exam":
+            nodes = self.machine.current.nodes
+            return sorted({nodes[t].spec.get("skill") for t in spec.get("topics") or []
+                           if t in nodes and nodes[t].spec.get("skill")})
+        return [spec["skill"]] if spec.get("skill") else []
 
     def _with_feedback(self, rules: str, obj) -> str:
         # A repair is a retry that changed the request: the machine-produced

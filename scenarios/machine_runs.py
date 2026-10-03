@@ -19,19 +19,22 @@ import yaml
 
 from machine import world as world_module
 from machine.machine import Machine
+from scenarios.lessons import BENCH, TOOLS
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 BRIEF = yaml.safe_load((ROOT / "fixtures" / "brief.yaml").read_text())["brief"]
 N1, N2, EXAM = (n["id"] for n in BRIEF["nodes"])
 OUTLINE = {"nodes": [dict(n) for n in BRIEF["nodes"]]}
 
+def _lesson(chunk: str, opening: str, body: tuple) -> dict:
+    blocks = [{"type": "paragraph", "text": opening, "cites": [chunk]}, *(dict(b) for b in body)]
+    return {"blocks": blocks, "cites": sorted({chunk, *(c for b in blocks for c in b.get("cites", []))}),
+            "minutes": 20}
+
+
 CONTENT = {
-    N1: {"blocks": [{"type": "paragraph", "text": "keep the bench clear of offcuts",
-                     "cites": ["mt-kb-001"]}],
-         "cites": ["mt-kb-001"], "minutes": 20},
-    N2: {"blocks": [{"type": "paragraph", "text": "check a tool before every use",
-                     "cites": ["mt-kb-002"]}],
-         "cites": ["mt-kb-002"], "minutes": 20},
+    N1: _lesson("mt-kb-001", "keep the bench clear of offcuts", BENCH),
+    N2: _lesson("mt-kb-002", "check a tool before every use", TOOLS),
     EXAM: {"blocks": [{"type": "quiz", "question": "when is a tool checked",
                        "options": ["before every use", "once a year"], "answer": 0,
                        "points": 10}],

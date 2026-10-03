@@ -8,33 +8,48 @@
 # drifts, deciding who sees restricted material.
 knowledge_base:
   version: kb-4
+  # each chunk says which skill it teaches. permissions attach to the article
+  # a chunk belongs to; what a chunk is about is the chunk's own, and it is what
+  # retrieval scopes a lesson's sources by.
   chunks:
-    - {id: mt-kb-001, text: keep the bench clear of offcuts and wipe spills before starting work}
-    - {id: mt-kb-002, text: check a tool for splits and loose handles before every use}
-    - {id: mt-kb-003, text: set the plane iron so a thin shaving lifts evenly across the mouth}
-    - {id: mt-kb-004, text: hone a chisel until the edge no longer catches on a thumbnail}
-    - {id: mt-kb-005, text: connect extraction before cutting and empty the bag at the end of a run}
-    - {id: mt-kb-006, text: wear defenders where a machine runs above the daily limit}
-    - {id: mt-kb-007, text: report every injury on the day it happens however small it looks}
-    - {id: mt-kb-008, text: incident records name the people involved and are held by the supervisor only}
-    - {id: mt-kb-009, text: lift with the load close to the body and turn with the feet not the waist}
-    - {id: mt-kb-010, text: a guard removed for setting up is refitted before the machine is started}
-
+    - {id: mt-kb-001, skill: bench-safety, text: keep the bench clear of offcuts and wipe spills before starting work}
+    - {id: mt-kb-002, skill: tool-inspection, text: check a tool for splits and loose handles before every use}
+    - {id: mt-kb-003, skill: hand-plane-setup, text: set the plane iron so a thin shaving lifts evenly across the mouth}
+    - {id: mt-kb-004, skill: chisel-sharpening, text: hone a chisel until the edge no longer catches on a thumbnail}
+    - {id: mt-kb-005, skill: dust-extraction, text: connect extraction before cutting and empty the bag at the end of a run}
+    - {id: mt-kb-006, skill: noise-exposure, text: wear defenders where a machine runs above the daily limit}
+    - {id: mt-kb-007, skill: incident-reporting, text: report every injury on the day it happens however small it looks}
+    - {id: mt-kb-008, skill: incident-reporting, text: incident records name the people involved and are held by the supervisor only}
+    - {id: mt-kb-009, skill: lifting-technique, text: lift with the load close to the body and turn with the feet not the waist}
+    - {id: mt-kb-010, skill: machine-guarding, text: a guard removed for setting up is refitted before the machine is started}
+    - {id: mt-kb-012, skill: bench-safety, text: "a cluttered bench is where most hand injuries begin. offcuts roll under a workpiece and tip it, a stray chisel waits edge up under a rag, and a spill makes a clamp slip at the moment force is applied. clearing the bench is the first step of every job, not the last."}
+    - {id: mt-kb-013, skill: bench-safety, text: "keep only the tools for the current step on the bench, laid flat with edges facing away and toward the back. return each tool to its rack when the step is done. a tool left out is a tool that falls, and a falling chisel is caught by reflex far more often than it should be."}
+    - {id: mt-kb-014, skill: bench-safety, text: "wipe a spill of glue, oil or finish at once with a dry cloth, then put the cloth in the lidded bin and not on the bench. oily cloths left in a heap can heat up on their own. a dry bench also keeps the work from sliding while it is held in the vice."}
+    - {id: mt-kb-015, skill: tool-inspection, text: "before a tool is used it is looked at, every time. a split in a wooden handle, a mushroomed head on a cold chisel or a loose ferrule will fail under load, and they fail without warning. the check takes less than a minute and is done before the tool touches the work."}
+    - {id: mt-kb-016, skill: tool-inspection, text: "hold the handle and twist it against the blade: any movement means it is loose. run a thumb along the handle to feel for cracks, and look at the striking end for burrs or splinters. a tool that fails any of these goes in the red tray for repair and is not used again until it is signed off."}
+    - {id: mt-kb-017, skill: tool-inspection, text: "a damaged tool is never repaired at the bench with tape or glue. it is tagged with the fault and the date and handed to the workshop lead, who decides whether it is mended or replaced. a shared tool left damaged on the rack puts the next person at risk without their knowing."}
+    - {id: mt-kb-018, skill: dust-extraction, text: "fine wood dust is the hazard nobody sees: it hangs in the air long after a cut and settles deep in the lungs. extraction catches it at the source, so the hose is connected and the extractor switched on before the machine starts, not after the first cut has filled the air."}
+    - {id: mt-kb-019, skill: dust-extraction, text: "check that the hose is seated firmly on the machine port and that the blast gate for that machine is open and every other gate is closed. a gate left open elsewhere halves the suction where it is needed. a hose that kinks or rests on the floor will choke and stop pulling dust."}
+    - {id: mt-kb-020, skill: dust-extraction, text: "empty the collection bag at the end of a run, before it is more than two thirds full, wearing a mask and gloves. lower the bag slowly into a sealed sack rather than shaking it out. a full bag stops the extractor drawing air, and the dust then escapes through every gap in the system."}
+    - {id: mt-kb-021, skill: lifting-technique, text: "before lifting, test the weight by tipping one corner. if it is more than can be held close to the body, ask for a second person or use the trolley. plan the route first and clear it, so the load is never carried around an obstacle."}
+    - {id: mt-kb-022, skill: incident-reporting, text: "a report is short: what happened, where, when, and what was done straight away. it is written the same day while the details are clear. a near miss is reported in the same way, because the same fault will cause an injury the next time."}
+    - {id: mt-kb-023, skill: hand-plane-setup, text: "sight down the sole from the front to see how far the iron projects, and adjust until it shows as a thin even line. take a test shaving on scrap: a thick shaving on one side means the iron is skewed, and the lateral lever corrects it."}
+    - {id: mt-kb-024, skill: machine-guarding, text: "a machine is isolated at the switch before a guard is removed, and the switch is tagged so nobody restarts it. once the setting up is done the guard is refitted and checked before the isolation is lifted. a machine is never run with a guard open, even for a single cut."}
 # an article is the thing permissions are actually attached to. a chunk is a
 # fragment of one, and it is retrieved and cited individually — which is why the
 # derivation path has four steps and not three: the node cites a chunk, the
 # chunk belongs to an article, and the article is what an audience may or may
 # not see.
 articles:
-  - {id: mt-art-bench-and-lifting,  chunks: [mt-kb-001, mt-kb-009]}
-  - {id: mt-art-tool-inspection,    chunks: [mt-kb-002]}
-  - {id: mt-art-plane-setup,        chunks: [mt-kb-003]}
+  - {id: mt-art-bench-and-lifting,  chunks: [mt-kb-001, mt-kb-009, mt-kb-012, mt-kb-013, mt-kb-014, mt-kb-021]}
+  - {id: mt-art-tool-inspection,    chunks: [mt-kb-002, mt-kb-015, mt-kb-016, mt-kb-017]}
+  - {id: mt-art-plane-setup,        chunks: [mt-kb-003, mt-kb-023]}
   - {id: mt-art-sharpening,         chunks: [mt-kb-004]}
-  - {id: mt-art-dust-extraction,    chunks: [mt-kb-005]}
+  - {id: mt-art-dust-extraction,    chunks: [mt-kb-005, mt-kb-018, mt-kb-019, mt-kb-020]}
   - {id: mt-art-noise-exposure,     chunks: [mt-kb-006]}
-  - {id: mt-art-injury-reporting,   chunks: [mt-kb-007]}
+  - {id: mt-art-injury-reporting,   chunks: [mt-kb-007, mt-kb-022]}
   - {id: mt-art-incident-records,   chunks: [mt-kb-008]}
-  - {id: mt-art-machine-guarding,   chunks: [mt-kb-010]}
+  - {id: mt-art-machine-guarding,   chunks: [mt-kb-010, mt-kb-024]}
 
 # the platform's answer to "can every member of this audience see this article",
 # already resolved. the generator asks; it does not derive.

@@ -215,6 +215,14 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
             tracked["duration_matches_the_block_count"] = (
                 minutes == per_block * len(blocks))
         tracked["a_node_takes_time"] = minutes > 0
+        per_minute = int(thresholds.get("min_words_per_minute") or 0)
+        if per_minute and node.get("type") == "topic":
+            # A lesson that says twenty minutes and holds a paragraph has
+            # stated a duration its content cannot fill. Counted, not judged:
+            # whether the words are any good is the person's review.
+            words = z3.Int("words")
+            tracked["words_are_as_written"] = words == _words(blocks)
+            tracked["enough_words_for_the_minutes"] = words >= per_minute * minutes
 
     if not tracked:
         return allowed(engine=ENGINE, node=node.get("id"), sums=0)
@@ -225,11 +233,31 @@ def check_arithmetic(node: dict, thresholds: dict) -> Verdict:
     if solver.check() == z3.sat:
         return allowed(engine=ENGINE, node=node.get("id"), sums=len(tracked))
     core = sorted(str(c) for c in solver.unsat_core())
-    return refused(
-        kind="failing-sum",
-        summary=f"{node.get('id')}: " + ", ".join(core),
-        detail={"node": node.get("id"), "core": core},
-        engine=ENGINE)
+    detail = {"node": node.get("id"), "core": core}
+    summary = f"{node.get('id')}: " + ", ".join(core)
+    if "enough_words_for_the_minutes" in core:
+        # The numbers are what the next draft needs: told only the names of
+        # two claims, a model cannot tell how far short it fell.
+        detail.update(words=_words(blocks), needed=int(thresholds["min_words_per_minute"]) * int(stated_minutes))
+        summary += f" ({detail['words']} words for {stated_minutes} minutes; at least {detail['needed']})"
+    return refused(kind="failing-sum", summary=summary, detail=detail, engine=ENGINE)
+
+
+def _words(blocks) -> int:
+    """The words a learner reads in a lesson's blocks: text, list items,
+    questions and their options, captions. Anything that is not a block of
+    words counts as none, so a malformed block can only fall short."""
+    count = 0
+    for b in blocks or []:
+        if not isinstance(b, dict):
+            continue
+        for key in ("text", "question", "caption"):
+            if isinstance(b.get(key), str):
+                count += len(b[key].split())
+        for key in ("items", "options"):
+            if isinstance(b.get(key), list):
+                count += sum(len(x.split()) for x in b[key] if isinstance(x, str))
+    return count
 
 
 def _integer(value) -> bool:
