@@ -487,8 +487,8 @@ Each test's name is the sentence it checks; the column *expects* is that name re
 | [`test_a_brief_that_leaves_out_the_count_cannot_be_judged`](../tests/test_ui_session.py#L116) | a brief that leaves out the count cannot be judged | passed |
 | [`test_a_rejected_outline_is_drafted_again_and_the_model_is_told_why`](../tests/test_ui_session.py#L122) | a rejected outline is drafted again and the model is told why | passed |
 | [`test_a_removed_node_leaves_the_outline_and_the_exam_and_the_outline_is_checked_again`](../tests/test_ui_session.py#L131) | a removed node leaves the outline and the exam and the outline is checked again | passed |
-| [`test_live_mode_is_refused_without_a_published_guardrail`](../tests/test_ui_session.py#L143) | live mode is refused without a published guardrail | passed |
-| [`test_only_this_page_may_press_the_buttons`](../tests/test_ui_session.py#L159) | only this page may press the buttons | passed |
+| [`test_live_mode_is_refused_without_a_published_guardrail`](../tests/test_ui_session.py#L151) | live mode is refused without a published guardrail | passed |
+| [`test_only_this_page_may_press_the_buttons`](../tests/test_ui_session.py#L167) | only this page may press the buttons | passed |
 
 
 ## Specification

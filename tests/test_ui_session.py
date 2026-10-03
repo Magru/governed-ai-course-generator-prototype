@@ -138,6 +138,14 @@ def test_a_removed_node_leaves_the_outline_and_the_exam_and_the_outline_is_check
     assert snap["nodes"][-1]["topics"] == [w.T1, w.T3]   # the exam no longer claims to test it
     assert "OutlineRevised" in [e["event"] for e in snap["events"]]
     assert not s.act("remove_node", "nowhere")["ok"]
+    assert s.act("remove_node", w.T1)["ok"]
+    out = s.act("remove_node", w.T3)                     # the exam's last topic
+    assert not out["ok"] and "the exam would test nothing" in out["error"]
+    assert s.act("remove_node", w.E1)["ok"]
+    out = s.act("remove_node", w.T3)                     # the last node of all
+    assert not out["ok"] and "at least one topic" in out["error"]
+    assert not s.act("reject_outline", "   ")["ok"]
+    assert s.snapshot()["revision"]["state"] == "OutlineReview"
 
 
 def test_live_mode_is_refused_without_a_published_guardrail(monkeypatch):

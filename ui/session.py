@@ -139,7 +139,9 @@ class Session:
     def reject_outline(self, reason: str) -> None:
         """The person sends the outline back; the model is asked again and
         told exactly this reason, as it is told a check's."""
-        self.p.machine.fire("OutlineRejected", {"reason": reason, "actor": run.AUTHOR["id"]})
+        if not isinstance(reason, str) or not reason.strip():
+            raise GatewayRefused("a rejection needs a reason: it is what the next draft is told")
+        self.p.machine.fire("OutlineRejected", {"reason": reason.strip(), "actor": run.AUTHOR["id"]})
         self._draft()
 
     def remove_node(self, node: str) -> None:
@@ -148,12 +150,19 @@ class Session:
         not have is what the trace refuses at the end. The edited outline goes
         through the outline's checks again, never straight to approval."""
         nodes = copy.deepcopy((self.p.machine.current.proposal or {}).get("nodes") or [])
-        if node not in {n.get("id") for n in nodes}:
-            raise GatewayRefused(f"{node} is not in the outline")
+        if not isinstance(node, str) or node not in {n.get("id") for n in nodes}:
+            raise GatewayRefused(f"{node!r} is not in the outline")
         kept = [n for n in nodes if n.get("id") != node]
         for n in kept:
             if isinstance(n.get("topics"), list):
                 n["topics"] = [t for t in n["topics"] if t != node]
+        # Two edits the outline's checks would let through and the course could
+        # not survive: an empty outline sends the machine back to drafting with
+        # nobody to draft, and an exam over nothing breaks the trace at the end.
+        if any(n.get("type") == "exam" and not n.get("topics") for n in kept):
+            raise GatewayRefused("the exam would test nothing; remove the exam first, or keep one of its topics")
+        if not any(n.get("type") != "exam" for n in kept):
+            raise GatewayRefused("an outline needs at least one topic; reject it instead to have it drafted again")
         self.p.machine.fire("OutlineRevised", {"outline": {"nodes": kept}, "actor": run.AUTHOR["id"]})
 
     def approve_outline(self) -> None:
