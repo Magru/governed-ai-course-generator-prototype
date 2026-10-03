@@ -1,9 +1,9 @@
 # The live run
 
-2 October 2026. Gemini (`gemini-2.5-flash`) writes, Amazon Bedrock Guardrails
+2 and 3 October 2026. Gemini (`gemini-2.5-flash`) writes, Amazon Bedrock Guardrails
 (`mt-guard`, version 1, built by `make guardrail-create` from
 `fixtures/guardrail-policy.yaml`) screens, the machine decides. Account checked
-before every call by `make whoami`. Three runs of `make live-run`, then two from the
+before every call by `make whoami`. Three runs of `make live-run`, then five from the
 course builder (`make ui`, Live), all on the same brief as `make run`.
 
 ## The guardrail on three known answers
@@ -134,6 +134,14 @@ topics. The tool-inspection lesson was denied once more as `unqualified-repair`
 — three drafts in a row — waited for a person, was released, and passed on the
 next draft. The course was approved, signed and published in 106 seconds of
 calls, and every invariant held.
+
+## Run 8 — published again, after the floor was tied to the brief
+
+After a review: the word floor counted only against the minutes a lesson
+states, so a lesson could lower it by stating fewer; it now counts against the
+brief's minutes too. Published in about 90 seconds of calls; lessons of 366 to
+418 words, each citing only its own skill's chunks; the tool-inspection lesson
+was denied once as `unqualified-repair` and passed on its repair.
 
 ## What the runs show
 
